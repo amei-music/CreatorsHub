@@ -15,5 +15,8 @@
   "bugs": {
     "url": ""
   },
-  "homepage": ""
+  "homepage": "",
+  "dependencies": {
+    "midi": "^0.9.4"
+  }
 }

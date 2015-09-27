@@ -1,5 +1,5 @@
 var http = require('http');
- 
+
 var midi = require('midi');
 
 // Set up a new input.
@@ -9,7 +9,7 @@ var input = new midi.input();
 input.getPortCount();
 
 // Get the name of a specified input port.
-for(var i=0; i<=input.getPortCount(); ++i){
+for(var i=0; i<input.getPortCount(); ++i){
   var portName = input.getPortName(i);
   console.log(i, portName);
 }
@@ -39,4 +39,3 @@ input.ignoreTypes(false, true, true);
 
 // Close the port when done.
 //input.closePort();
-

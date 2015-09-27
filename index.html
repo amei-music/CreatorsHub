@@ -1,0 +1,51 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>FM_MW1</title>
+</head>
+<body>
+  <input type="text" id="msg_input" style="width:200px;" />
+  <button onclick="self.publishMessage();">語る</button>
+  <div id="msg"></div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript">
+    self = {
+      socket:    undefined,
+
+      myName:    Math.floor(Math.random()*100) + "さん",
+      textInput: document.getElementById('msg_input'),
+      msgArea:   document.getElementById("msg"),
+
+      start: function(){
+        this.socket = io.connect(/*'http://localhost:8080'*/);
+
+        this.socket.on("publish", function (obj) {
+          console.log(this);
+          self.addMessage(obj.value);
+        });
+
+        this.socket.on("disconnect", function () {
+          // noop
+        });
+
+        this.addMessage("貴方は" + this.myName + "として入室しました");
+        this.socket.emit("connected", {name: this.myName});
+      },
+
+      publishMessage: function() {
+        var msg = "[" + this.myName + "] " + this.textInput.value;
+        this.socket.emit("publish", {value: msg});
+        this.textInput.value = '';
+      },
+
+      addMessage: function(msg){
+        var domMeg = document.createElement('div');
+        domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + msg;
+        this.msgArea.appendChild(domMeg);
+      },
+    }
+
+    self.start();
+  </script>
+</body>
+</html>

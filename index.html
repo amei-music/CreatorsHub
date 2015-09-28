@@ -2,73 +2,111 @@
 <head>
   <meta charset="UTF-8">
   <title>FM_MW1</title>
-</head>
-<body>
-  <input type="text" id="msg_input" style="width:200px;" />
-  <button onclick="self.publishMessage();">語る</button>
-  <div id="msg"></div>
   <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript">
+    function makeNodeName(client){
+      var name = client.type
+      if (client.type == "json") name += ": socket[" + client.socketId + "]"
+      if (client.type == "midi") name += ": " + client.name
+      if (client.type == "osc" ) name += ": " + client.host + "(" + client.port + ")"
+      return name
+    }
+
     self = {
       socket:    undefined,
 
-      myName:    Math.floor(Math.random()*100) + "さん",
-      textInput: document.getElementById('msg_input'),
-      msgArea:   document.getElementById("msg"),
+      myName:      Math.floor(Math.random()*100) + "さん",
+      // textInput:   ,
+      // msgArea:     ,
+      // networkArea: ,
+
 
       start: function(){
         this.socket = io.connect(/*'http://localhost:8080'*/);
 
         // リスト更新
         this.socket.on("update_list", function (obj) {
-          var txt = "==============================<br>[network and connection information]<br>"
+          var txt = "[network and connection information]<br>"
           for (var i in obj.inputs){
-            input = obj.inputs[i]
-            // var typestr = input.type == "json" ? "websocket" : (input.tpye == "osc" ? "osc" : )
-            var name = (input.type == "midi") ? (input.type + ":" + input.name) : input.type
-            txt += "input " + i + ", " + input.type + "<br>"
+            txt += "input _" + i + ", [" + makeNodeName(obj.inputs[i]) + "]<br>"
           }
 
-          for (var i in obj.outputs){
-            output = obj.outputs[i]
-            // var typestr = input.type == "json" ? "websocket" : (input.tpye == "osc" ? "osc" : )
-            txt += "output " + i + ", " + output.type + "<br>"
-
+          for (var o in obj.outputs){
+            txt += "output_" + o + ", [" + makeNodeName(obj.outputs[o]) + "]<br>"
           }
 
           for (var c in obj.connections){
-            connection = obj.connections[i]
+            connection = obj.connections[c]
             for (var d in connection){
-              txt += "connection from " + c + " => " + d + "<br>"
+              txt += "connection from input " + c + " => output " + d + "<br>"
             }
           }
 
-          self.addMessage(txt);
+          // self.addMessage(txt);
+          var networkArea = document.getElementById("network");
+          networkArea.innerHTML = txt;
+        });
+
+        this.socket.on("message_json", function (obj) {
+          self.addMessage(obj);
         });
 
         this.socket.on("disconnect", function () {
           // noop
         });
 
-        this.addMessage("貴方は" + this.myName + "として入室しました");
-        this.socket.emit("connected", {name: this.myName});
+        // this.addMessage("貴方は" + this.myName + "として入室しました");
+        // this.socket.emit("connected", {name: this.myName});
+      },
+
+
+      join_as_wsjson: function() {
+        this.socket.emit("join_as_wsjson");
+      },
+
+      join_as_osc: function() {
+        var host = document.getElementById('osc_host_input');
+        var port = document.getElementById('osc_port_input');
+        this.socket.emit("join_as_osc", {host: host.value, port: port.value});
       },
 
       publishMessage: function() {
-        var msg = this.textInput.value;
-        this.socket.emit("message_json", {value: msg});
-        this.textInput.value = '';
+        var textInput = document.getElementById('msg_input');
+        var msg = textInput.value;
+        this.socket.emit("message_json", msg);
+        // this.textInput.value = '';
       },
 
       addMessage: function(msg){
         var domMeg = document.createElement('div');
         // domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + msg;
         domMeg.innerHTML = msg;
-        this.msgArea.appendChild(domMeg);
+        var msgArea = document.getElementById("msg")
+        msgArea.appendChild(domMeg);
       },
     }
 
     self.start();
   </script>
+
+</head>
+<body>
+  このページをJSONクライアントとしてネットワーク参加する
+  <button onclick="self.join_as_wsjson();">参加</button><br>
+  <input type="text" id="msg_input" style="width:200px;" />
+  <button onclick="self.publishMessage();">JSONを送る</button>
+  <div id="msg"></div>
+
+  <br>
+  <br>======================================================================<br>
+  OSCクライアントをネットワークに登録する<br>
+  oscホストアドレス<input  type="text" id="osc_host_input" style="width:80px;" />
+  待ち受けポート番号<input type="text" id="osc_port_input" style="width:80px;" />
+  <button onclick="self.join_as_osc();">登録</button>
+
+
+  <br>
+  <br>======================================================================<br>
+  <div id="network"></div>
 </body>
 </html>

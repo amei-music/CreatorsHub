@@ -29,7 +29,7 @@ function ClientOsc(/*direction,*/ host, port){
   return {
     type:      "osc",
     // direction: direction,
-    host:      host,
+    host:      host, // 受信時には使わない
     port:      port,
   }
 }
@@ -69,6 +69,7 @@ var self = {
   // コネクション管理
   //==============================================================================
   connections:  {}, // {input_clientId: [output_clientId, ...]}
+  oscsocks: {}, // {}
 
   addConnection: function(input_clientId, output_clientId){
     if (this.connections[input_clientId]){
@@ -146,19 +147,26 @@ io.sockets.on("connection", function (socket) {
 
   // (2)のためのAPIは、(1)に加えて
   //  - wsjsonクライアントとしてネットワークに参加する
-  socket.on("join_as_wsjson", function (obj) {
+  socket.on("join_as_wsjson", function () {
     var inputId  = self.addNewClientInput (ClientJson(socket.id));
     var outputId = self.addNewClientOutput(ClientJson(socket.id));
 
     console.log("[Web Socket #'" + socket.id + "'] joined as JSON client");
+
+    for(var i in self.clients_input){
+      console.log(self.clients_input[i]);
+    }
+    for(var o in self.clients_output){
+      console.log(self.clients_output[o]);
+    }
 
     update_list(); // ネットワーク更新
   });
 
   //  - ネットワークから離脱する
   socket.on("exit_wsjson", function () {
-    self.deleteClientInput (socketId2clientId(socket.id, self.clients_input ));
-    self.deleteClientOutput(socketId2clientId(socket.id, self.clients_output));
+    self.deleteClientInput (self.socketId2clientId(socket.id, self.clients_input ));
+    self.deleteClientOutput(self.socketId2clientId(socket.id, self.clients_output));
 
     console.log("[Web Socket #'" + socket.id + "'] exited.");
 
@@ -167,24 +175,25 @@ io.sockets.on("connection", function (socket) {
 
   //  - メッセージを送信する
   socket.on("message_json", function (obj) {
-    var inputId  = socketId2clientId(socket.id, self.clients_input);
+    var inputId  = self.socketId2clientId(socket.id, self.clients_input);
 
-    if (inputId) {
-      for(var k in self.clients_input[inputId]){
-        var output = self.clients_output[outputId];
-        if       ( output.type == "json"){
-          output.socket.emit("message_json", obj);
-        } else if ( output.type == "osc" ){
-          // osc送信
-          console.log("OSC send");
-        } else if ( output.type == "midi"){
-          // midi送信
-          console.log("MIDI send");
-        }
-      }
-    }
+    // if (inputId) {
+    //   for(var i in self.clients_input[inputId]){
+    //     var outputId = self.clients_input[i]
+    //     var output = self.clients_output[outputId];
+    //     if       ( output.type == "json"){
+    //       output.socket.emit("message_json", obj);
+    //     } else if ( output.type == "osc" ){
+    //       // osc送信
+    //       console.log("OSC send");
+    //     } else if ( output.type == "midi"){
+    //       // midi送信
+    //       console.log("MIDI send");
+    //     }
+    //   }
+    // }
 
-    console.log("[Web Socket #'" + socket.id + "'] exited.");
+    io.sockets.emit("message_json", obj); // 仮で全部
 
     update_list(); // ネットワーク更新
   });
@@ -192,6 +201,21 @@ io.sockets.on("connection", function (socket) {
 
   // (3)のためのAPIは、(1)に加えて
   //  - 指定のアドレス/ポート番号をoscクライアントとしてネットワークに追加する
+  socket.on("join_as_osc", function (obj) {
+    var inputId  = self.addNewClientInput (ClientOsc(obj.host, 12345)); // 受信ポートはサーバーが独自に決める
+    var outputId = self.addNewClientOutput(ClientOsc(obj.host, obj.port));
+
+    console.log("[OSC #'" + obj.host + "'] joined as OSC client");
+
+    for(var i in self.clients_input){
+      console.log(self.clients_input[i]);
+    }
+    for(var o in self.clients_output){
+      console.log(self.clients_output[o]);
+    }
+
+    update_list(); // ネットワーク更新
+  });
   //  - 指定のアドレス/ポート番号のoscクライアントをネットワークから除外する
   // が必要。oscアプリ本体とこのserver.jsのoscモジュールが直接メッセージをやり取りするので、
   // oscクライアントとの実通信にWebSocketは絡まない。あくまでコネクション管理のみ
@@ -250,7 +274,7 @@ var midiObj = {
       console.log('m:' + message + ' d:' + deltaTime);
 
       // broadcast all clients (including the sender)
-      io.sockets.emit("message_json", {value: 'm:' + message + ' d:' + deltaTime});
+      io.sockets.emit("message_json", 'm:' + message + ' d:' + deltaTime);
     });
 
     // Open the first available input port.

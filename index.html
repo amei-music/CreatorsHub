@@ -19,9 +19,31 @@
       start: function(){
         this.socket = io.connect(/*'http://localhost:8080'*/);
 
-        this.socket.on("publish", function (obj) {
-          console.log(this);
-          self.addMessage(obj.value);
+        // リスト更新
+        this.socket.on("update_list", function (obj) {
+          var txt = "==============================<br>[network and connection information]<br>"
+          for (var i in obj.inputs){
+            input = obj.inputs[i]
+            // var typestr = input.type == "json" ? "websocket" : (input.tpye == "osc" ? "osc" : )
+            var name = (input.type == "midi") ? (input.type + ":" + input.name) : input.type
+            txt += "input " + i + ", " + input.type + "<br>"
+          }
+
+          for (var i in obj.outputs){
+            output = obj.outputs[i]
+            // var typestr = input.type == "json" ? "websocket" : (input.tpye == "osc" ? "osc" : )
+            txt += "output " + i + ", " + output.type + "<br>"
+
+          }
+
+          for (var c in obj.connections){
+            connection = obj.connections[i]
+            for (var d in connection){
+              txt += "connection from " + c + " => " + d + "<br>"
+            }
+          }
+
+          self.addMessage(txt);
         });
 
         this.socket.on("disconnect", function () {
@@ -33,14 +55,15 @@
       },
 
       publishMessage: function() {
-        var msg = "[" + this.myName + "] " + this.textInput.value;
-        this.socket.emit("publish", {value: msg});
+        var msg = this.textInput.value;
+        this.socket.emit("message_json", {value: msg});
         this.textInput.value = '';
       },
 
       addMessage: function(msg){
         var domMeg = document.createElement('div');
-        domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + msg;
+        // domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + msg;
+        domMeg.innerHTML = msg;
         this.msgArea.appendChild(domMeg);
       },
     }

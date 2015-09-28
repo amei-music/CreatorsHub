@@ -8,20 +8,105 @@ var LISTEN_PORT = 8080;
 //==============================================================================
 // 全体の管理情報
 //==============================================================================
-function Client(socket){
+function ClientJson(/*direction,*/ socketId){
   return {
-    socket: socket,
+    type:      "json",
+    // direction: direction,
+    socketId:  socketId,
   };
 }
 
-var self = {
-  clients: {}, // socket.id: name
+function ClientMidi(/*direction,*/ portNum, name){
+  return {
+    type:      "midi",
+    // direction: direction,
+    portNum:   portNum,
+    name:      name,
+  };
+}
 
-  midi: {
-    opened_input_ports:  [],
-    opened_output_ports: [],
+function ClientOsc(/*direction,*/ host, port){
+  return {
+    type:      "osc",
+    // direction: direction,
+    host:      host,
+    port:      port,
+  }
+}
+
+var self = {
+  clients_input:  {},
+  clients_output: {},
+  id_input:      0,
+  id_output:     0, // 接続のユニークID
+
+  //==============================================================================
+  // クライアント管理
+  //==============================================================================
+  addNewClientInput: function(client){
+    this.clients_input[this.id_input] = client;
+    this.id_input += 1;
+    return this.id_input - 1;
   },
-};
+
+  addNewClientOutput: function(client){
+    this.clients_output[this.id_output] = client;
+    this.id_output += 1;
+    return this.id_output - 1;
+  },
+
+  deleteClientInput: function(clientId){
+    delete this.clients_input[clientId];
+    return;
+  },
+
+  deleteClientOutput: function(clientId){
+    delete this.clients_output[clientId];
+    return;
+  },
+
+  //==============================================================================
+  // コネクション管理
+  //==============================================================================
+  connections:  {}, // {input_clientId: [output_clientId, ...]}
+
+  addConnection: function(input_clientId, output_clientId){
+    if (this.connections[input_clientId]){
+      if (this.connections[input_clientId].indexOf(output_clientId) < 0){
+        this.connections[input_clientId].push(output_clientId);
+      }
+    } else {
+      this.connections[input_clientId] = [output_clientId];
+    }
+  },
+
+  deleteConnection: function(input_clientId, output_clientId){
+    if (this.connections[input_clientId]){
+      var pos = this.connections[input_clientId].indexOf(output_clientId);
+      if (pos >= 0){
+        this.connections[input_clientId].splice(pos, pos);
+      }
+    } else {
+      // 何もしない
+    }
+  },
+
+  //==============================================================================
+  // データ送信管理
+  //==============================================================================
+  socketId2clientId: function(socketId, clients){
+    // socketのcallbackで届いてきたメッセージの送信元を調べる
+    for (var k in clients) {
+      var client = clients[k];
+      if(client.type == "json" && client.socketId == socketId){
+        return k;
+      }
+    }
+    return undefined;
+  },
+
+}
+
 
 //==============================================================================
 // WebSocketの設定
@@ -42,13 +127,67 @@ io.sockets.on("connection", function (socket) {
   // (3) OSCでネットワークに参加しにきた人は別扱いする必要がある
 
   // (1)のためのAPI
-  //  - ネットワーク接続者一覧を表示する
+  //  - ネットワーク接続者一覧を表示する(socketだからサーバー側からpush可能)
+  function update_list(){
+    // broadcast all clients (including the sender)
+    io.sockets.emit("update_list", {inputs: self.clients_input, outputs: self.clients_output, connection: self.connections});
+  }
+  update_list(); // websocket接続時に一度現状を送る
+
   //  - ネットワークのノード間の接続/切断をする
+  socket.on("add_connection", function (obj) {
+    var inputId = obj.inputId, outputId = obj.outputId
+
+    self.addConnection(inputId, outputId) // 接続
+    console.log("input '" + inputId + "' connected to output '" + outputID + "'");
+
+    update_list(); // ネットワーク更新
+  });
 
   // (2)のためのAPIは、(1)に加えて
   //  - wsjsonクライアントとしてネットワークに参加する
+  socket.on("join_as_wsjson", function (obj) {
+    var inputId  = self.addNewClientInput (ClientJson(socket.id));
+    var outputId = self.addNewClientOutput(ClientJson(socket.id));
+
+    console.log("[Web Socket #'" + socket.id + "'] joined as JSON client");
+
+    update_list(); // ネットワーク更新
+  });
+
   //  - ネットワークから離脱する
+  socket.on("exit_wsjson", function () {
+    self.deleteClientInput (socketId2clientId(socket.id, self.clients_input ));
+    self.deleteClientOutput(socketId2clientId(socket.id, self.clients_output));
+
+    console.log("[Web Socket #'" + socket.id + "'] exited.");
+
+    update_list(); // ネットワーク更新
+  });
+
   //  - メッセージを送信する
+  socket.on("message_json", function (obj) {
+    var inputId  = socketId2clientId(socket.id, self.clients_input);
+
+    if (inputId) {
+      for(var k in self.clients_input[inputId]){
+        var output = self.clients_output[outputId];
+        if       ( output.type == "json"){
+          output.socket.emit("message_json", obj);
+        } else if ( output.type == "osc" ){
+          // osc送信
+          console.log("OSC send");
+        } else if ( output.type == "midi"){
+          // midi送信
+          console.log("MIDI send");
+        }
+      }
+    }
+
+    console.log("[Web Socket #'" + socket.id + "'] exited.");
+
+    update_list(); // ネットワーク更新
+  });
   // が必要。これらを関数化したjavascriptを配布する必要があるかも
 
   // (3)のためのAPIは、(1)に加えて
@@ -58,22 +197,22 @@ io.sockets.on("connection", function (socket) {
   // oscクライアントとの実通信にWebSocketは絡まない。あくまでコネクション管理のみ
 
   // 接続開始
-  socket.on("connected", function (obj) {
-    console.log("client '" + obj.name + "' connected.");
-    self.clients[socket.id] = Client(socket, obj.name)
-  });
-
-  socket.on("publish", function (obj) {
-    // broadcast all clients (including the sender)
-    io.sockets.emit("publish", obj);
-  });
+  // socket.on("connected", function (obj) {
+  //   console.log("client '" + obj.name + "' connected.");
+  //   devices.clients[socket.id] = Client(socket, obj.name)
+  // });
+  //
+  // socket.on("publish", function (obj) {
+  //   // broadcast all clients (including the sender)
+  //   io.sockets.emit("publish", obj);
+  // });
 
   // 接続終了
   socket.on("disconnect", function () {
-    if (self.clients[socket.id]) {
-      console.log("client '" + self.clients[socket.id].name + "' disconnected.");
-      delete self.clients[socket.id];
-    }
+    // if (devices.clients[socket.id]) {
+    //   console.log("client '" + devices.clients[socket.id].name + "' disconnected.");
+    //   delete devices.clients[socket.id];
+    // }
   });
 
 });
@@ -89,12 +228,14 @@ var midiObj = {
   input:  new midi.input(),
   output: new midi.output(),
 
-  print_midiports: function(){
+  setup_midiports: function(){
     for(var i=0; i<this.input.getPortCount(); ++i){
       console.log("input  ", i, this.input.getPortName(i));
+      var inputId  = self.addNewClientInput (ClientMidi(i, this.input.getPortName(i)));
     }
-    for(var i=0; i<this.input.getPortCount(); ++i){
-      console.log("output ", i, this.input.getPortName(i));
+    for(var i=0; i<this.output.getPortCount(); ++i){
+      console.log("output ", i, this.output.getPortName(i));
+      var outputId = self.addNewClientOutput(ClientMidi(i, this.output.getPortName(i)));
     }
     return;
   },
@@ -109,7 +250,7 @@ var midiObj = {
       console.log('m:' + message + ' d:' + deltaTime);
 
       // broadcast all clients (including the sender)
-      io.sockets.emit("publish", {value: 'm:' + message + ' d:' + deltaTime});
+      io.sockets.emit("message_json", {value: 'm:' + message + ' d:' + deltaTime});
     });
 
     // Open the first available input port.
@@ -131,7 +272,7 @@ var midiObj = {
   },
 }
 
-midiObj.print_midiports();
+midiObj.setup_midiports();
 midiObj.setup(1, 0);
 
 // Close the port when done.

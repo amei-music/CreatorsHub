@@ -12,7 +12,7 @@ oscSender = dgram.createSocket("udp4")
 //==============================================================================
 // 汎用関数
 //==============================================================================
-function midi2json(msg){
+function midi2obj(msg){
   // ただのバイト列であるmidiをそれっぽいOSCに変換して返す
 
   if ( msg.length == 3 && ((msg[0] >> 4) == 9) && (msg[2] >  0) ){
@@ -49,20 +49,65 @@ function midi2json(msg){
   }
 }
 
+function obj2midi(msg){
+  console.log(msg, msg.address);
+
+  if(msg.address == "/fm/note/on"){
+    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
+    if (ch < 15) return [0x90 + (ch & 0x0F), noteNum, velo];
+    else         return [0x90 + (ch & 0x0F), noteNum, velo]; // 要対応
+  } else if(msg.address == "/fm/note/off"){
+    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
+    if (ch < 15) return [0x80 + (ch & 0x0F), noteNum, velo];
+    else         return [0x80 + (ch & 0x0F), noteNum, velo]; // 要対応
+  } else if (msg.args){
+    // msg.argsがあれば、それを送信
+    return msg.args
+  } else {
+    // 特に形状が無ければ、stringifyしてそのままSysExにしてみる
+    // 本当は8bit -> 7bit変換が必要だが、暫定対応でそのまま流してみる
+    // このあたりを追求すればUSB-MIDIを「IPに依存しない汎用シリアル通信路」としてもうちょっと訴求できる気がする
+    // 言い換えればUSB-MIDIにJSON流して現代的なプログラマも気軽に電子工作できる？
+    var varlen = function(val){
+      var size = 1;
+      var tmp = val >> 7;
+      while (tmp != 0){
+        size += 1;
+        tmp = tmp >> 7;
+      }
+      var ret = new Array(size);
+      ret[size - 1] = val & 0x7F;
+      for (var i=size-2; i>=0; --i){
+        val = val >> 7;
+        ret[i] = (val & 0x7F) | 0x80;
+      }
+      return ret;
+    }
+
+    var buf = JSON.stringify(msg);
+    var ret = [0xF0, 0x7C] // 0x7D: 非営利, 0x7E: ノンリアルタイム, 0x7F: リアルタイムなので、0x7Cにしてみる
+    var bytes = Array.prototype.map.call(buf, function(c){ return c.charCodeAt(0); });
+    Array.prototype.push.apply(ret, varlen(buf.length));
+    Array.prototype.push.apply(ret, bytes);
+    Array.prototype.push.apply(ret, [0xF7]);
+    return ret;
+  }
+}
+
 function convert_message(msg, msg_from, msg_to){
   if(msg_from == msg_to) return msg; // そのまま
 
   if(msg_from == "json"){
     if(msg_to == "osc" ) return osc.toBuffer(msg);
-    if(msg_to == "midi") return msg;
+    if(msg_to == "midi") return obj2midi(msg);
   }
   if(msg_from == "osc"){
     if(msg_to == "json") return osc.fromBuffer(msg); // 失敗するとthrow
-    if(msg_to == "midi") return msg;
+    if(msg_to == "midi") return obj2midi(osc.fromBuffer(msg));
   }
   if(msg_from == "midi"){
-    if(msg_to == "json") return midi2json(msg); // OSCっぽいjsonなのでそのまま送信可
-    if(msg_to == "osc" ) return osc.toBuffer(midi2osc(msg)); // 文字列にする
+    if(msg_to == "json") return midi2obj(msg); // OSCっぽいjsonなのでそのまま送信可
+    if(msg_to == "osc" ) return osc.toBuffer(midi2obj(msg)); // 文字列にする
   }
 }
 

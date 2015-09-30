@@ -136,9 +136,13 @@
 
       publishMessage: function() {
         var textInput = document.getElementById('msg_input');
-        var msg = textInput.value;
-        this.socket.emit("message_json", msg);
-        // this.textInput.value = '';
+        try{
+          var obj = JSON.parse(textInput.value);
+          this.socket.emit("message_json", obj);
+          document.getElementById("errormsg").innerHTML = "";
+        } catch(e){
+          document.getElementById("errormsg").innerHTML = "json syntax error";
+        }
       },
 
       addMessage: function(msg){
@@ -159,6 +163,7 @@
   <button onclick="self.join_as_wsjson();">参加</button><br>
   <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
   <button onclick="self.publishMessage();">JSONを送る</button>
+  <p id=errormsg> </p>
   <div id="msg"></div>
 
   <br>

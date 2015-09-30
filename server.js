@@ -2,8 +2,30 @@ var fs       = require("fs");
 var http     = require('http');
 var socketio = require("socket.io")
 var midi     = require('midi');
+var udp      = require("dgram");
+var osc      = require('osc-min');
 
 var LISTEN_PORT = 8080;
+
+//==============================================================================
+// 汎用関数
+//==============================================================================
+function convert_message(msg, msg_from, msg_to){
+  if(msg_from == msg_to) return msg;
+
+  if(msg_from == "json"){
+    if(msg_to == "osc" ) return msg;
+    if(msg_to == "midi") return msg;
+  }
+  if(msg_from == "osc"){
+    if(msg_to == "json") return msg;
+    if(msg_to == "midi") return msg;
+  }
+  if(msg_from == "midi"){
+    if(msg_to == "json") return msg;
+    if(msg_to == "osc" ) return msg;
+  }
+}
 
 //==============================================================================
 // 全体の管理情報
@@ -11,27 +33,45 @@ var LISTEN_PORT = 8080;
 function ClientJson(/*direction,*/ socketId){
   return {
     type:      "json",
-    // direction: direction,
     socketId:  socketId,
-  };
-}
 
-function ClientMidi(/*direction,*/ portNum, name){
-  return {
-    type:      "midi",
-    // direction: direction,
-    portNum:   portNum,
-    name:      name,
+    deliver: function(msg, msg_from){
+      io.to(this.socketId).emit("message_json", convert_message(msg, msg_from, "json"));
+    },
+
+    simplify: function(){ return {type: "json", socketId: this.socketId} },
   };
 }
 
 function ClientOsc(/*direction,*/ host, port){
   return {
     type:      "osc",
-    // direction: direction,
     host:      host, // 受信時には使わない
     port:      port,
+
+    deliver: function(msg, msg_from){
+      var buf = convert_message(msg, msg_from, "osc")
+      udp.send(buf, 0, buf.length, port, port);
+    },
+
+    simplify: function(){ return {type: "osc", portNum: this.host, name: this.port} },
   }
+}
+
+function ClientMidi(/*direction,*/ portNum, name){
+  return {
+    type:      "midi",
+    portNum:   portNum,
+    name:      name,
+
+
+    deliver: function(msg, msg_from){
+      var buf = convert_message(msg, msg_from, "midi")
+      console.log("midi out", buf)
+    },
+
+    simplify: function(){ return {type: "midi", portNum: this.portNum, name: this.name} },
+  };
 }
 
 //==============================================================================
@@ -71,10 +111,12 @@ var self = {
   //==============================================================================
   // コネクション管理
   //==============================================================================
-  connections:  {}, // {input_clientId: [output_clientId, ...]}
-  oscsocks: {}, // {}
+  connections: {}, // {input_clientId: [output_clientId, ...]}
+  oscsocks:    {}, // {input_oscport: {clientId: , sock: }} osc送受信オブジェクトを詰めておくところ
+  // socketはio.socketsで参照可能
 
   addConnection: function(input_clientId, output_clientId){
+    // まず結線情報を作る
     if (this.connections[input_clientId]){
       if (this.connections[input_clientId].indexOf(output_clientId) < 0){
         this.connections[input_clientId].push(output_clientId);
@@ -82,9 +124,12 @@ var self = {
     } else {
       this.connections[input_clientId] = [output_clientId];
     }
+
+    // midiポートはopenする
   },
 
   deleteConnection: function(input_clientId, output_clientId){
+    // まず結線情報を作る
     if (this.connections[input_clientId]){
       var pos = this.connections[input_clientId].indexOf(output_clientId);
       if (pos >= 0){
@@ -93,6 +138,8 @@ var self = {
     } else {
       // 何もしない
     }
+
+    //
   },
 
   //==============================================================================
@@ -133,8 +180,12 @@ io.sockets.on("connection", function (socket) {
   // (1)のためのAPI
   //  - ネットワーク接続者一覧を表示する(socketだからサーバー側からpush可能)
   function update_list(){
+    // メソッド類は削ぎ落として表示に必要な情報だけまとめる
+    var inputs  = {}; for (i in self.clients_input ) inputs [i] = self.clients_input [i].simplify();
+    var outputs = {}; for (o in self.clients_output) outputs[o] = self.clients_output[o].simplify();
+
     // broadcast all clients (including the sender)
-    io.sockets.emit("update_list", {inputs: self.clients_input, outputs: self.clients_output, connections: self.connections});
+    io.sockets.emit("update_list", {inputs: inputs, outputs: outputs, connections: self.connections});
   }
   update_list(); // websocket接続時に一度現状を送る
 
@@ -161,12 +212,12 @@ io.sockets.on("connection", function (socket) {
 
     console.log("[Web Socket #'" + socket.id + "'] joined as JSON client");
 
-    for(var i in self.clients_input){
-      console.log(self.clients_input[i]);
-    }
-    for(var o in self.clients_output){
-      console.log(self.clients_output[o]);
-    }
+    // for(var i in self.clients_input){
+    //   console.log(self.clients_input[i]);
+    // }
+    // for(var o in self.clients_output){
+    //   console.log(self.clients_output[o]);
+    // }
 
     update_list(); // ネットワーク更新
   });
@@ -181,7 +232,7 @@ io.sockets.on("connection", function (socket) {
     update_list(); // ネットワーク更新
   });
 
-  //  - メッセージを送信する
+  //  - メッセージを受信する
   socket.on("message_json", function (obj) {
     var inputId  = self.socketId2clientId(socket.id, self.clients_input);
 
@@ -192,15 +243,7 @@ io.sockets.on("connection", function (socket) {
       for(var o in self.connections[inputId]){
         var outputId = self.connections[inputId][o]
         var output   = self.clients_output[outputId];
-        if       ( output.type == "json"){
-          io.to(output.socketId).emit("message_json", obj);
-        } else if ( output.type == "osc" ){
-          // osc送信
-          console.log("OSC send");
-        } else if ( output.type == "midi"){
-          // midi送信
-          console.log("MIDI send");
-        }
+        output.deliver(obj, "json");
       }
     }
 
@@ -211,19 +254,40 @@ io.sockets.on("connection", function (socket) {
   // (3)のためのAPIは、(1)に加えて
   //  - 指定のアドレス/ポート番号をoscクライアントとしてネットワークに追加する
   socket.on("join_as_osc", function (obj) {
-    var inputId  = self.addNewClientInput (ClientOsc(obj.host, 12345)); // 受信ポートはサーバーが独自に決める
+    var inPort = 12345; // 受信ポートは指定が無ければサーバーが独自に決める
+
+    // 入り口と出口のudpポートを作成する
+    var _onRead = function(inputId){
+      return function(msg, rinfo) {
+        console.log("message from input #" + inputId);
+
+        var obj;
+        try {
+          obj = osc.fromBuffer(msg);
+        } catch (_error) {
+          return console.log("invalid OSC packet");
+        }
+
+        for(var o in self.connections[inputId]){
+          var outputId = self.connections[inputId][o]
+          var output   = self.clients_output[outputId];
+          output.deliver(msg, "osc");
+        }
+
+      }
+    }
+
+    // socketのlistenに成功してからネットワークに登録したいので、idは先回りで+1して受け取る
+    self.oscsocks[inPort] = udp.createSocket("udp4", _onRead(self.id_input + 1));
+    self.oscsocks[inPort].bind(inPort);
+
+    // 接続ネットワークに参加する
+    var inputId  = self.addNewClientInput (ClientOsc(obj.host, inPort));
     var outputId = self.addNewClientOutput(ClientOsc(obj.host, obj.port));
 
     console.log("[OSC #'" + obj.host + "'] joined as OSC client");
 
-    for(var i in self.clients_input){
-      console.log(self.clients_input[i]);
-    }
-    for(var o in self.clients_output){
-      console.log(self.clients_output[o]);
-    }
-
-    update_list(); // ネットワーク更新
+    update_list(); // クライアントのネットワーク表示更新
   });
   //  - 指定のアドレス/ポート番号のoscクライアントをネットワークから除外する
   // が必要。oscアプリ本体とこのserver.jsのoscモジュールが直接メッセージをやり取りするので、

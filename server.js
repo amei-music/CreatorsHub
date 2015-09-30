@@ -13,7 +13,7 @@ oscSender = dgram.createSocket("udp4")
 // 汎用関数
 //==============================================================================
 function convert_message(msg, msg_from, msg_to){
-  if(msg_from == msg_to) return msg;
+  if(msg_from == msg_to) return msg; // そのまま
 
   if(msg_from == "json"){
     if(msg_to == "osc" ) return osc.toBuffer(msg);
@@ -74,6 +74,7 @@ function ClientMidi(/*direction,*/ portNum, name){
     deliver: function(msg, msg_from){
       var buf = convert_message(msg, msg_from, "midi")
       console.log("midi out", buf)
+      midiObj.outputs[this.portNum].sendMessage(buf);
     },
 
     simplify: function(){ return {type: "midi", portNum: this.portNum, name: this.name} },
@@ -218,12 +219,21 @@ io.sockets.on("connection", function (socket) {
 
     console.log("[Web Socket #'" + socket.id + "'] joined as JSON client");
 
-    // for(var i in self.clients_input){
-    //   console.log(self.clients_input[i]);
-    // }
-    // for(var o in self.clients_output){
-    //   console.log(self.clients_output[o]);
-    // }
+    //  - メッセージを受信する
+    socket.on("message_json", function (obj) {
+      var inputId  = self.socketId2clientId(socket.id, self.clients_input);
+
+      console.log("message from input #" + inputId);
+
+      if (inputId >= 0) {
+        var client = self.clients_input[inputId];
+        for(var o in self.connections[inputId]){
+          var outputId = self.connections[inputId][o]
+          var output   = self.clients_output[outputId];
+          output.deliver(obj, "json");
+        }
+      }
+    });
 
     update_list(); // ネットワーク更新
   });
@@ -238,23 +248,6 @@ io.sockets.on("connection", function (socket) {
     update_list(); // ネットワーク更新
   });
 
-  //  - メッセージを受信する
-  socket.on("message_json", function (obj) {
-    var inputId  = self.socketId2clientId(socket.id, self.clients_input);
-
-    console.log("message from input #" + inputId);
-
-    if (inputId >= 0) {
-      var client = self.clients_input[inputId];
-      for(var o in self.connections[inputId]){
-        var outputId = self.connections[inputId][o]
-        var output   = self.clients_output[outputId];
-        output.deliver(obj, "json");
-      }
-    }
-
-    update_list(); // ネットワーク更新
-  });
   // が必要。これらを関数化したjavascriptを配布する必要があるかも
 
   // (3)のためのAPIは、(1)に加えて
@@ -328,36 +321,63 @@ console.log("listening connections...")
 
 // Set up a new input.
 var midiObj = {
-  input:  new midi.input(),
-  output: new midi.output(),
+  input:  new midi.input(),  // port一覧を出すためのglobalな(openPortしない)inputを一つ用意しておく
+  output: new midi.output(), // port一覧を出すためのglobalな(openPortしない)outputを一つ用意しておく
+
+  inputs : {}, // 開いたportにつながっているmidiオブジェクト
+  outputs: {}, // 開いたportにつながっているmidiオブジェクト
 
   setup_midiports: function(){
-    for(var i=0; i<this.input.getPortCount(); ++i){
-      console.log("input  ", i, this.input.getPortName(i));
-      var inputId  = self.addNewClientInput (ClientMidi(i, this.input.getPortName(i)));
+    // inputをopen
+    for(var portId=0; portId<this.input.getPortCount(); ++portId){
+      console.log("input  ", portId, this.input.getPortName(portId));
+
+      // ネットワークに登録
+      var inputId  = self.addNewClientInput (ClientMidi(portId, this.input.getPortName(portId)));
+
+      // コールバックを作る(inputIdをキャプチャする)
+      var _onMessage = function(_inputId){
+        return function(deltaTime, message) {
+          // The message is an array of numbers corresponding to the MIDI bytes:
+          //   [status, data1, data2]
+          // https://www.cs.cf.ac.uk/Dave/Multimedia/node158.html has some helpful
+          // information interpreting the messages.
+          var msg = {'msg': message, 'delta': deltaTime};
+          console.log(msg);
+
+          // 転送
+          for(var o in self.connections[_inputId]){
+            var outputId = self.connections[_inputId][o]
+            var output   = self.clients_output[outputId];
+            output.deliver(message, "midi"); // とりあえずメッセージだけ送る
+          }
+        };
+      }
+
+      // 開く
+      this.inputs[portId] = this.openInput(portId, _onMessage(inputId));
     }
-    for(var i=0; i<this.output.getPortCount(); ++i){
-      console.log("output ", i, this.output.getPortName(i));
-      var outputId = self.addNewClientOutput(ClientMidi(i, this.output.getPortName(i)));
+
+    // outputをopen
+    for(var portId=0; portId<this.output.getPortCount(); ++portId){
+      console.log("output ", portId, this.output.getPortName(portId));
+
+      // ネットワークに登録
+      var outputId = self.addNewClientOutput(ClientMidi(portId, this.output.getPortName(portId)));
+
+      // 開く
+      this.outputs[portId] = new midi.output();
+      this.outputs[portId].openPort(portId);
     }
+
     return;
   },
 
-  setup: function(input_port, output_port){
-    // Configure a callback.
-    this.input.on('message', function(deltaTime, message) {
-      // The message is an array of numbers corresponding to the MIDI bytes:
-      //   [status, data1, data2]
-      // https://www.cs.cf.ac.uk/Dave/Multimedia/node158.html has some helpful
-      // information interpreting the messages.
-      console.log('m:' + message + ' d:' + deltaTime);
+  openInput: function(port, callback){
+    var this_input  = new midi.input();
 
-      // broadcast all clients (including the sender)
-      io.sockets.emit("message_json", 'm:' + message + ' d:' + deltaTime);
-    });
-
-    // Open the first available input port.
-    // this.input.openPort(input_port);
+    this_input.on('message', callback); // configure a callback.
+    this_input.openPort(port);          // open port
 
     // Sysex, timing, and active sensing messages are ignored
     // by default. To enable these message types, pass false for
@@ -366,17 +386,11 @@ var midiObj = {
     // For example if you want to receive only MIDI Clock beats
     // you should use
     // input.ignoreTypes(true, false, true)
-    this.input.ignoreTypes(false, true, true);
+    this_input.ignoreTypes(false, true, true);
 
-    // Open the first available input port.
-    // this.output.openPort(output_port);
+    return this_input;
+  }
 
-    // ... receive MIDI messages ...
-  },
 }
 
 midiObj.setup_midiports();
-midiObj.setup(1, 0);
-
-// Close the port when done.
-//midiObj.input.closePort();

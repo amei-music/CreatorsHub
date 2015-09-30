@@ -112,7 +112,7 @@
         });
 
         this.socket.on("message_json", function (obj) {
-          self.addMessage(obj);
+          self.addMessage(JSON.stringify(obj));
         });
 
         this.socket.on("disconnect", function () {
@@ -157,7 +157,7 @@
 <body>
   このページをJSONクライアントとしてネットワーク参加する
   <button onclick="self.join_as_wsjson();">参加</button><br>
-  <input type="text" id="msg_input" style="width:200px;" />
+  <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
   <button onclick="self.publishMessage();">JSONを送る</button>
   <div id="msg"></div>
 

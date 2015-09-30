@@ -2,10 +2,12 @@ var fs       = require("fs");
 var http     = require('http');
 var socketio = require("socket.io")
 var midi     = require('midi');
-var udp      = require("dgram");
+var dgram    = require("dgram");
 var osc      = require('osc-min');
 
 var LISTEN_PORT = 8080;
+
+oscSender = dgram.createSocket("udp4")
 
 //==============================================================================
 // 汎用関数
@@ -14,11 +16,11 @@ function convert_message(msg, msg_from, msg_to){
   if(msg_from == msg_to) return msg;
 
   if(msg_from == "json"){
-    if(msg_to == "osc" ) return msg;
+    if(msg_to == "osc" ) return osc.toBuffer(msg);
     if(msg_to == "midi") return msg;
   }
   if(msg_from == "osc"){
-    if(msg_to == "json") return msg;
+    if(msg_to == "json") return osc.fromBuffer(msg); // throw
     if(msg_to == "midi") return msg;
   }
   if(msg_from == "midi"){
@@ -51,10 +53,14 @@ function ClientOsc(/*direction,*/ host, port){
 
     deliver: function(msg, msg_from){
       var buf = convert_message(msg, msg_from, "osc")
-      udp.send(buf, 0, buf.length, port, port);
+      console.log("*********")
+      console.log(buf)
+      console.log(buf.length)
+      console.log(this.port, this.host)
+      oscSender.send(buf, 0, buf.length, this.port, this.host);
     },
 
-    simplify: function(){ return {type: "osc", portNum: this.host, name: this.port} },
+    simplify: function(){ return {type: "osc", host: this.host, port: this.port} },
   }
 }
 
@@ -261,12 +267,12 @@ io.sockets.on("connection", function (socket) {
       return function(msg, rinfo) {
         console.log("message from input #" + inputId);
 
-        var obj;
-        try {
-          obj = osc.fromBuffer(msg);
-        } catch (_error) {
-          return console.log("invalid OSC packet");
-        }
+        // var obj;
+        // try {
+        //   obj = osc.fromBuffer(msg);
+        // } catch (_error) {
+        //   return console.log("invalid OSC packet");
+        // }
 
         for(var o in self.connections[inputId]){
           var outputId = self.connections[inputId][o]
@@ -277,8 +283,8 @@ io.sockets.on("connection", function (socket) {
       }
     }
 
-    // socketのlistenに成功してからネットワークに登録したいので、idは先回りで+1して受け取る
-    self.oscsocks[inPort] = udp.createSocket("udp4", _onRead(self.id_input + 1));
+    // socketのlistenに成功してからネットワークに登録したいので、idは先回りで受け取る
+    self.oscsocks[inPort] = dgram.createSocket("udp4", _onRead(self.id_input));
     self.oscsocks[inPort].bind(inPort);
 
     // 接続ネットワークに参加する

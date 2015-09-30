@@ -5,13 +5,50 @@ var midi     = require('midi');
 var dgram    = require("dgram");
 var osc      = require('osc-min');
 
-var LISTEN_PORT = 8080;
+var LISTEN_PORT = 16080;
 
 oscSender = dgram.createSocket("udp4")
 
 //==============================================================================
 // 汎用関数
 //==============================================================================
+function midi2json(msg){
+  // ただのバイト列であるmidiをそれっぽいOSCに変換して返す
+
+  if ( msg.length == 3 && ((msg[0] >> 4) == 9) && (msg[2] >  0) ){
+    // note on
+    var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
+    return {
+      address: "/fm/note/on",
+      args:    [ch, noteNum, velo]
+    };
+
+  } else if ( msg.length == 3 && ((msg[0] >> 4) == 9) && (msg[2] == 0) ){
+    // note off with status 9
+    var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = 0x40;
+    return {
+      address: "/fm/note/off",
+      args:    [ch, noteNum, velo]
+    };
+
+  } else if ( msg.length == 3 && ((msg[0] >> 4) == 8) ){
+    // note off with status 8
+    var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
+    return {
+      address: "/fm/note/off",
+      args:    [ch, noteNum, velo]
+    };
+
+  } else {
+    // 残りはそのまま送信
+    return {
+      address: "/fm/midi_bytes",
+      args:    msg
+    };
+
+  }
+}
+
 function convert_message(msg, msg_from, msg_to){
   if(msg_from == msg_to) return msg; // そのまま
 
@@ -20,12 +57,12 @@ function convert_message(msg, msg_from, msg_to){
     if(msg_to == "midi") return msg;
   }
   if(msg_from == "osc"){
-    if(msg_to == "json") return osc.fromBuffer(msg); // throw
+    if(msg_to == "json") return osc.fromBuffer(msg); // 失敗するとthrow
     if(msg_to == "midi") return msg;
   }
   if(msg_from == "midi"){
-    if(msg_to == "json") return msg;
-    if(msg_to == "osc" ) return msg;
+    if(msg_to == "json") return midi2json(msg); // OSCっぽいjsonなのでそのまま送信可
+    if(msg_to == "osc" ) return osc.toBuffer(midi2osc(msg)); // 文字列にする
   }
 }
 
@@ -170,16 +207,8 @@ var self = {
 // WebSocketの設定
 //==============================================================================
 
-// 普通のhttpサーバーとしてlisten
-var server = http.createServer(function(req, res) {
-  res.writeHead(200, {"Content-Type":"text/html"});
-  var output = fs.readFileSync("./index.html", "utf-8"); // カレントディレクトリのindex.htmlを配布
-  res.end(output);
-}).listen(LISTEN_PORT);
-
-// websocketとしてlistenして、応答内容を記述
-var io = socketio.listen(server);
-io.sockets.on("connection", function (socket) {
+// websocketとしての応答内容を記述
+function onWebSocket(socket){
   // (1) ただweb設定画面を見に来た人と、
   // (2) WebSocket-JSON (以下wsjson) でネットワークに参加しにきた人と、
   // (3) OSCでネットワークに参加しにきた人は別扱いする必要がある
@@ -311,9 +340,7 @@ io.sockets.on("connection", function (socket) {
     // }
   });
 
-});
-
-console.log("listening connections...")
+}
 
 //==============================================================================
 // MIDIの設定
@@ -393,4 +420,25 @@ var midiObj = {
 
 }
 
+
+//==============================================================================
+// start!
+//==============================================================================
+// midiのコネクションを作成
 midiObj.setup_midiports();
+
+// 普通のhttpサーバーとしてlisten
+var server = http.createServer(function(req, res) {
+  res.writeHead(200, {"Content-Type":"text/html"});
+  var output = fs.readFileSync("./index.html", "utf-8"); // カレントディレクトリのindex.htmlを配布
+  res.end(output);
+}).listen(LISTEN_PORT);
+
+// websocketとしてlistenして、応答内容を記述
+var io = socketio.listen(server);
+io.sockets.on("connection", onWebSocket);
+
+console.log("================================================");
+console.log("listening web socket on port " + LISTEN_PORT);
+console.log("connection control at http://localhost:" + LISTEN_PORT + "/");
+console.log("================================================");

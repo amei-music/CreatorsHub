@@ -34,6 +34,9 @@ function ClientOsc(/*direction,*/ host, port){
   }
 }
 
+//==============================================================================
+// データ全体
+//==============================================================================
 var self = {
   clients_input:  {},
   clients_output: {},
@@ -131,7 +134,7 @@ io.sockets.on("connection", function (socket) {
   //  - ネットワーク接続者一覧を表示する(socketだからサーバー側からpush可能)
   function update_list(){
     // broadcast all clients (including the sender)
-    io.sockets.emit("update_list", {inputs: self.clients_input, outputs: self.clients_output, connection: self.connections});
+    io.sockets.emit("update_list", {inputs: self.clients_input, outputs: self.clients_output, connections: self.connections});
   }
   update_list(); // websocket接続時に一度現状を送る
 
@@ -140,7 +143,7 @@ io.sockets.on("connection", function (socket) {
     var inputId = obj.inputId, outputId = obj.outputId
 
     self.addConnection(inputId, outputId) // 接続
-    console.log("input '" + inputId + "' connected to output '" + outputID + "'");
+    console.log("input '" + inputId + "' connected to output '" + outputId + "'");
 
     update_list(); // ネットワーク更新
   });
@@ -278,7 +281,7 @@ var midiObj = {
     });
 
     // Open the first available input port.
-    this.input.openPort(input_port);
+    // this.input.openPort(input_port);
 
     // Sysex, timing, and active sensing messages are ignored
     // by default. To enable these message types, pass false for
@@ -290,7 +293,7 @@ var midiObj = {
     this.input.ignoreTypes(false, true, true);
 
     // Open the first available input port.
-    this.output.openPort(output_port);
+    // this.output.openPort(output_port);
 
     // ... receive MIDI messages ...
   },

@@ -2,14 +2,88 @@
 <head>
   <meta charset="UTF-8">
   <title>FM_MW1</title>
+  <style type="text/css">
+  <!--
+  table, td, th {
+    border: solid 1px #999999;
+  }
+  //-->
+  </style>
+
   <script src="/socket.io/socket.io.js"></script>
   <script type="text/javascript">
+    "use strict";
+
     function makeNodeName(client){
       var name = client.type
       if (client.type == "json") name += ": socket[" + client.socketId + "]"
       if (client.type == "midi") name += ": " + client.name
       if (client.type == "osc" ) name += ": " + client.host + "(" + client.port + ")"
       return name
+    }
+
+    function makeConnectionButton(isNowConnected, event){
+      var btn = document.createElement("input");  /*  inputタグを作成して…  */
+      // btn.id = "button1";
+      btn.type = "button";
+      btn.value = isNowConnected ? "o" : "x";
+      btn.addEventListener('click', event);
+      return btn;
+    }
+
+    // プレーンテキストで接続状態を表示する
+    function makeConnectionString(inputs, outputs, connections){
+      var txt = "[network and connection information]<br>"
+      for (var i in inputs){
+        txt += "input _" + i + ", [" + makeNodeName(inputs[i]) + "]<br>"
+      }
+
+      for (var o in outputs){
+        txt += "output_" + o + ", [" + makeNodeName(outputs[o]) + "]<br>"
+      }
+
+      for (var c in connections){
+        connection = connections[c]
+        for (var d in connection){
+          txt += "connection from input " + c + " => output " + d + "<br>"
+        }
+      }
+      return txt;
+    }
+
+    // N個のdevice名を記した配列を受け取ってその接続マトリックスのhtmlを作る
+    function makeConnectionTable(inputNames, outputNames, connections){
+      var table = document.createElement('table');
+      // タイトル行
+      var tr = table.insertRow(-1)
+      tr.insertCell(-1).outputHTML = "";
+      for(var o=0; o<outputNames.length; ++o){
+        tr.insertCell(-1).innerHTML = outputNames[o].name;
+      }
+      table.appendChild(tr);
+
+      // データ行
+      for(var i=0; i<inputNames.length; ++i){
+        var tr = table.insertRow(-1)
+        tr.insertCell(-1).innerHTML = inputNames[i].name;
+        for(var o=0; o<outputNames.length; ++o){
+          var isConnected = (inputNames[i].id in connections) && (outputNames[o].id in connections[i]);
+
+          var _onclick = function(_i, _o){
+            return function(){
+              // console.log("add_connection: " + _i);
+              // console.log("add_connection: " + inputNames[0].name);
+              // ボタンを押すとコネクションを貼り直すメッセージをサーバーに送信
+              console.log("add_connection: " + JSON.stringify({inputId: inputNames[_i].id, outputId: outputNames[_o].id}));
+              if(self.socket) self.socket.emit("add_connection", {inputId: inputNames[_i].id, outputId: outputNames[_o].id});
+            }
+          }
+
+          tr.insertCell(-1).appendChild(makeConnectionButton(isConnected, _onclick(i, o)));
+        }
+      }
+
+      return table;
     }
 
     self = {
@@ -26,25 +100,16 @@
 
         // リスト更新
         this.socket.on("update_list", function (obj) {
-          var txt = "[network and connection information]<br>"
-          for (var i in obj.inputs){
-            txt += "input _" + i + ", [" + makeNodeName(obj.inputs[i]) + "]<br>"
-          }
-
-          for (var o in obj.outputs){
-            txt += "output_" + o + ", [" + makeNodeName(obj.outputs[o]) + "]<br>"
-          }
-
-          for (var c in obj.connections){
-            connection = obj.connections[c]
-            for (var d in connection){
-              txt += "connection from input " + c + " => output " + d + "<br>"
-            }
-          }
+          // var inputNames  = obj.inputs.map (function(input ){makeNodeName(input );});
+          // var outputNames = obj.outputs.map(function(output){makeNodeName(output);});
+          var inputNames  = Object.keys(obj.inputs ).map(function(key, i) { return {id: key, name: makeNodeName(obj.inputs [key])}; });
+          var outputNames = Object.keys(obj.outputs).map(function(key, i) { return {id: key, name: makeNodeName(obj.outputs[key])}; });
+          var table = makeConnectionTable(inputNames, outputNames, obj.connections)
 
           // self.addMessage(txt);
           var networkArea = document.getElementById("network");
-          networkArea.innerHTML = txt;
+          networkArea.textContent = null;
+          networkArea.appendChild(table);
         });
 
         this.socket.on("message_json", function (obj) {

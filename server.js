@@ -88,7 +88,7 @@ var self = {
     if (this.connections[input_clientId]){
       var pos = this.connections[input_clientId].indexOf(output_clientId);
       if (pos >= 0){
-        this.connections[input_clientId].splice(pos, pos);
+        this.connections[input_clientId].splice(pos);
       }
     } else {
       // 何もしない
@@ -140,10 +140,15 @@ io.sockets.on("connection", function (socket) {
 
   //  - ネットワークのノード間の接続/切断をする
   socket.on("add_connection", function (obj) {
-    var inputId = obj.inputId, outputId = obj.outputId
+    var inputId = obj.inputId, outputId = obj.outputId, connect = obj.connect
 
-    self.addConnection(inputId, outputId) // 接続
-    console.log("input '" + inputId + "' connected to output '" + outputId + "'");
+    if (connect == true){
+      self.addConnection(inputId, outputId) // 接続
+      console.log("input '" + inputId + "' connected to output '" + outputId + "'");
+    } else {
+      self.deleteConnection(inputId, outputId) // 切断
+      console.log("input '" + inputId + "' and output '" + outputId + "' disconnected");
+    }
 
     update_list(); // ネットワーク更新
   });

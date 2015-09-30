@@ -63,23 +63,22 @@
       table.appendChild(tr);
 
       // データ行
+      console.log("connections: ", JSON.stringify(connections));
       for(var i=0; i<inputNames.length; ++i){
         var tr = table.insertRow(-1)
         tr.insertCell(-1).innerHTML = inputNames[i].name;
         for(var o=0; o<outputNames.length; ++o){
-          var isConnected = (inputNames[i].id in connections) && (outputNames[o].id in connections[i]);
-
-          var _onclick = function(_i, _o){
+          var isConnected = (inputNames[i].id in connections) && (connections[inputNames[i].id].indexOf(outputNames[o].id) >= 0);
+          // console.log(inputNames[i].id, ":", outputNames[o].id, ":", connections[inputNames[i].id], ":", isConnected);
+          var _onclick = function(_i, _o, connect){
             return function(){
-              // console.log("add_connection: " + _i);
-              // console.log("add_connection: " + inputNames[0].name);
               // ボタンを押すとコネクションを貼り直すメッセージをサーバーに送信
-              console.log("add_connection: " + JSON.stringify({inputId: inputNames[_i].id, outputId: outputNames[_o].id}));
-              if(self.socket) self.socket.emit("add_connection", {inputId: inputNames[_i].id, outputId: outputNames[_o].id});
+              console.log("add_connection: " + JSON.stringify({inputId: inputNames[_i].id, outputId: outputNames[_o].id, connect: connect}));
+              if(self.socket) self.socket.emit("add_connection", {inputId: inputNames[_i].id, outputId: outputNames[_o].id, connect: connect});
             }
           }
 
-          tr.insertCell(-1).appendChild(makeConnectionButton(isConnected, _onclick(i, o)));
+          tr.insertCell(-1).appendChild(makeConnectionButton(isConnected, _onclick(i, o, (! isConnected) )));
         }
       }
 

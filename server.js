@@ -106,7 +106,7 @@ var self = {
         return k;
       }
     }
-    return undefined;
+    return -1;
   },
 
 }
@@ -185,23 +185,24 @@ io.sockets.on("connection", function (socket) {
   socket.on("message_json", function (obj) {
     var inputId  = self.socketId2clientId(socket.id, self.clients_input);
 
-    // if (inputId) {
-    //   for(var i in self.clients_input[inputId]){
-    //     var outputId = self.clients_input[i]
-    //     var output = self.clients_output[outputId];
-    //     if       ( output.type == "json"){
-    //       output.socket.emit("message_json", obj);
-    //     } else if ( output.type == "osc" ){
-    //       // osc送信
-    //       console.log("OSC send");
-    //     } else if ( output.type == "midi"){
-    //       // midi送信
-    //       console.log("MIDI send");
-    //     }
-    //   }
-    // }
+    console.log("message from input #" + inputId);
 
-    io.sockets.emit("message_json", obj); // 仮で全部
+    if (inputId >= 0) {
+      var client = self.clients_input[inputId];
+      for(var o in self.connections[inputId]){
+        var outputId = self.connections[inputId][o]
+        var output   = self.clients_output[outputId];
+        if       ( output.type == "json"){
+          io.to(output.socketId).emit("message_json", obj);
+        } else if ( output.type == "osc" ){
+          // osc送信
+          console.log("OSC send");
+        } else if ( output.type == "midi"){
+          // midi送信
+          console.log("MIDI send");
+        }
+      }
+    }
 
     update_list(); // ネットワーク更新
   });

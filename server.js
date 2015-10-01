@@ -19,7 +19,7 @@ function midi2obj(msg){
     // note on
     var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
     return {
-      address: "/fm/note/on",
+      address: "/fm/noteon",
       args:    [ch, noteNum, velo]
     };
 
@@ -27,7 +27,7 @@ function midi2obj(msg){
     // note off with status 9
     var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = 0x40;
     return {
-      address: "/fm/note/off",
+      address: "/fm/noteoff",
       args:    [ch, noteNum, velo]
     };
 
@@ -35,8 +35,48 @@ function midi2obj(msg){
     // note off with status 8
     var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
     return {
-      address: "/fm/note/off",
+      address: "/fm/noteoff",
       args:    [ch, noteNum, velo]
+    };
+
+  } else if ( msg.length == 3 && ((msg[0] >> 4) == 0xA) ){
+    // polyphonic pressure
+    var ch = (msg[0] & 0x0F), noteNum = msg[1], press = msg[2];
+    return {
+      address: "/fm/notepressure",
+      args:    [ch, noteNum, press]
+    };
+
+  } else if ( msg.length == 3 && ((msg[0] >> 4) == 0xB) ){
+    // control change
+    var ch = (msg[0] & 0x0F), type = msg[1], value = msg[2];
+    return {
+      address: "/fm/controlchange",
+      args:    [ch, type, value]
+    };
+
+  } else if ( msg.length == 2 && ((msg[0] >> 4) == 0xC) ){
+    // program change
+    var ch = (msg[0] & 0x0F), number = msg[1];
+    return {
+      address: "/fm/programchange",
+      args:    [ch, number]
+    };
+
+  } else if ( msg.length == 2 && ((msg[0] >> 4) == 0xD) ){
+    // channel pressure
+    var ch = (msg[0] & 0x0F), value = msg[1];
+    return {
+      address: "/fm/channelpressure",
+      args:    [ch, value]
+    };
+
+  } else if ( msg.length == 3 && ((msg[0] >> 4) == 0xE) ){
+    // pitch bend
+    var ch = (msg[0] & 0x0F), msb = msg[1], lsb = msg[2];
+    return {
+      address: "/fm/pitchbend",
+      args:    [ch, msb, lsb]
     };
 
   } else {
@@ -50,15 +90,13 @@ function midi2obj(msg){
 }
 
 function obj2midi(msg){
-  console.log(msg, msg.address);
-
-  if(msg.address == "/fm/note/on"){
+  if(msg.address == "/fm/noteon"){
     var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
-    if (ch < 15) return [0x90 + (ch & 0x0F), noteNum, velo];
+    if (ch < 16) return [0x90 + (ch & 0x0F), noteNum, velo];
     else         return [0x90 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if(msg.address == "/fm/note/off"){
+  } else if(msg.address == "/fm/noteoff"){
     var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
-    if (ch < 15) return [0x80 + (ch & 0x0F), noteNum, velo];
+    if (ch < 16) return [0x80 + (ch & 0x0F), noteNum, velo];
     else         return [0x80 + (ch & 0x0F), noteNum, velo]; // 要対応
   } else if (msg.args){
     // msg.argsがあれば、それを送信
@@ -155,7 +193,7 @@ function ClientMidi(/*direction,*/ portNum, name){
 
     deliver: function(msg, msg_from){
       var buf = convert_message(msg, msg_from, "midi")
-      console.log("midi out", buf)
+      console.log("midi out ", msg.address, " => ", buf)
       midiObj.outputs[this.portNum].sendMessage(buf);
     },
 

@@ -252,22 +252,45 @@ var self = {
 // WebSocketの設定
 //==============================================================================
 
+// (1) ただweb設定画面を見に来た人と、
+// (2) WebSocket-JSON (以下wsjson) でネットワークに参加しにきた人と、
+// (3) OSCでネットワークに参加しにきた人は別扱いする必要がある
+
+// (1)のためのAPI
+//  - ネットワーク接続者一覧を表示する(socketだからサーバー側からpush可能)
+function update_list(){
+  // メソッド類は削ぎ落として表示に必要な情報だけまとめる
+  var inputs  = {}; for (i in self.clients_input ) inputs [i] = self.clients_input [i].simplify();
+  var outputs = {}; for (o in self.clients_output) outputs[o] = self.clients_output[o].simplify();
+
+  // broadcast all clients (including the sender)
+  io.sockets.emit("update_list", {inputs: inputs, outputs: outputs, connections: self.connections});
+}
+
+// (2)のためのAPIは、(1)に加えて
+//  - wsjsonクライアントとしてネットワークに参加する
+function join_as_wsjson(socket) {
+  var inputId  = self.addNewClientInput (ClientJson(socket.id));
+  var outputId = self.addNewClientOutput(ClientJson(socket.id));
+
+  console.log("[Web Socket #'" + socket.id + "'] joined as JSON client");
+
+  update_list(); // ネットワーク更新
+}
+
+//  - ネットワークから離脱する
+function exit_wsjson(socket) {
+  self.deleteClientInput (self.socketId2clientId(socket.id, self.clients_input ));
+  self.deleteClientOutput(self.socketId2clientId(socket.id, self.clients_output));
+
+  console.log("[Web Socket #'" + socket.id + "'] exited.");
+
+  update_list(); // ネットワーク更新
+}
+
+
 // websocketとしての応答内容を記述
 function onWebSocket(socket){
-  // (1) ただweb設定画面を見に来た人と、
-  // (2) WebSocket-JSON (以下wsjson) でネットワークに参加しにきた人と、
-  // (3) OSCでネットワークに参加しにきた人は別扱いする必要がある
-
-  // (1)のためのAPI
-  //  - ネットワーク接続者一覧を表示する(socketだからサーバー側からpush可能)
-  function update_list(){
-    // メソッド類は削ぎ落として表示に必要な情報だけまとめる
-    var inputs  = {}; for (i in self.clients_input ) inputs [i] = self.clients_input [i].simplify();
-    var outputs = {}; for (o in self.clients_output) outputs[o] = self.clients_output[o].simplify();
-
-    // broadcast all clients (including the sender)
-    io.sockets.emit("update_list", {inputs: inputs, outputs: outputs, connections: self.connections});
-  }
   update_list(); // websocket接続時に一度現状を送る
 
   //  - ネットワークのノード間の接続/切断をする
@@ -287,41 +310,25 @@ function onWebSocket(socket){
 
   // (2)のためのAPIは、(1)に加えて
   //  - wsjsonクライアントとしてネットワークに参加する
-  socket.on("join_as_wsjson", function () {
-    var inputId  = self.addNewClientInput (ClientJson(socket.id));
-    var outputId = self.addNewClientOutput(ClientJson(socket.id));
-
-    console.log("[Web Socket #'" + socket.id + "'] joined as JSON client");
-
-    //  - メッセージを受信する
-    socket.on("message_json", function (obj) {
-      var inputId  = self.socketId2clientId(socket.id, self.clients_input);
-
-      console.log("message from input #" + inputId);
-
-      if (inputId >= 0) {
-        var client = self.clients_input[inputId];
-        for(var o in self.connections[inputId]){
-          var outputId = self.connections[inputId][o]
-          var output   = self.clients_output[outputId];
-          output.deliver(obj, "json");
-        }
-      }
-    });
-
-    update_list(); // ネットワーク更新
-  });
+  socket.on("join_as_wsjson", function () { join_as_wsjson(socket); });
 
   //  - ネットワークから離脱する
-  socket.on("exit_wsjson", function () {
-    self.deleteClientInput (self.socketId2clientId(socket.id, self.clients_input ));
-    self.deleteClientOutput(self.socketId2clientId(socket.id, self.clients_output));
+  socket.on("exit_wsjson",    function () { exit_wsjson(socket); });
 
-    console.log("[Web Socket #'" + socket.id + "'] exited.");
+  //  - メッセージを受信する
+  socket.on("message_json", function (obj) {
+    var inputId  = self.socketId2clientId(socket.id, self.clients_input);
 
-    update_list(); // ネットワーク更新
+    if (inputId >= 0) { // joinしたクライアントだけがメッセージのやり取りに参加できる
+      console.log("message from input #" + inputId);
+      var client = self.clients_input[inputId];
+      for(var o in self.connections[inputId]){
+        var outputId = self.connections[inputId][o]
+        var output   = self.clients_output[outputId];
+        output.deliver(obj, "json");
+      }
+    }
   });
-
   // が必要。これらを関数化したjavascriptを配布する必要があるかも
 
   // (3)のためのAPIは、(1)に加えて
@@ -366,23 +373,9 @@ function onWebSocket(socket){
   // が必要。oscアプリ本体とこのserver.jsのoscモジュールが直接メッセージをやり取りするので、
   // oscクライアントとの実通信にWebSocketは絡まない。あくまでコネクション管理のみ
 
-  // 接続開始
-  // socket.on("connected", function (obj) {
-  //   console.log("client '" + obj.name + "' connected.");
-  //   devices.clients[socket.id] = Client(socket, obj.name)
-  // });
-  //
-  // socket.on("publish", function (obj) {
-  //   // broadcast all clients (including the sender)
-  //   io.sockets.emit("publish", obj);
-  // });
-
-  // 接続終了
+  // ソケット自体の接続終了
   socket.on("disconnect", function () {
-    // if (devices.clients[socket.id]) {
-    //   console.log("client '" + devices.clients[socket.id].name + "' disconnected.");
-    //   delete devices.clients[socket.id];
-    // }
+    exit_wsjson(socket); // 切断
   });
 
 }

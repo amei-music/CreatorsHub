@@ -21,6 +21,7 @@
   <script type="text/javascript">
     "use strict";
 
+    // 動的な表示コントロール
     var view = {
       filter: {}, // メッセージをフィルタする
 
@@ -30,7 +31,43 @@
 
         console.log(cbox, cbox.checked, this.filter);
       },
-    }
+    };
+
+    // 適当なテンポ計算
+    var timing = { // 4分音符に24回届くtimingメッセージを元にテンポを推定する
+      running: false, // startを受けてtrue, stopを受けてfalse
+
+      starttime: 0, // startを受けた時の時刻
+      count:     0, // startからの累積カウント
+      tempo:     0,
+
+      onBeat: function(){}, // 四分音符で何するか
+
+      onStart : function(){
+        this.running   = true;
+        this.starttime = new Date().getTime();
+      },
+
+      onStop : function(){
+        this.running = false;
+        this.count   = 0;
+      },
+
+      onTiming : function(){
+        if (this.count % 24 == 0) this.onBeat();
+        if (this.count > 0){
+          var elapsed = new Date().getTime() - this.starttime; // 再生中のテンポ変更はNG
+          this.tempo   = 60. * 1000. / ((elapsed / this.count) * 24);
+        }
+        this.count += 1;
+      },
+
+      get : function(obj){
+        if(obj.address == "/fm/start")  return this.onStart();
+        if(obj.address == "/fm/timing") return this.onTiming();
+        if(obj.address == "/fm/stop")   return this.onStop();
+      }
+    };
 
     // デバイス名を作る
     function makeNodeName(client){
@@ -107,7 +144,7 @@
 
     // jsonクライアントとして受けとったメッセージを追加する
     function addMessage(obj){
-      console.log(obj.address, view.filter)
+      // console.log(obj.address, view.filter)
       if (! (obj.address in view.filter)){ // filter考慮
         var domMeg = document.createElement('div');
         // domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + msg;
@@ -146,6 +183,7 @@
 
         this.socket.on("message_json", function (obj) {
           addMessage(obj);
+          timing.get(obj);
         });
 
         this.socket.on("disconnect", function () {
@@ -185,6 +223,9 @@
     window.onload = function(){
       self.start();
       showJsonClient(false);
+      timing.onBeat = function(){
+        document.getElementById("tempo").innerHTML = timing.tempo;
+      };
     }
   </script>
 
@@ -206,6 +247,10 @@
     filter:
     <input type="checkbox" onclick="view.filterSet(this);" value="/fm/noteon">  noteon
     <input type="checkbox" onclick="view.filterSet(this);" value="/fm/noteoff"> noteoff
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/timing"> timing
+
+    <br>
+    tempo: <span id="tempo"> </span>
 
   </div>
 

@@ -79,6 +79,34 @@ function midi2obj(msg){
       args:    [ch, msb, lsb]
     };
 
+  } else if ( msg.length == 1 && msg[0] == 0xF8 ){
+    // timing clock
+    return {
+      address: "/fm/timing",
+      args:    []
+    };
+
+  } else if ( msg.length == 1 && msg[0] == 0xFA ){
+    // start
+    return {
+      address: "/fm/start",
+      args:    []
+    };
+
+  } else if ( msg.length == 1 && msg[0] == 0xFB ){
+    // continue
+    return {
+      address: "/fm/continue",
+      args:    []
+    };
+
+  } else if ( msg.length == 1 && msg[0] == 0xFC ){
+    // stop
+    return {
+      address: "/fm/stop",
+      args:    []
+    };
+
   } else {
     // 残りはそのまま送信
     return {
@@ -482,7 +510,7 @@ var midiObj = {
     // For example if you want to receive only MIDI Clock beats
     // you should use
     // input.ignoreTypes(true, false, true)
-    this_input.ignoreTypes(false, true, true);
+    this_input.ignoreTypes(false, false, true);
 
     return this_input;
   }

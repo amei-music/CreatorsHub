@@ -189,53 +189,66 @@ var self = {
 
   deleteClientInput: function(clientId){
     delete this.clients_input[clientId];
+
+    for(var outputId in this.connections[clientId]){
+      this.deleteConnection(clientId, outputId);
+    }
+
+    // console.log(this.connections)
     return;
   },
 
   deleteClientOutput: function(clientId){
     delete this.clients_output[clientId];
+
+    for(var inputId in this.connections){
+      for(var outputId in this.connections[inputId]){
+        if(outputId == clientId) this.deleteConnection(inputId, outputId);
+      }
+    }
+
+    // console.log(this.connections)
     return;
   },
 
   //==============================================================================
   // コネクション管理
   //==============================================================================
-  connections: {}, // {input_clientId: [output_clientId, ...]}
+  connections: {}, // {input_clientId: {output_clientId: true, ...}, ...}
   oscsocks:    {}, // {input_oscport: {clientId: , sock: }} osc送受信オブジェクトを詰めておくところ
   // socketはio.socketsで参照可能
 
   addConnection: function(input_clientId, output_clientId){
-    // まず結線情報を作る
-    if (this.connections[input_clientId]){
-      if (this.connections[input_clientId].indexOf(output_clientId) < 0){
-        this.connections[input_clientId].push(output_clientId);
-      }
-    } else {
-      this.connections[input_clientId] = [output_clientId];
+    // 結線情報を作る
+    if (! this.connections[input_clientId]){
+      this.connections[input_clientId] = {};
     }
-
-    // midiポートはopenする
+    this.connections[input_clientId][output_clientId] = true;
   },
 
   deleteConnection: function(input_clientId, output_clientId){
-    // まず結線情報を作る
+    // 結線情報を切る
     if (this.connections[input_clientId]){
-      var pos = this.connections[input_clientId].indexOf(output_clientId);
-      if (pos >= 0){
-        this.connections[input_clientId].splice(pos);
-      }
+      delete this.connections[input_clientId][output_clientId];
     } else {
       // 何もしない
     }
 
-    //
   },
 
   //==============================================================================
   // データ送信管理
   //==============================================================================
+  // inputに届いたメッセージをコネクション先に配信
+  deliver: function(input_clientId, functor){
+    for(var outputId in self.connections[input_clientId]){
+      var output   = self.clients_output[outputId];
+      functor(output);
+    }
+  },
+
+  // socketのcallbackで届いてきたメッセージの送信元を調べる
   socketId2clientId: function(socketId, clients){
-    // socketのcallbackで届いてきたメッセージの送信元を調べる
     for (var k in clients) {
       var client = clients[k];
       if(client.type == "json" && client.socketId == socketId){
@@ -260,8 +273,8 @@ var self = {
 //  - ネットワーク接続者一覧を表示する(socketだからサーバー側からpush可能)
 function update_list(){
   // メソッド類は削ぎ落として表示に必要な情報だけまとめる
-  var inputs  = {}; for (i in self.clients_input ) inputs [i] = self.clients_input [i].simplify();
-  var outputs = {}; for (o in self.clients_output) outputs[o] = self.clients_output[o].simplify();
+  var inputs  = {}; for (var i in self.clients_input ) inputs [i] = self.clients_input [i].simplify();
+  var outputs = {}; for (var o in self.clients_output) outputs[o] = self.clients_output[o].simplify();
 
   // broadcast all clients (including the sender)
   io.sockets.emit("update_list", {inputs: inputs, outputs: outputs, connections: self.connections});
@@ -273,7 +286,7 @@ function join_as_wsjson(socket) {
   var inputId  = self.addNewClientInput (ClientJson(socket.id));
   var outputId = self.addNewClientOutput(ClientJson(socket.id));
 
-  console.log("[Web Socket #'" + socket.id + "'] joined as JSON client");
+  console.log("[Web Socket #'" + socket.id + "'] joined as JSON client [id=" + inputId + "]");
 
   update_list(); // ネットワーク更新
 }
@@ -321,12 +334,8 @@ function onWebSocket(socket){
 
     if (inputId >= 0) { // joinしたクライアントだけがメッセージのやり取りに参加できる
       console.log("message from input #" + inputId);
-      var client = self.clients_input[inputId];
-      for(var o in self.connections[inputId]){
-        var outputId = self.connections[inputId][o]
-        var output   = self.clients_output[outputId];
-        output.deliver(obj, "json");
-      }
+
+      self.deliver(inputId, function(output){output.deliver(obj, "json");} ); // 配信
     }
   });
   // が必要。これらを関数化したjavascriptを配布する必要があるかも
@@ -341,18 +350,7 @@ function onWebSocket(socket){
       return function(msg, rinfo) {
         console.log("message from input #" + inputId);
 
-        // var obj;
-        // try {
-        //   obj = osc.fromBuffer(msg);
-        // } catch (_error) {
-        //   return console.log("invalid OSC packet");
-        // }
-
-        for(var o in self.connections[inputId]){
-          var outputId = self.connections[inputId][o]
-          var output   = self.clients_output[outputId];
-          output.deliver(msg, "osc");
-        }
+        self.deliver(inputId, function(output){output.deliver(msg, "osc");} ); // 配信
 
       }
     }
@@ -365,7 +363,7 @@ function onWebSocket(socket){
     var inputId  = self.addNewClientInput (ClientOsc(obj.host, inPort));
     var outputId = self.addNewClientOutput(ClientOsc(obj.host, obj.port));
 
-    console.log("[OSC #'" + obj.host + "'] joined as OSC client");
+    console.log("[OSC #'" + obj.host + "'] joined as OSC client [id=" + inputId + "]");
 
     update_list(); // クライアントのネットワーク表示更新
   });
@@ -410,12 +408,7 @@ var midiObj = {
           var msg = {'msg': message, 'delta': deltaTime};
           console.log(msg);
 
-          // 転送
-          for(var o in self.connections[_inputId]){
-            var outputId = self.connections[_inputId][o]
-            var output   = self.clients_output[outputId];
-            output.deliver(message, "midi"); // とりあえずメッセージだけ送る
-          }
+          self.deliver(_inputId, function(output){output.deliver(message, "midi");} ); // 配信
         };
       }
 

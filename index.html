@@ -245,9 +245,14 @@
     <div id="msg"></div>
 
     filter:
-    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/noteon">  noteon
-    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/noteoff"> noteoff
     <input type="checkbox" onclick="view.filterSet(this);" value="/fm/timing"> timing
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/noteon"> noteon
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/noteoff"> noteoff
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/notepressure"> notepressure
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/controlchange"> controlchange
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/programchange"> programchange
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/channelpressure"> channelpressure
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/pitchbend"> pitchbend
 
     <br>
     tempo: <span id="tempo"> </span>

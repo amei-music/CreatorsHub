@@ -12,6 +12,30 @@ oscSender = dgram.createSocket("udp4")
 //==============================================================================
 // 汎用関数
 //==============================================================================
+
+// yamaha専用MIDIを試験的にパースしてみる
+var yamahaStyle = {
+  "/yamaha/style/sectioncontrol": [0xF0, 0x43, 0x7E, 0x00, 0xFF, 0xFF, 0xF7],
+  "/yamaha/style/chordcontrol":   [0xF0, 0x43, 0x7E, 0x02, 0xFF, 0xFF, 0xFF, 0xFF, 0xF7],
+}
+function convertible(msg, dict){
+  for (var key in dict){
+    var midiTemplate = dict[key]
+    if (midiTemplate.length != msg.length) continue;
+
+    var args = [], i = 0; matches = true;
+    while(matches && i < msg.length){
+      if (midiTemplate[i] == 0xFF) args.push(msg[i]);
+      else if (msg[i] != midiTemplate[i]) matches = false;
+      i += 1;
+    }
+    if (matches) return {address: key, args: args};
+  }
+
+  return undefined
+}
+
+
 function midi2obj(msg){
   // ただのバイト列であるmidiをそれっぽいOSCに変換して返す
 
@@ -108,13 +132,19 @@ function midi2obj(msg){
     };
 
   } else {
-    // 残りはそのまま送信
-    return {
-      address: "/fm/midi_bytes",
-      args:    msg
-    };
-
+    // 追加挿入のtemplateにマッチするかチェック
+    var obj = convertible(msg, yamahaStyle);
+    if (obj != undefined){
+      return obj;
+    } else {
+      // マッチしなければそのまま送信
+      return {
+        address: "/fm/midi_bytes",
+        args:    msg
+      };
+    }
   }
+
 }
 
 function obj2midi(msg){

@@ -7,6 +7,13 @@
   table, td, th {
     border: solid 1px #999999;
   }
+
+  div#msg {
+    overflow: scroll;   /* スクロール表示 */
+    width: 600px;
+    height: 400px;
+    border: solid 1px #999999;
+  }
   //-->
   </style>
 
@@ -14,6 +21,18 @@
   <script type="text/javascript">
     "use strict";
 
+    var view = {
+      filter: {}, // メッセージをフィルタする
+
+      filterSet : function(cbox){
+        if (cbox.checked) this.filter[cbox.value] = true;
+        else delete this.filter[cbox.value];
+
+        console.log(cbox, cbox.checked, this.filter);
+      },
+    }
+
+    // デバイス名を作る
     function makeNodeName(client){
       var name = client.type
       if (client.type == "json") name += ": socket[" + client.socketId + "]"
@@ -22,6 +41,7 @@
       return name
     }
 
+    // 接続/切断ボタンを作る
     function makeConnectionButton(isNowConnected, event){
       var btn = document.createElement("input");  /*  inputタグを作成して…  */
       // btn.id = "button1";
@@ -85,14 +105,25 @@
       return table;
     }
 
+    // jsonクライアントとして受けとったメッセージを追加する
+    function addMessage(obj){
+      console.log(obj.address, view.filter)
+      if (! (obj.address in view.filter)){ // filter考慮
+        var domMeg = document.createElement('div');
+        // domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + msg;
+        domMeg.innerHTML = JSON.stringify(obj);
+        document.getElementById("msg").appendChild(domMeg)
+      }
+    }
+
+    // jsonクライアントの表示/非表示を切り替える
+    function showJsonClient(onoff){
+      document.getElementById("jsonclient").style.display = (onoff ? "block" : "none");
+    }
+
+    // ソケット関係
     self = {
       socket:    undefined,
-
-      myName:      Math.floor(Math.random()*100) + "さん",
-      // textInput:   ,
-      // msgArea:     ,
-      // networkArea: ,
-
 
       start: function(){
         this.socket = io.connect(/*'http://localhost:8080'*/);
@@ -114,11 +145,11 @@
         });
 
         this.socket.on("message_json", function (obj) {
-          self.addMessage(JSON.stringify(obj));
+          addMessage(obj);
         });
 
         this.socket.on("disconnect", function () {
-          // noop
+          showJsonClient(false);
         });
 
         // this.addMessage("貴方は" + this.myName + "として入室しました");
@@ -128,6 +159,7 @@
 
       join_as_wsjson: function() {
         this.socket.emit("join_as_wsjson");
+        showJsonClient(true);
       },
 
       join_as_osc: function() {
@@ -147,26 +179,35 @@
         }
       },
 
-      addMessage: function(msg){
-        var domMeg = document.createElement('div');
-        // domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + msg;
-        domMeg.innerHTML = msg;
-        var msgArea = document.getElementById("msg")
-        msgArea.appendChild(domMeg);
-      },
     }
 
-    self.start();
+    // 開始!
+    window.onload = function(){
+      self.start();
+      showJsonClient(false);
+    }
   </script>
 
 </head>
 <body>
+  <h2>接続中のデバイス</h2>
+  <div id="network"></div>
+
+  <br>======================================================================<br>
   このページをJSONクライアントとしてネットワーク参加する
   <button onclick="self.join_as_wsjson();">参加</button><br>
-  <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
-  <button onclick="self.publishMessage();">JSONを送る</button>
-  <p id=errormsg> </p>
-  <div id="msg"></div>
+
+  <div id=jsonclient>
+    <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
+    <button onclick="self.publishMessage();">JSONを送る</button>
+    <p id=errormsg> </p>
+    <div id="msg"></div>
+
+    filter:
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/noteon">  noteon
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/noteoff"> noteoff
+
+  </div>
 
   <br>
   <br>======================================================================<br>
@@ -175,9 +216,6 @@
   待ち受けポート番号<input type="text" id="osc_port_input" style="width:80px;" />
   <button onclick="self.join_as_osc();">登録</button>
 
-
   <br>
-  <br>======================================================================<br>
-  <div id="network"></div>
 </body>
 </html>

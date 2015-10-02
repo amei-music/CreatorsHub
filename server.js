@@ -284,6 +284,7 @@ var self = {
   },
 
   deleteClientInput: function(clientId){
+    var existed = (clientId in this.clients_input);
     delete this.clients_input[clientId];
 
     for(var outputId in this.connections[clientId]){
@@ -291,10 +292,11 @@ var self = {
     }
 
     // console.log(this.connections)
-    return;
+    return existed;
   },
 
   deleteClientOutput: function(clientId){
+    var existed = (clientId in this.clients_output);
     delete this.clients_output[clientId];
 
     for(var inputId in this.connections){
@@ -304,7 +306,7 @@ var self = {
     }
 
     // console.log(this.connections)
-    return;
+    return existed;
   },
 
   //==============================================================================
@@ -389,10 +391,13 @@ function join_as_wsjson(socket) {
 
 //  - ネットワークから離脱する
 function exit_wsjson(socket) {
-  self.deleteClientInput (self.socketId2clientId(socket.id, self.clients_input ));
-  self.deleteClientOutput(self.socketId2clientId(socket.id, self.clients_output));
+  var existed = false;
+  existed |= self.deleteClientInput (self.socketId2clientId(socket.id, self.clients_input ));
+  existed |= self.deleteClientOutput(self.socketId2clientId(socket.id, self.clients_output));
 
-  console.log("[Web Socket #'" + socket.id + "'] exited.");
+  if(existed){
+    console.log("[Web Socket #'" + socket.id + "'] exited.");
+  }
 
   update_list(); // ネットワーク更新
 }
@@ -569,3 +574,37 @@ console.log("================================================");
 console.log("listening web socket on port " + LISTEN_PORT);
 console.log("connection control at http://localhost:" + LISTEN_PORT + "/");
 console.log("================================================");
+
+//==============================================================================
+// graceful shutdown
+//==============================================================================
+
+function graceful_shutdown(){
+  process.exit();
+}
+
+// 例外
+process.on('uncaughtException', function(err) {
+    console.log(err.stack);
+    graceful_shutdown();
+});
+
+// windowsのctrl-c
+if (process.platform === "win32") {
+  var rl = require("readline").createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  rl.on("SIGINT", function () {
+    console.log("Caught interrupt signal");
+    graceful_shutdown();
+  });
+}
+
+// それ以外のctrl-c
+process.on("SIGINT", function () {
+  //graceful shutdown
+  console.log("Caught interrupt signal");
+  graceful_shutdown();
+});

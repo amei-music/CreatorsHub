@@ -7,6 +7,13 @@
   table, td, th {
     border: solid 1px #999999;
   }
+
+  div#msg {
+    overflow: scroll;   /* スクロール表示 */
+    width: 600px;
+    height: 400px;
+    border: solid 1px #999999;
+  }
   //-->
   </style>
 
@@ -14,6 +21,55 @@
   <script type="text/javascript">
     "use strict";
 
+    // 動的な表示コントロール
+    var view = {
+      filter: {}, // メッセージをフィルタする
+
+      filterSet : function(cbox){
+        if (cbox.checked) this.filter[cbox.value] = true;
+        else delete this.filter[cbox.value];
+
+        console.log(cbox, cbox.checked, this.filter);
+      },
+    };
+
+    // 適当なテンポ計算
+    var timing = { // 4分音符に24回届くtimingメッセージを元にテンポを推定する
+      running: false, // startを受けてtrue, stopを受けてfalse
+
+      starttime: 0, // startを受けた時の時刻
+      count:     0, // startからの累積カウント
+      tempo:     0,
+
+      onBeat: function(){}, // 四分音符で何するか
+
+      onStart : function(){
+        this.running   = true;
+        this.starttime = new Date().getTime();
+      },
+
+      onStop : function(){
+        this.running = false;
+        this.count   = 0;
+      },
+
+      onTiming : function(){
+        if (this.count % 24 == 0) this.onBeat();
+        if (this.count > 0){
+          var elapsed = new Date().getTime() - this.starttime; // 再生中のテンポ変更はNG
+          this.tempo   = 60. * 1000. / ((elapsed / this.count) * 24);
+        }
+        this.count += 1;
+      },
+
+      get : function(obj){
+        if(obj.address == "/fm/start")  return this.onStart();
+        if(obj.address == "/fm/timing") return this.onTiming();
+        if(obj.address == "/fm/stop")   return this.onStop();
+      }
+    };
+
+    // デバイス名を作る
     function makeNodeName(client){
       var name = client.type
       if (client.type == "json") name += ": socket[" + client.socketId + "]"
@@ -22,6 +78,7 @@
       return name
     }
 
+    // 接続/切断ボタンを作る
     function makeConnectionButton(isNowConnected, event){
       var btn = document.createElement("input");  /*  inputタグを作成して…  */
       // btn.id = "button1";
@@ -34,18 +91,17 @@
     // プレーンテキストで接続状態を表示する
     function makeConnectionString(inputs, outputs, connections){
       var txt = "[network and connection information]<br>"
-      for (var i in inputs){
-        txt += "input _" + i + ", [" + makeNodeName(inputs[i]) + "]<br>"
+      for (var inputId in inputs){
+        txt += "input _" + inputId + ", [" + makeNodeName(inputs[inputId]) + "]<br>"
       }
 
-      for (var o in outputs){
-        txt += "output_" + o + ", [" + makeNodeName(outputs[o]) + "]<br>"
+      for (var outputId in outputs){
+        txt += "output_" + outputId + ", [" + makeNodeName(outputs[outputId]) + "]<br>"
       }
 
-      for (var c in connections){
-        connection = connections[c]
-        for (var d in connection){
-          txt += "connection from input " + c + " => output " + d + "<br>"
+      for (var inputId in connections){
+        for (var outputId in connection[inputId]){
+          txt += "connection from input " + inputId + " => output " + outputId + "<br>"
         }
       }
       return txt;
@@ -57,42 +113,54 @@
       // タイトル行
       var tr = table.insertRow(-1)
       tr.insertCell(-1).outputHTML = "";
-      for(var o=0; o<outputNames.length; ++o){
-        tr.insertCell(-1).innerHTML = outputNames[o].name;
+      for(var outputId in outputNames){
+        tr.insertCell(-1).innerHTML = outputNames[outputId];
       }
       table.appendChild(tr);
 
       // データ行
       console.log("connections: ", JSON.stringify(connections));
-      for(var i=0; i<inputNames.length; ++i){
+      for(var inputId in inputNames){
         var tr = table.insertRow(-1)
-        tr.insertCell(-1).innerHTML = inputNames[i].name;
-        for(var o=0; o<outputNames.length; ++o){
-          var isConnected = (inputNames[i].id in connections) && (connections[inputNames[i].id].indexOf(outputNames[o].id) >= 0);
-          // console.log(inputNames[i].id, ":", outputNames[o].id, ":", connections[inputNames[i].id], ":", isConnected);
-          var _onclick = function(_i, _o, connect){
+        tr.insertCell(-1).innerHTML = inputNames[inputId];
+        for(var outputId in outputNames){
+          var isConnected = (inputId in connections) && (outputId in connections[inputId]);
+
+          // 「ボタンを押すとコネクションを貼り直すメッセージをサーバーに送信する」関数を作る
+          // closureにしてローカル変数をキャプチャする
+          var _onclick = function(_inputId, _outputId, connect){
             return function(){
-              // ボタンを押すとコネクションを貼り直すメッセージをサーバーに送信
-              console.log("add_connection: " + JSON.stringify({inputId: inputNames[_i].id, outputId: outputNames[_o].id, connect: connect}));
-              if(self.socket) self.socket.emit("add_connection", {inputId: inputNames[_i].id, outputId: outputNames[_o].id, connect: connect});
+              console.log("add_connection: " + JSON.stringify(   {inputId: _inputId, outputId: _outputId, connect: connect}));
+              if(self.socket) self.socket.emit("add_connection", {inputId: _inputId, outputId: _outputId, connect: connect});
             }
           }
 
-          tr.insertCell(-1).appendChild(makeConnectionButton(isConnected, _onclick(i, o, (! isConnected) )));
+          tr.insertCell(-1).appendChild(makeConnectionButton(isConnected, _onclick(inputId, outputId, (! isConnected) )));
         }
       }
 
       return table;
     }
 
+    // jsonクライアントとして受けとったメッセージを追加する
+    function addMessage(obj){
+      // console.log(obj.address, view.filter)
+      if (! (obj.address in view.filter)){ // filter考慮
+        var domMeg = document.createElement('div');
+        // domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + msg;
+        domMeg.innerHTML = JSON.stringify(obj);
+        document.getElementById("msg").appendChild(domMeg)
+      }
+    }
+
+    // jsonクライアントの表示/非表示を切り替える
+    function showJsonClient(onoff){
+      document.getElementById("jsonclient").style.display = (onoff ? "block" : "none");
+    }
+
+    // ソケット関係
     self = {
       socket:    undefined,
-
-      myName:      Math.floor(Math.random()*100) + "さん",
-      // textInput:   ,
-      // msgArea:     ,
-      // networkArea: ,
-
 
       start: function(){
         this.socket = io.connect(/*'http://localhost:8080'*/);
@@ -101,8 +169,10 @@
         this.socket.on("update_list", function (obj) {
           // var inputNames  = obj.inputs.map (function(input ){makeNodeName(input );});
           // var outputNames = obj.outputs.map(function(output){makeNodeName(output);});
-          var inputNames  = Object.keys(obj.inputs ).map(function(key, i) { return {id: key, name: makeNodeName(obj.inputs [key])}; });
-          var outputNames = Object.keys(obj.outputs).map(function(key, i) { return {id: key, name: makeNodeName(obj.outputs[key])}; });
+          // var inputNames  = Object.keys(obj.inputs ).map(function(key, i) { return {id: key, name: makeNodeName(obj.inputs [key])}; });
+          // var outputNames = Object.keys(obj.outputs).map(function(key, i) { return {id: key, name: makeNodeName(obj.outputs[key])}; });
+          var inputNames  = {}; for(var inputId  in obj.inputs ) inputNames [inputId ] = makeNodeName(obj.inputs [inputId ]);
+          var outputNames = {}; for(var outputId in obj.outputs) outputNames[outputId] = makeNodeName(obj.outputs[outputId]);
           var table = makeConnectionTable(inputNames, outputNames, obj.connections)
 
           // self.addMessage(txt);
@@ -112,11 +182,12 @@
         });
 
         this.socket.on("message_json", function (obj) {
-          self.addMessage(JSON.stringify(obj));
+          addMessage(obj);
+          timing.get(obj);
         });
 
         this.socket.on("disconnect", function () {
-          // noop
+          showJsonClient(false);
         });
 
         // this.addMessage("貴方は" + this.myName + "として入室しました");
@@ -126,6 +197,7 @@
 
       join_as_wsjson: function() {
         this.socket.emit("join_as_wsjson");
+        showJsonClient(true);
       },
 
       join_as_osc: function() {
@@ -136,30 +208,56 @@
 
       publishMessage: function() {
         var textInput = document.getElementById('msg_input');
-        var msg = textInput.value;
-        this.socket.emit("message_json", msg);
-        // this.textInput.value = '';
+        try{
+          var obj = JSON.parse(textInput.value);
+          this.socket.emit("message_json", obj);
+          document.getElementById("errormsg").innerHTML = "";
+        } catch(e){
+          document.getElementById("errormsg").innerHTML = "json syntax error";
+        }
       },
 
-      addMessage: function(msg){
-        var domMeg = document.createElement('div');
-        // domMeg.innerHTML = new Date().toLocaleTimeString() + ' ' + msg;
-        domMeg.innerHTML = msg;
-        var msgArea = document.getElementById("msg")
-        msgArea.appendChild(domMeg);
-      },
     }
 
-    self.start();
+    // 開始!
+    window.onload = function(){
+      self.start();
+      showJsonClient(false);
+      timing.onBeat = function(){
+        document.getElementById("tempo").innerHTML = timing.tempo;
+      };
+    }
   </script>
 
 </head>
 <body>
+  <h2>接続中のデバイス</h2>
+  <div id="network"></div>
+
+  <br>======================================================================<br>
   このページをJSONクライアントとしてネットワーク参加する
   <button onclick="self.join_as_wsjson();">参加</button><br>
-  <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
-  <button onclick="self.publishMessage();">JSONを送る</button>
-  <div id="msg"></div>
+
+  <div id=jsonclient>
+    <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
+    <button onclick="self.publishMessage();">JSONを送る</button>
+    <p id=errormsg> </p>
+    <div id="msg"></div>
+
+    filter:
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/timing"> timing
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/noteon"> noteon
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/noteoff"> noteoff
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/notepressure"> notepressure
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/controlchange"> controlchange
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/programchange"> programchange
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/channelpressure"> channelpressure
+    <input type="checkbox" onclick="view.filterSet(this);" value="/fm/pitchbend"> pitchbend
+
+    <br>
+    tempo: <span id="tempo"> </span>
+
+  </div>
 
   <br>
   <br>======================================================================<br>
@@ -168,9 +266,6 @@
   待ち受けポート番号<input type="text" id="osc_port_input" style="width:80px;" />
   <button onclick="self.join_as_osc();">登録</button>
 
-
   <br>
-  <br>======================================================================<br>
-  <div id="network"></div>
 </body>
 </html>

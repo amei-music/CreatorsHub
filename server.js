@@ -5,27 +5,205 @@ var midi     = require('midi');
 var dgram    = require("dgram");
 var osc      = require('osc-min');
 
-var LISTEN_PORT = 8080;
+var LISTEN_PORT = 16080;
 
 oscSender = dgram.createSocket("udp4")
 
 //==============================================================================
 // 汎用関数
 //==============================================================================
+
+// yamaha専用MIDIを試験的にパースしてみる
+var yamahaStyle = {
+  "/yamaha/style/sectioncontrol": [0xF0, 0x43, 0x7E, 0x00, 0xFF, 0xFF, 0xF7],
+  "/yamaha/style/chordcontrol":   [0xF0, 0x43, 0x7E, 0x02, 0xFF, 0xFF, 0xFF, 0xFF, 0xF7],
+}
+function convertible(msg, dict){
+  for (var key in dict){
+    var midiTemplate = dict[key]
+    if (midiTemplate.length != msg.length) continue;
+
+    var args = [], i = 0; matches = true;
+    while(matches && i < msg.length){
+      if (midiTemplate[i] == 0xFF) args.push(msg[i]);
+      else if (msg[i] != midiTemplate[i]) matches = false;
+      i += 1;
+    }
+    if (matches) return {address: key, args: args};
+  }
+
+  return undefined
+}
+
+
+function midi2obj(msg){
+  // ただのバイト列であるmidiをそれっぽいOSCに変換して返す
+
+  if ( msg.length == 3 && ((msg[0] >> 4) == 9) && (msg[2] >  0) ){
+    // note on
+    var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
+    return {
+      address: "/fm/noteon",
+      args:    [ch, noteNum, velo]
+    };
+
+  } else if ( msg.length == 3 && ((msg[0] >> 4) == 9) && (msg[2] == 0) ){
+    // note off with status 9
+    var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = 0x40;
+    return {
+      address: "/fm/noteoff",
+      args:    [ch, noteNum, velo]
+    };
+
+  } else if ( msg.length == 3 && ((msg[0] >> 4) == 8) ){
+    // note off with status 8
+    var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
+    return {
+      address: "/fm/noteoff",
+      args:    [ch, noteNum, velo]
+    };
+
+  } else if ( msg.length == 3 && ((msg[0] >> 4) == 0xA) ){
+    // polyphonic pressure
+    var ch = (msg[0] & 0x0F), noteNum = msg[1], press = msg[2];
+    return {
+      address: "/fm/notepressure",
+      args:    [ch, noteNum, press]
+    };
+
+  } else if ( msg.length == 3 && ((msg[0] >> 4) == 0xB) ){
+    // control change
+    var ch = (msg[0] & 0x0F), type = msg[1], value = msg[2];
+    return {
+      address: "/fm/controlchange",
+      args:    [ch, type, value]
+    };
+
+  } else if ( msg.length == 2 && ((msg[0] >> 4) == 0xC) ){
+    // program change
+    var ch = (msg[0] & 0x0F), number = msg[1];
+    return {
+      address: "/fm/programchange",
+      args:    [ch, number]
+    };
+
+  } else if ( msg.length == 2 && ((msg[0] >> 4) == 0xD) ){
+    // channel pressure
+    var ch = (msg[0] & 0x0F), value = msg[1];
+    return {
+      address: "/fm/channelpressure",
+      args:    [ch, value]
+    };
+
+  } else if ( msg.length == 3 && ((msg[0] >> 4) == 0xE) ){
+    // pitch bend
+    var ch = (msg[0] & 0x0F), msb = msg[1], lsb = msg[2];
+    return {
+      address: "/fm/pitchbend",
+      args:    [ch, msb, lsb]
+    };
+
+  } else if ( msg.length == 1 && msg[0] == 0xF8 ){
+    // timing clock
+    return {
+      address: "/fm/timing",
+      args:    []
+    };
+
+  } else if ( msg.length == 1 && msg[0] == 0xFA ){
+    // start
+    return {
+      address: "/fm/start",
+      args:    []
+    };
+
+  } else if ( msg.length == 1 && msg[0] == 0xFB ){
+    // continue
+    return {
+      address: "/fm/continue",
+      args:    []
+    };
+
+  } else if ( msg.length == 1 && msg[0] == 0xFC ){
+    // stop
+    return {
+      address: "/fm/stop",
+      args:    []
+    };
+
+  } else {
+    // 追加挿入のtemplateにマッチするかチェック
+    var obj = convertible(msg, yamahaStyle);
+    if (obj != undefined){
+      return obj;
+    } else {
+      // マッチしなければそのまま送信
+      return {
+        address: "/fm/midi_bytes",
+        args:    msg
+      };
+    }
+  }
+
+}
+
+function obj2midi(msg){
+  if(msg.address == "/fm/noteon"){
+    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
+    if (ch < 16) return [0x90 + (ch & 0x0F), noteNum, velo];
+    else         return [0x90 + (ch & 0x0F), noteNum, velo]; // 要対応
+  } else if(msg.address == "/fm/noteoff"){
+    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
+    if (ch < 16) return [0x80 + (ch & 0x0F), noteNum, velo];
+    else         return [0x80 + (ch & 0x0F), noteNum, velo]; // 要対応
+  } else if (msg.args){
+    // msg.argsがあれば、それを送信
+    return msg.args
+  } else {
+    // 特に形状が無ければ、stringifyしてそのままSysExにしてみる
+    // 本当は8bit -> 7bit変換が必要だが、暫定対応でそのまま流してみる
+    // このあたりを追求すればUSB-MIDIを「IPに依存しない汎用シリアル通信路」としてもうちょっと訴求できる気がする
+    // 言い換えればUSB-MIDIにJSON流して現代的なプログラマも気軽に電子工作できる？
+    var varlen = function(val){
+      var size = 1;
+      var tmp = val >> 7;
+      while (tmp != 0){
+        size += 1;
+        tmp = tmp >> 7;
+      }
+      var ret = new Array(size);
+      ret[size - 1] = val & 0x7F;
+      for (var i=size-2; i>=0; --i){
+        val = val >> 7;
+        ret[i] = (val & 0x7F) | 0x80;
+      }
+      return ret;
+    }
+
+    var buf = JSON.stringify(msg);
+    var ret = [0xF0, 0x7C] // 0x7D: 非営利, 0x7E: ノンリアルタイム, 0x7F: リアルタイムなので、0x7Cにしてみる
+    var bytes = Array.prototype.map.call(buf, function(c){ return c.charCodeAt(0); });
+    Array.prototype.push.apply(ret, varlen(buf.length));
+    Array.prototype.push.apply(ret, bytes);
+    Array.prototype.push.apply(ret, [0xF7]);
+    return ret;
+  }
+}
+
 function convert_message(msg, msg_from, msg_to){
   if(msg_from == msg_to) return msg; // そのまま
 
   if(msg_from == "json"){
     if(msg_to == "osc" ) return osc.toBuffer(msg);
-    if(msg_to == "midi") return msg;
+    if(msg_to == "midi") return obj2midi(msg);
   }
   if(msg_from == "osc"){
-    if(msg_to == "json") return osc.fromBuffer(msg); // throw
-    if(msg_to == "midi") return msg;
+    if(msg_to == "json") return osc.fromBuffer(msg); // 失敗するとthrow
+    if(msg_to == "midi") return obj2midi(osc.fromBuffer(msg));
   }
   if(msg_from == "midi"){
-    if(msg_to == "json") return msg;
-    if(msg_to == "osc" ) return msg;
+    if(msg_to == "json") return midi2obj(msg); // OSCっぽいjsonなのでそのまま送信可
+    if(msg_to == "osc" ) return osc.toBuffer(midi2obj(msg)); // 文字列にする
   }
 }
 
@@ -73,7 +251,7 @@ function ClientMidi(/*direction,*/ portNum, name){
 
     deliver: function(msg, msg_from){
       var buf = convert_message(msg, msg_from, "midi")
-      console.log("midi out", buf)
+      console.log("midi out ", msg.address, " => ", buf)
       midiObj.outputs[this.portNum].sendMessage(buf);
     },
 
@@ -107,53 +285,66 @@ var self = {
 
   deleteClientInput: function(clientId){
     delete this.clients_input[clientId];
+
+    for(var outputId in this.connections[clientId]){
+      this.deleteConnection(clientId, outputId);
+    }
+
+    // console.log(this.connections)
     return;
   },
 
   deleteClientOutput: function(clientId){
     delete this.clients_output[clientId];
+
+    for(var inputId in this.connections){
+      for(var outputId in this.connections[inputId]){
+        if(outputId == clientId) this.deleteConnection(inputId, outputId);
+      }
+    }
+
+    // console.log(this.connections)
     return;
   },
 
   //==============================================================================
   // コネクション管理
   //==============================================================================
-  connections: {}, // {input_clientId: [output_clientId, ...]}
+  connections: {}, // {input_clientId: {output_clientId: true, ...}, ...}
   oscsocks:    {}, // {input_oscport: {clientId: , sock: }} osc送受信オブジェクトを詰めておくところ
   // socketはio.socketsで参照可能
 
   addConnection: function(input_clientId, output_clientId){
-    // まず結線情報を作る
-    if (this.connections[input_clientId]){
-      if (this.connections[input_clientId].indexOf(output_clientId) < 0){
-        this.connections[input_clientId].push(output_clientId);
-      }
-    } else {
-      this.connections[input_clientId] = [output_clientId];
+    // 結線情報を作る
+    if (! this.connections[input_clientId]){
+      this.connections[input_clientId] = {};
     }
-
-    // midiポートはopenする
+    this.connections[input_clientId][output_clientId] = true;
   },
 
   deleteConnection: function(input_clientId, output_clientId){
-    // まず結線情報を作る
+    // 結線情報を切る
     if (this.connections[input_clientId]){
-      var pos = this.connections[input_clientId].indexOf(output_clientId);
-      if (pos >= 0){
-        this.connections[input_clientId].splice(pos);
-      }
+      delete this.connections[input_clientId][output_clientId];
     } else {
       // 何もしない
     }
 
-    //
   },
 
   //==============================================================================
   // データ送信管理
   //==============================================================================
+  // inputに届いたメッセージをコネクション先に配信
+  deliver: function(input_clientId, functor){
+    for(var outputId in self.connections[input_clientId]){
+      var output   = self.clients_output[outputId];
+      functor(output);
+    }
+  },
+
+  // socketのcallbackで届いてきたメッセージの送信元を調べる
   socketId2clientId: function(socketId, clients){
-    // socketのcallbackで届いてきたメッセージの送信元を調べる
     for (var k in clients) {
       var client = clients[k];
       if(client.type == "json" && client.socketId == socketId){
@@ -170,30 +361,45 @@ var self = {
 // WebSocketの設定
 //==============================================================================
 
-// 普通のhttpサーバーとしてlisten
-var server = http.createServer(function(req, res) {
-  res.writeHead(200, {"Content-Type":"text/html"});
-  var output = fs.readFileSync("./index.html", "utf-8"); // カレントディレクトリのindex.htmlを配布
-  res.end(output);
-}).listen(LISTEN_PORT);
+// (1) ただweb設定画面を見に来た人と、
+// (2) WebSocket-JSON (以下wsjson) でネットワークに参加しにきた人と、
+// (3) OSCでネットワークに参加しにきた人は別扱いする必要がある
 
-// websocketとしてlistenして、応答内容を記述
-var io = socketio.listen(server);
-io.sockets.on("connection", function (socket) {
-  // (1) ただweb設定画面を見に来た人と、
-  // (2) WebSocket-JSON (以下wsjson) でネットワークに参加しにきた人と、
-  // (3) OSCでネットワークに参加しにきた人は別扱いする必要がある
+// (1)のためのAPI
+//  - ネットワーク接続者一覧を表示する(socketだからサーバー側からpush可能)
+function update_list(){
+  // メソッド類は削ぎ落として表示に必要な情報だけまとめる
+  var inputs  = {}; for (var i in self.clients_input ) inputs [i] = self.clients_input [i].simplify();
+  var outputs = {}; for (var o in self.clients_output) outputs[o] = self.clients_output[o].simplify();
 
-  // (1)のためのAPI
-  //  - ネットワーク接続者一覧を表示する(socketだからサーバー側からpush可能)
-  function update_list(){
-    // メソッド類は削ぎ落として表示に必要な情報だけまとめる
-    var inputs  = {}; for (i in self.clients_input ) inputs [i] = self.clients_input [i].simplify();
-    var outputs = {}; for (o in self.clients_output) outputs[o] = self.clients_output[o].simplify();
+  // broadcast all clients (including the sender)
+  io.sockets.emit("update_list", {inputs: inputs, outputs: outputs, connections: self.connections});
+}
 
-    // broadcast all clients (including the sender)
-    io.sockets.emit("update_list", {inputs: inputs, outputs: outputs, connections: self.connections});
-  }
+// (2)のためのAPIは、(1)に加えて
+//  - wsjsonクライアントとしてネットワークに参加する
+function join_as_wsjson(socket) {
+  var inputId  = self.addNewClientInput (ClientJson(socket.id));
+  var outputId = self.addNewClientOutput(ClientJson(socket.id));
+
+  console.log("[Web Socket #'" + socket.id + "'] joined as JSON client [id=" + inputId + "]");
+
+  update_list(); // ネットワーク更新
+}
+
+//  - ネットワークから離脱する
+function exit_wsjson(socket) {
+  self.deleteClientInput (self.socketId2clientId(socket.id, self.clients_input ));
+  self.deleteClientOutput(self.socketId2clientId(socket.id, self.clients_output));
+
+  console.log("[Web Socket #'" + socket.id + "'] exited.");
+
+  update_list(); // ネットワーク更新
+}
+
+
+// websocketとしての応答内容を記述
+function onWebSocket(socket){
   update_list(); // websocket接続時に一度現状を送る
 
   //  - ネットワークのノード間の接続/切断をする
@@ -213,41 +419,21 @@ io.sockets.on("connection", function (socket) {
 
   // (2)のためのAPIは、(1)に加えて
   //  - wsjsonクライアントとしてネットワークに参加する
-  socket.on("join_as_wsjson", function () {
-    var inputId  = self.addNewClientInput (ClientJson(socket.id));
-    var outputId = self.addNewClientOutput(ClientJson(socket.id));
-
-    console.log("[Web Socket #'" + socket.id + "'] joined as JSON client");
-
-    //  - メッセージを受信する
-    socket.on("message_json", function (obj) {
-      var inputId  = self.socketId2clientId(socket.id, self.clients_input);
-
-      console.log("message from input #" + inputId);
-
-      if (inputId >= 0) {
-        var client = self.clients_input[inputId];
-        for(var o in self.connections[inputId]){
-          var outputId = self.connections[inputId][o]
-          var output   = self.clients_output[outputId];
-          output.deliver(obj, "json");
-        }
-      }
-    });
-
-    update_list(); // ネットワーク更新
-  });
+  socket.on("join_as_wsjson", function () { join_as_wsjson(socket); });
 
   //  - ネットワークから離脱する
-  socket.on("exit_wsjson", function () {
-    self.deleteClientInput (self.socketId2clientId(socket.id, self.clients_input ));
-    self.deleteClientOutput(self.socketId2clientId(socket.id, self.clients_output));
+  socket.on("exit_wsjson",    function () { exit_wsjson(socket); });
 
-    console.log("[Web Socket #'" + socket.id + "'] exited.");
+  //  - メッセージを受信する
+  socket.on("message_json", function (obj) {
+    var inputId  = self.socketId2clientId(socket.id, self.clients_input);
 
-    update_list(); // ネットワーク更新
+    if (inputId >= 0) { // joinしたクライアントだけがメッセージのやり取りに参加できる
+      console.log("message from input #" + inputId);
+
+      self.deliver(inputId, function(output){output.deliver(obj, "json");} ); // 配信
+    }
   });
-
   // が必要。これらを関数化したjavascriptを配布する必要があるかも
 
   // (3)のためのAPIは、(1)に加えて
@@ -260,18 +446,7 @@ io.sockets.on("connection", function (socket) {
       return function(msg, rinfo) {
         console.log("message from input #" + inputId);
 
-        // var obj;
-        // try {
-        //   obj = osc.fromBuffer(msg);
-        // } catch (_error) {
-        //   return console.log("invalid OSC packet");
-        // }
-
-        for(var o in self.connections[inputId]){
-          var outputId = self.connections[inputId][o]
-          var output   = self.clients_output[outputId];
-          output.deliver(msg, "osc");
-        }
+        self.deliver(inputId, function(output){output.deliver(msg, "osc");} ); // 配信
 
       }
     }
@@ -284,7 +459,7 @@ io.sockets.on("connection", function (socket) {
     var inputId  = self.addNewClientInput (ClientOsc(obj.host, inPort));
     var outputId = self.addNewClientOutput(ClientOsc(obj.host, obj.port));
 
-    console.log("[OSC #'" + obj.host + "'] joined as OSC client");
+    console.log("[OSC #'" + obj.host + "'] joined as OSC client [id=" + inputId + "]");
 
     update_list(); // クライアントのネットワーク表示更新
   });
@@ -292,28 +467,12 @@ io.sockets.on("connection", function (socket) {
   // が必要。oscアプリ本体とこのserver.jsのoscモジュールが直接メッセージをやり取りするので、
   // oscクライアントとの実通信にWebSocketは絡まない。あくまでコネクション管理のみ
 
-  // 接続開始
-  // socket.on("connected", function (obj) {
-  //   console.log("client '" + obj.name + "' connected.");
-  //   devices.clients[socket.id] = Client(socket, obj.name)
-  // });
-  //
-  // socket.on("publish", function (obj) {
-  //   // broadcast all clients (including the sender)
-  //   io.sockets.emit("publish", obj);
-  // });
-
-  // 接続終了
+  // ソケット自体の接続終了
   socket.on("disconnect", function () {
-    // if (devices.clients[socket.id]) {
-    //   console.log("client '" + devices.clients[socket.id].name + "' disconnected.");
-    //   delete devices.clients[socket.id];
-    // }
+    exit_wsjson(socket); // 切断
   });
 
-});
-
-console.log("listening connections...")
+}
 
 //==============================================================================
 // MIDIの設定
@@ -345,12 +504,7 @@ var midiObj = {
           var msg = {'msg': message, 'delta': deltaTime};
           console.log(msg);
 
-          // 転送
-          for(var o in self.connections[_inputId]){
-            var outputId = self.connections[_inputId][o]
-            var output   = self.clients_output[outputId];
-            output.deliver(message, "midi"); // とりあえずメッセージだけ送る
-          }
+          self.deliver(_inputId, function(output){output.deliver(message, "midi");} ); // 配信
         };
       }
 
@@ -386,11 +540,32 @@ var midiObj = {
     // For example if you want to receive only MIDI Clock beats
     // you should use
     // input.ignoreTypes(true, false, true)
-    this_input.ignoreTypes(false, true, true);
+    this_input.ignoreTypes(false, false, true);
 
     return this_input;
   }
 
 }
 
+
+//==============================================================================
+// start!
+//==============================================================================
+// midiのコネクションを作成
 midiObj.setup_midiports();
+
+// 普通のhttpサーバーとしてlisten
+var server = http.createServer(function(req, res) {
+  res.writeHead(200, {"Content-Type":"text/html"});
+  var output = fs.readFileSync("./index.html", "utf-8"); // カレントディレクトリのindex.htmlを配布
+  res.end(output);
+}).listen(LISTEN_PORT);
+
+// websocketとしてlistenして、応答内容を記述
+var io = socketio.listen(server);
+io.sockets.on("connection", onWebSocket);
+
+console.log("================================================");
+console.log("listening web socket on port " + LISTEN_PORT);
+console.log("connection control at http://localhost:" + LISTEN_PORT + "/");
+console.log("================================================");

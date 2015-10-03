@@ -1,11 +1,13 @@
-var fs       = require("fs");
-var http     = require('http');
-var socketio = require("socket.io")
-var midi     = require('midi');
-var dgram    = require("dgram");
-var osc      = require('osc-min');
+var http        = require('http');
+var connect     = require('connect');
+var serveStatic = require('serve-static');
+var socketio    = require("socket.io")
+var midi        = require('midi');
+var dgram       = require("dgram");
+var osc         = require('osc-min');
 
 var LISTEN_PORT = 16080;
+var PUBLIC_DIR  = __dirname + "/public"
 
 oscSender = dgram.createSocket("udp4")
 
@@ -559,12 +561,11 @@ var midiObj = {
 // midiのコネクションを作成
 midiObj.setup_midiports();
 
-// 普通のhttpサーバーとしてlisten
-var server = http.createServer(function(req, res) {
-  res.writeHead(200, {"Content-Type":"text/html"});
-  var output = fs.readFileSync("./index.html", "utf-8"); // カレントディレクトリのindex.htmlを配布
-  res.end(output);
-}).listen(LISTEN_PORT);
+// PUBLIC_DIR以下を普通のhttpサーバーとしてlisten
+var app = connect();
+app.use(serveStatic(PUBLIC_DIR));
+var server = http.createServer(app);
+server.listen(LISTEN_PORT);
 
 // websocketとしてlistenして、応答内容を記述
 var io = socketio.listen(server);

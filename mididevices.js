@@ -4,6 +4,16 @@ module.exports = {
 
 var midi        = require('midi');
 
+// ALSAがデフォルトで作るこれをopenPortすると即座にもう一個ポートが増えるらしく、無限増殖する
+// ので、とりあえず名前で除外しておく(どうするのが正しい？)
+var IGNORE_PATTERNS  = ["Midi Through", "RtMidi Output Client", "RtMidi Input Client"];
+function foundInIngnoreList(name){
+  for(var i=0; i<IGNORE_PATTERNS.length; ++i){
+    if(name.indexOf(IGNORE_PATTERNS[i]) >= 0) return true;
+  }
+  return false;
+}
+
 //==============================================================================
 // MIDIデバイスの増減をcallback式で通知してくれる人
 //
@@ -29,6 +39,7 @@ function MidiDevices(onAddNewInput, onDeleteInput, onAddNewOutput, onDeleteOutpu
 
       for(var portNum=0; portNum<this.input.getPortCount(); ++portNum){
         var name = this.input.getPortName(portNum);
+        if (foundInIngnoreList(name)) continue;
 
         if (! (name in this.inputs)){ // 新たに見つかったMIDI IN
           var midiIn   = new midi.input();
@@ -59,6 +70,7 @@ function MidiDevices(onAddNewInput, onDeleteInput, onAddNewOutput, onDeleteOutpu
 
       for(var portNum=0; portNum<this.output.getPortCount(); ++portNum){
         var name = this.output.getPortName(portNum);
+        if (foundInIngnoreList(name)) continue;
 
         if (! (name in this.outputs)){ // 新たに見つかったMIDI OUT
           var midiOut   = new midi.output();

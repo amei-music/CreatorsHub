@@ -314,7 +314,8 @@ function App(){ return{
       // https://www.cs.cf.ac.uk/Dave/Multimedia/node158.html has some helpful
       // information interpreting the messages.
       var msg = {'msg': message, 'delta': deltaTime};
-      console.log(msg);
+
+      if (message.length != 1 || message[0] != 0xF8) console.log(msg); // log
 
       this.clients.deliver(inputId, message); // 配信
     }).bind(this);

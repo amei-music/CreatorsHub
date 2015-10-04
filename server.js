@@ -2,11 +2,11 @@ var http        = require('http');
 var connect     = require('connect');
 var serveStatic = require('serve-static');
 var socketio    = require("socket.io")
-var midi        = require('midi');
 var dgram       = require("dgram");
 var osc         = require('osc-min');
 
 var convert     = require('./convert')
+var mididevs    = require('./mididevices') // require('midi');
 
 var LISTEN_PORT = 16080;
 var PUBLIC_DIR  = __dirname + "/public"
@@ -46,20 +46,19 @@ function ClientOsc(/*direction,*/ host, port){
   }
 }
 
-function ClientMidi(/*direction,*/ portNum, name){
+function ClientMidi(/*direction,*/ name){
   return {
     type:      "midi",
-    portNum:   portNum,
     name:      name,
 
 
     deliver: function(msg, msg_from){
       var buf = convert.convertMessage(msg, msg_from, "midi")
       console.log("midi out ", msg.address, " => ", buf)
-      g_midiObj.outputs[this.portNum].sendMessage(buf);
+      g_midiDevs.outputs[this.name].sendMessage(buf);
     },
 
-    simplify: function(){ return {type: "midi", portNum: this.portNum, name: this.name} },
+    simplify: function(){ return {type: "midi", name: this.name} },
   };
 }
 
@@ -140,15 +139,15 @@ function Clients(){ return {
   // データ送信管理
   //==============================================================================
   // inputに届いたメッセージをコネクション先に配信
-  deliver: function(input_clientId, functor){
+  deliver: function(input_clientId, data){
     for(var outputId in this.connections[input_clientId]){
-      var output   = this.outputs[outputId];
-      functor(output);
+      var output = this.outputs[outputId];
+      output.deliver(data, this.inputs[input_clientId].type); // いわゆるダブルディスパッチ
     }
   },
 
   // socketのcallbackで届いてきたメッセージの送信元を調べる
-  socketId2clientId: function(socketId, inputsOutputs){
+  socketId2ClientId : function(socketId, inputsOutputs){
     for (var k in inputsOutputs) {
       var client = inputsOutputs[k];
       if(client.type == "json" && client.socketId == socketId){
@@ -157,6 +156,20 @@ function Clients(){ return {
     }
     return -1;
   },
+  socketId2InputClientId  : function(socketId){ return this.socketId2ClientId(socketId, this.inputs ); },
+  socketId2OutputClientId : function(socketId){ return this.socketId2ClientId(socketId, this.outputs); },
+
+  midiName2ClientId : function(name, inputsOutputs){
+    for (var k in inputsOutputs) {
+      var client = inputsOutputs[k];
+      if(client.type == "midi" && client.name == name){
+        return k;
+      }
+    }
+    return -1;
+  },
+  midiName2InputClientId  : function(name){ return this.midiName2ClientId(name, this.inputs ); },
+  midiName2OutputClientId : function(name){ return this.midiName2ClientId(name, this.outputs); },
 
 }}
 
@@ -207,8 +220,8 @@ function App(){ return{
   // ネットワークから離脱する
   exit_wsjson : function(socket) {
     var existed = false;
-    existed |= this.clients.deleteClientInput (this.clients.socketId2clientId(socket.id, this.clients.inputs ));
-    existed |= this.clients.deleteClientOutput(this.clients.socketId2clientId(socket.id, this.clients.outputs));
+    existed |= this.clients.deleteClientInput (this.clients.socketId2InputClientId (socket.id));
+    existed |= this.clients.deleteClientOutput(this.clients.socketId2OutputClientId(socket.id));
 
     if(existed){
       console.log("[Web Socket #'" + socket.id + "'] exited.");
@@ -219,12 +232,12 @@ function App(){ return{
 
   // JSONメッセージを受信する
   message_json : function(socket, obj){
-    var inputId  = this.clients.socketId2clientId(socket.id, this.clients.inputs);
+    var inputId  = this.clients.socketId2InputClientId(socket.id);
 
     if (inputId >= 0) { // joinしたクライアントだけがメッセージのやり取りに参加できる
       console.log("message from input #" + inputId);
 
-      this.clients.deliver(inputId, function(output){output.deliver(obj, "json");} ); // 配信
+      this.clients.deliver(inputId, obj); // 配信
     }
   },
 
@@ -237,7 +250,7 @@ function App(){ return{
       return function(msg, rinfo) {
         console.log("message from input #" + inputId);
 
-        this.clients.deliver(inputId, function(output){output.deliver(msg, "osc");} ); // 配信
+        this.clients.deliver(inputId, msg); // 配信
       }
     }
 
@@ -281,13 +294,14 @@ function App(){ return{
   },
 
   // 新規MIDI入力デバイスの登録
-  newMidiInput : function(portId, name){
+  onAddNewMidiInput : function(midiIn, name){
     // ネットワークに登録
-    console.log("input  ", portId, name);
-    var inputId  = this.clients.addNewClientInput (ClientMidi(portId, name));
+    console.log("MIDI Input [" + name + "] connected.");
+    var inputId  = this.clients.addNewClientInput (ClientMidi(name));
+    this.update_list(); // クライアントのネットワーク表示更新
 
     // コールバックを作る(影でinputIdをキャプチャする)
-    return function(deltaTime, message) {
+    return (function(deltaTime, message) {
       // The message is an array of numbers corresponding to the MIDI bytes:
       //   [status, data1, data2]
       // https://www.cs.cf.ac.uk/Dave/Multimedia/node158.html has some helpful
@@ -295,60 +309,45 @@ function App(){ return{
       var msg = {'msg': message, 'delta': deltaTime};
       console.log(msg);
 
-      this.clients.deliver(inputId, function(output){output.deliver(message, "midi");} ); // 配信
-    };
+      this.clients.deliver(inputId, message); // 配信
+    }).bind(this);
+  },
+
+  // MIDI入力デバイスの切断通知
+  onDeleteMidiInput : function(midiIn, name){
+    console.log("MIDI Input [" + name + "] disconnected.");
+    this.clients.deleteClientInput(this.clients.midiName2InputClientId(name));
+    this.update_list(); // クライアントのネットワーク表示更新
   },
 
   // 新規MIDI出力デバイスの登録
-  newMidiOutput : function(portId, name){
+  onAddNewMidiOutput : function(midiOut, name){
     // ネットワークに登録
-    console.log("output ", portId, name);
-    var outputId = this.clients.addNewClientOutput(ClientMidi(portId, name));
+    console.log("MIDI Output [" + name + "] connected.");
+    this.clients.addNewClientOutput(ClientMidi(name));
+    this.update_list(); // クライアントのネットワーク表示更新
   },
+
+  // MIDI出力デバイスの切断通知
+  onDeleteMidiOutput : function(midiOut, name){
+    console.log("MIDI Output [" + name + "] disconnected.");
+    this.clients.deleteClientOutput(this.clients.midiName2OutputClientId(name));
+    this.update_list(); // クライアントのネットワーク表示更新
+  }
+
 }}
-
-//==============================================================================
-// MIDIリストを管理してくれる人
-//==============================================================================
-function MidiObj(){ return {
-  input:  new midi.input(),  // port一覧を出すためのglobalな(openPortしない)inputを一つ用意しておく
-  output: new midi.output(), // port一覧を出すためのglobalな(openPortしない)outputを一つ用意しておく
-
-  inputs : {}, // 開いたportにつながっているmidiオブジェクト
-  outputs: {}, // 開いたportにつながっているmidiオブジェクト
-
-  setup_midiports: function(onNewInput, onNewOutput){
-    for(var portId=0; portId<this.input.getPortCount(); ++portId){
-      // inputを見つけたときの処理を実行し、そのinput MIDI portからの受信時にしたい処理をもらう
-      var callback = onNewInput(portId, this.input.getPortName(portId));
-      // 実際に開いておく
-      this.inputs[portId] = new midi.input();
-      this.inputs[portId].on('message', callback);
-      this.inputs[portId].openPort(portId);
-      // (Sysex, Timing, Active Sensing) のignoreを設定する
-      this.inputs[portId].ignoreTypes(false, false, true);
-    }
-
-    for(var portId=0; portId<this.output.getPortCount(); ++portId){
-      // outputを見つけたときの処理を実行する
-      onNewOutput(portId, this.output.getPortName(portId));
-      // 実際に開いておく
-      this.outputs[portId] = new midi.output();
-      this.outputs[portId].openPort(portId);
-    }
-  },
-}}
-
 
 //==============================================================================
 // start!
 //==============================================================================
 var g_app       = App();
-var g_midiObj   = MidiObj();
 var g_oscSender = dgram.createSocket("udp4")
-
-// midiのコネクションを作成
-g_midiObj.setup_midiports(g_app.newMidiInput.bind(g_app), g_app.newMidiOutput.bind(g_app));
+var g_midiDevs  = mididevs.MidiDevices(
+  g_app.onAddNewMidiInput.bind(g_app),
+  g_app.onDeleteMidiInput.bind(g_app),
+  g_app.onAddNewMidiOutput.bind(g_app),
+  g_app.onDeleteMidiOutput.bind(g_app)
+);
 
 // PUBLIC_DIR以下を普通のhttpサーバーとしてlisten
 var g_httpApp = connect();

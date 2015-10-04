@@ -54,7 +54,7 @@ function ClientMidi(/*direction,*/ name){
 
     deliver: function(msg, msg_from){
       var buf = convert.convertMessage(msg, msg_from, "midi")
-      console.log("midi out ", msg.address, " => ", buf)
+      console.log("midi out ", buf)
       g_midiDevs.outputs[this.name].sendMessage(buf);
     },
 
@@ -209,12 +209,19 @@ function App(){ return{
 
   // wsjsonクライアントとしてネットワークに参加する
   join_as_wsjson : function(socket) {
-    var inputId  = this.clients.addNewClientInput (ClientJson(socket.id));
-    var outputId = this.clients.addNewClientOutput(ClientJson(socket.id));
+    var changed = false;
+    if (this.clients.socketId2InputClientId(socket.id) < 0){
+      var inputId  = this.clients.addNewClientInput (ClientJson(socket.id));
+      console.log("[Web Socket #'" + socket.id + "'] joined as JSON input client [id=" + inputId + "]");
+      changed = true;
+    }
+    if (this.clients.socketId2OutputClientId(socket.id) < 0){
+      var outputId = this.clients.addNewClientOutput(ClientJson(socket.id));
+      console.log("[Web Socket #'" + socket.id + "'] joined as JSON output client [id=" + outputId + "]");
+      changed = true;
+    }
 
-    console.log("[Web Socket #'" + socket.id + "'] joined as JSON client [id=" + inputId + "]");
-
-    this.update_list(); // ネットワーク更新
+    if(changed) this.update_list(); // ネットワーク更新
   },
 
   // ネットワークから離脱する

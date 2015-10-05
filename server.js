@@ -35,10 +35,9 @@ function ClientOsc(/*direction,*/ host, port){
 
     deliver: function(msg, msg_from){
       var buf = convert.convertMessage(msg, msg_from, "osc")
-      console.log("*********")
-      console.log(buf)
-      console.log(buf.length)
-      console.log(this.port, this.host)
+      // console.log("*********")
+      // console.log(msg)
+      // console.log(this.port, this.host)
       g_oscSender.send(buf, 0, buf.length, this.port, this.host);
     },
 
@@ -54,7 +53,7 @@ function ClientMidi(/*direction,*/ name){
 
     deliver: function(msg, msg_from){
       var buf = convert.convertMessage(msg, msg_from, "midi")
-      console.log("midi out ", buf)
+      console.log("midi out ", "[" + buf.join(", ") + "]")
       g_midiDevs.outputs[this.name].sendMessage(buf);
     },
 

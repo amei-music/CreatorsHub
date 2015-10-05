@@ -150,6 +150,31 @@ function obj2midi(msg){
     var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
     if (ch < 16) return [0x80 + (ch & 0x0F), noteNum, velo];
     else         return [0x80 + (ch & 0x0F), noteNum, velo]; // 要対応
+  } else if(msg.address == prefix("/notepressure")){
+    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
+    if (ch < 16) return [0xA0 + (ch & 0x0F), noteNum, velo];
+    else         return [0xA0 + (ch & 0x0F), noteNum, velo]; // 要対応
+  } else if(msg.address == prefix("/controlchange")){
+    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
+    if (ch < 16) return [0xB0 + (ch & 0x0F), noteNum, velo];
+    else         return [0xB0 + (ch & 0x0F), noteNum, velo]; // 要対応
+  } else if(msg.address == prefix("/programchange")){
+    var ch = msg.args[0], noteNum = msg.args[1];
+    if (ch < 16) return [0xC0 + (ch & 0x0F), noteNum];
+    else         return [0xC0 + (ch & 0x0F), noteNum]; // 要対応
+  } else if(msg.address == prefix("/channelpressure")){
+    var ch = msg.args[0], noteNum = msg.args[1];
+    if (ch < 16) return [0xD0 + (ch & 0x0F), noteNum];
+    else         return [0xD0 + (ch & 0x0F), noteNum]; // 要対応
+  } else if(msg.address == prefix("/pitchbend")){
+    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
+    if (ch < 16) return [0xE0 + (ch & 0x0F), noteNum, velo];
+    else         return [0xE0 + (ch & 0x0F), noteNum, velo]; // 要対応
+
+  } else if(msg.address == prefix("/sysex")){
+    // sysexならargsにある配列をそのまま送信
+    return msg.args
+
   // } else if (msg.args){
   //   // msg.argsがあれば、それを送信
   //   return msg.args

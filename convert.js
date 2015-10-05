@@ -1,7 +1,12 @@
 module.exports = {
-  yamahaStyle: yamahaStyle,
+  yamahaStyle:    yamahaStyle,
   convertMessage: convertMessage,
+  prefix:         prefix,
 }
+
+var osc         = require('osc-min');
+
+var prefix = function(path){ return "/fm" + path; }
 
 // yamaha専用MIDIを試験的にパースしてみる
 var yamahaStyle = {
@@ -32,7 +37,7 @@ function midi2obj(msg){
     // note on
     var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
     return {
-      address: "/fm/noteon",
+      address: prefix("/noteon"),
       args:    [ch, noteNum, velo]
     };
 
@@ -40,7 +45,7 @@ function midi2obj(msg){
     // note off with status 9
     var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = 0x40;
     return {
-      address: "/fm/noteoff",
+      address: prefix("/noteoff"),
       args:    [ch, noteNum, velo]
     };
 
@@ -48,7 +53,7 @@ function midi2obj(msg){
     // note off with status 8
     var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
     return {
-      address: "/fm/noteoff",
+      address: prefix("/noteoff"),
       args:    [ch, noteNum, velo]
     };
 
@@ -56,7 +61,7 @@ function midi2obj(msg){
     // polyphonic pressure
     var ch = (msg[0] & 0x0F), noteNum = msg[1], press = msg[2];
     return {
-      address: "/fm/notepressure",
+      address: prefix("/notepressure"),
       args:    [ch, noteNum, press]
     };
 
@@ -64,7 +69,7 @@ function midi2obj(msg){
     // control change
     var ch = (msg[0] & 0x0F), type = msg[1], value = msg[2];
     return {
-      address: "/fm/controlchange",
+      address: prefix("/controlchange"),
       args:    [ch, type, value]
     };
 
@@ -72,7 +77,7 @@ function midi2obj(msg){
     // program change
     var ch = (msg[0] & 0x0F), number = msg[1];
     return {
-      address: "/fm/programchange",
+      address: prefix("/programchange"),
       args:    [ch, number]
     };
 
@@ -80,7 +85,7 @@ function midi2obj(msg){
     // channel pressure
     var ch = (msg[0] & 0x0F), value = msg[1];
     return {
-      address: "/fm/channelpressure",
+      address: prefix("/channelpressure"),
       args:    [ch, value]
     };
 
@@ -88,35 +93,35 @@ function midi2obj(msg){
     // pitch bend
     var ch = (msg[0] & 0x0F), msb = msg[1], lsb = msg[2];
     return {
-      address: "/fm/pitchbend",
+      address: prefix("/pitchbend"),
       args:    [ch, msb, lsb]
     };
 
   } else if ( msg.length == 1 && msg[0] == 0xF8 ){
     // timing clock
     return {
-      address: "/fm/timing",
+      address: prefix("/timing"),
       args:    []
     };
 
   } else if ( msg.length == 1 && msg[0] == 0xFA ){
     // start
     return {
-      address: "/fm/start",
+      address: prefix("/start"),
       args:    []
     };
 
   } else if ( msg.length == 1 && msg[0] == 0xFB ){
     // continue
     return {
-      address: "/fm/continue",
+      address: prefix("/continue"),
       args:    []
     };
 
   } else if ( msg.length == 1 && msg[0] == 0xFC ){
     // stop
     return {
-      address: "/fm/stop",
+      address: prefix("/stop"),
       args:    []
     };
 
@@ -128,7 +133,7 @@ function midi2obj(msg){
     } else {
       // マッチしなければそのまま送信
       return {
-        address: "/fm/midi_bytes",
+        address: prefix("/midi_bytes"),
         args:    msg
       };
     }
@@ -137,17 +142,17 @@ function midi2obj(msg){
 }
 
 function obj2midi(msg){
-  if(msg.address == "/fm/noteon"){
+  if(msg.address == prefix("/noteon")){
     var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
     if (ch < 16) return [0x90 + (ch & 0x0F), noteNum, velo];
     else         return [0x90 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if(msg.address == "/fm/noteoff"){
+  } else if(msg.address == prefix("/noteoff")){
     var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
     if (ch < 16) return [0x80 + (ch & 0x0F), noteNum, velo];
     else         return [0x80 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if (msg.args){
-    // msg.argsがあれば、それを送信
-    return msg.args
+  // } else if (msg.args){
+  //   // msg.argsがあれば、それを送信
+  //   return msg.args
   } else {
     // 特に形状が無ければ、stringifyしてそのままSysExにしてみる
     // 本当は8bit -> 7bit変換が必要だが、暫定対応でそのまま流してみる

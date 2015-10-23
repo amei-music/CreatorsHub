@@ -314,7 +314,7 @@ function App(){ return{
       // information interpreting the messages.
       var msg = {'msg': message, 'delta': deltaTime};
 
-      if (message.length != 1 || message[0] != 0xF8) console.log(msg); // log
+      // if (message.length != 1 || message[0] != 0xF8) console.log(msg); // log
 
       this.clients.deliver(inputId, message); // 配信
     }).bind(this);

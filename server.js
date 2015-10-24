@@ -1,3 +1,4 @@
+var os          = require('os');
 var http        = require('http');
 var connect     = require('connect');
 var serveStatic = require('serve-static');
@@ -368,7 +369,14 @@ g_io.sockets.on("connection", g_app.onWebSocket.bind(g_app));
 
 console.log("================================================");
 console.log("listening web socket on port " + LISTEN_PORT);
-console.log("connection control at http://localhost:" + LISTEN_PORT + "/");
+var interfaces = os.networkInterfaces()
+for (var dev in interfaces) {
+  interfaces[dev].forEach(function(iface){
+    if ((! iface.internal) && iface.family === "IPv4"){
+      console.log("connection control at http://" + iface.address + ":" + LISTEN_PORT + "/");
+    }
+  });
+}
 console.log("================================================");
 
 //==============================================================================

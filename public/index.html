@@ -33,6 +33,21 @@
   <div id="network"></div>
 
   <br>======================================================================<br>
+  OSC接続をネットワークに登録する<br>
+  <table>
+    <tr>
+      <td>サーバーの受信ポートを追加</td>
+      <td><button onclick="ctrl.open_new_osc_input();">追加</button></td>
+    </tr>
+    <tr>
+      <td>送信先ホストを追加</td>
+      <td>ホストアドレス<input  type="text" id="osc_host" style="width:120px;" />
+          待ち受けポート番号<input type="text" id="osc_port" style="width:60px;" />
+      <button onclick="ctrl.open_new_osc_output();">登録</button></td>
+    </tr>
+  </table>
+
+  <br>======================================================================<br>
   このページをJSONクライアントとしてネットワーク参加する
   <button onclick="ctrl.join_as_wsjson();">参加</button><br>
 
@@ -56,13 +71,6 @@
     tempo: <span id="tempo"> </span>
 
   </div>
-
-  <br>
-  <br>======================================================================<br>
-  OSCクライアントをネットワークに登録する<br>
-  oscホストアドレス<input  type="text" id="osc_host_input" style="width:80px;" />
-  待ち受けポート番号<input type="text" id="osc_port_input" style="width:80px;" />
-  <button onclick="ctrl.join_as_osc();">登録</button>
 
   <br>
 </body>

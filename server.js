@@ -9,8 +9,9 @@ var osc         = require('osc-min');
 var convert     = require('./convert')
 var mididevs    = require('./mididevices') // require('midi');
 
-var LISTEN_PORT = 16080;
-var PUBLIC_DIR  = __dirname + "/public"
+var LISTEN_PORT      = 16080;
+var PUBLIC_DIR       = __dirname + "/public"
+var OSC_INPORT_BEGIN = 12345;
 
 //==============================================================================
 // 全体の管理情報
@@ -248,11 +249,16 @@ function App(){ return{
     }
   },
 
-  //  - 指定のアドレス/ポート番号をoscクライアントとしてネットワークに追加する
-  join_as_osc : function(obj) {
-    var inPort = 12345; // 受信ポートは指定が無ければサーバーが独自に決める
+  //  - このサーバーのOSC受信ポートを追加する
+  open_new_osc_input : function() {
+    // 受信ポートはサーバーが独自に決める
+    var inPort = OSC_INPORT_BEGIN;
+    for(var _i in this.oscsocks){
+      var i = parseInt(_i);
+      if (inPort <= i) inPort = i+1;
+    }
 
-    // 入り口と出口のudpポートを作成する
+    // 受信ハンドラ
     var _onRead = function(inputId){
       return function(msg, rinfo) {
         console.log("message from input #" + inputId);
@@ -266,10 +272,19 @@ function App(){ return{
     this.oscsocks[inPort].bind(inPort);
 
     // 接続ネットワークに参加する
-    var inputId  = this.clients.addNewClientInput (ClientOsc(obj.host, inPort));
+    var inputId  = this.clients.addNewClientInput (ClientOsc("OSC arrived at", inPort));
+
+    console.log("Port:" + inPort + " opened for listening OSC (client id=" + inputId + ")");
+
+    this.update_list(); // クライアントのネットワーク表示更新
+  },
+
+  //  - 指定のアドレス/ポート番号をoscクライアントとしてネットワークに追加する
+  open_new_osc_output : function(obj) {
+    // 接続ネットワークに参加する
     var outputId = this.clients.addNewClientOutput(ClientOsc(obj.host, obj.port));
 
-    console.log("[OSC #'" + obj.host + "'] joined as OSC client [id=" + inputId + "]");
+    console.log("[OSC #'" + obj.host + "'] joined as OSC client [id=" + outputId + "]");
 
     this.update_list(); // クライアントのネットワーク表示更新
   },
@@ -283,21 +298,23 @@ function App(){ return{
     // (3) OSCでネットワークに参加しにきた人は別扱いする必要がある
 
     // (1)のためのAPI
-    socket.on("add_connection", this.add_connection.bind(this) );
+    socket.on("add_connection",      this.add_connection.bind(this) );
 
     // (2)のためのAPI
-    socket.on("join_as_wsjson", this.join_as_wsjson.bind(this, socket) ); // wsjsonクライアントとしてネットワークに参加する
-    socket.on("exit_wsjson",    this.exit_wsjson.bind(this, socket) );    // ネットワークから離脱する
-    socket.on("message_json",   this.message_json.bind(this, socket) );   // JSONメッセージを受信する
+    socket.on("join_as_wsjson",      this.join_as_wsjson.bind(this, socket) ); // wsjsonクライアントとしてネットワークに参加する
+    socket.on("exit_wsjson",         this.exit_wsjson.bind(this, socket) );    // ネットワークから離脱する
+    socket.on("message_json",        this.message_json.bind(this, socket) );   // JSONメッセージを受信する
 
     // (3)のためのAPI
-    socket.on("join_as_osc",    this.join_as_osc.bind(this) );              // 指定のアドレス/ポート番号をoscクライアントとしてネットワークに追加する
-    socket.on("exit_osc",       function(){ console.log("unimplemented")}); // 指定のアドレス/ポート番号をoscクライアントとしてネットワークから除外する
+    socket.on("open_new_osc_input",  this.open_new_osc_input.bind(this) );       // OSC受信ポートを増やす
+    socket.on("open_new_osc_output", this.open_new_osc_output.bind(this) );      // OSC送信先を登録する
+    socket.on("close_osc_input",     function(){ console.log("unimplemented")}); // 開いた受信ポートを閉じる
+    socket.on("close_osc_output",    function(){ console.log("unimplemented")}); // OSC送信先を閉じる
     // oscアプリ本体とこのserver.jsのoscモジュールが直接メッセージをやり取りするので、
     // oscクライアントとの実通信にWebSocketは絡まない。あくまでコネクション管理のみ
 
     // ソケット自体の接続終了
-    socket.on("disconnect",     this.exit_wsjson.bind(this, socket) );
+    socket.on("disconnect",          this.exit_wsjson.bind(this, socket) );
   },
 
   // 新規MIDI入力デバイスの登録

@@ -175,9 +175,21 @@ function obj2midi(msg){
     if (ch < 16) return [0xE0 + (ch & 0x0F), noteNum, velo];
     else         return [0xE0 + (ch & 0x0F), noteNum, velo]; // 要対応
 
+  } else if(msg.address == prefix("/timing")){
+    return [0xF8];
+
+  } else if(msg.address == prefix("/start")){
+    return [0xFA];
+
+  } else if(msg.address == prefix("/continue")){
+    return [0xFB];
+
+  } else if(msg.address == prefix("/stop")){
+    return [0xFC];
+
   } else if(msg.address == prefix("/sysex")){
     // sysexならargsにある配列をそのまま送信
-    return msg.args
+    return msg.args;
 
   // } else if (msg.args){
   //   // msg.argsがあれば、それを送信

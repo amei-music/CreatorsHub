@@ -213,6 +213,17 @@ function obj2midi(msg){
   }
 }
 
+function fromBuffer(msgbuf){
+  // osc.fromBufferは丁寧すぎるレイアウトで返すので使いづらい
+  // とりあえず自前で作ってみる。例外処理全然できてない
+  var msg  = osc.fromBuffer(msgbuf);
+  var args = new Array(msg.args.length);
+  for (var i in msg.args){
+    args[i] = msg.args[i].value;
+  }
+  return {address: msg.address, args: args}
+}
+
 function convertMessage(msg, msg_from, msg_to){
   if(msg_from == msg_to) return msg; // そのまま
 
@@ -221,8 +232,8 @@ function convertMessage(msg, msg_from, msg_to){
     if(msg_to == "midi") return obj2midi(msg);
   }
   if(msg_from == "osc"){
-    if(msg_to == "json") return osc.fromBuffer(msg); // 失敗するとthrow
-    if(msg_to == "midi") return obj2midi(osc.fromBuffer(msg));
+    if(msg_to == "json") return fromBuffer(msg); // 失敗するとthrow
+    if(msg_to == "midi") return obj2midi(fromBuffer(msg));
   }
   if(msg_from == "midi"){
     if(msg_to == "json") return midi2obj(msg); // OSCっぽいjsonなのでそのまま送信可

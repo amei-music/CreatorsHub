@@ -259,16 +259,14 @@ function App(){ return{
     }
 
     // 受信ハンドラ
-    var _onRead = function(inputId){
-      return function(msg, rinfo) {
-        console.log("message from input #" + inputId);
+    var _onRead = function(inputId, msg, rinfo) {
+      console.log("message from input #" + inputId);
 
-        this.clients.deliver(inputId, msg); // 配信
-      }
+      this.clients.deliver(inputId, msg); // 配信
     }
 
     // socketのlistenに成功してからネットワークに登録したいので、idは先回りで受け取る
-    this.oscsocks[inPort] = dgram.createSocket("udp4", _onRead(this.clients.id_input));
+    this.oscsocks[inPort] = dgram.createSocket("udp4", _onRead.bind(this, this.clients.id_input));
     this.oscsocks[inPort].bind(inPort);
 
     // 接続ネットワークに参加する

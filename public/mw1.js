@@ -151,10 +151,14 @@ var ctrl = {
     this.showJsonClient(true);
   },
 
-  join_as_osc: function() {
-    var host = document.getElementById('osc_host_input');
-    var port = document.getElementById('osc_port_input');
-    this.socket.emit("join_as_osc", {host: host.value, port: port.value});
+  open_new_osc_input: function() {
+    this.socket.emit("open_new_osc_input");
+  },
+
+  open_new_osc_output: function() {
+    var host = document.getElementById('osc_host');
+    var port = document.getElementById('osc_port');
+    this.socket.emit("open_new_osc_output", {host: host.value, port: port.value});
   },
 
   publishMessage: function(msg, callback) {

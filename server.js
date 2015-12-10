@@ -228,8 +228,8 @@ function App(){ return{
   // ネットワークから離脱する
   exit_wsjson : function(socket) {
     var existed = false;
-    existed |= this.clients.deleteClientInput (this.clients.socketId2InputClientId (socket.id));
-    existed |= this.clients.deleteClientOutput(this.clients.socketId2OutputClientId(socket.id));
+    existed = existed || this.clients.deleteClientInput (this.clients.socketId2InputClientId (socket.id));
+    existed = existed || this.clients.deleteClientOutput(this.clients.socketId2OutputClientId(socket.id));
 
     if(existed){
       console.log("[Web Socket #'" + socket.id + "'] exited.");

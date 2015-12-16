@@ -41,7 +41,7 @@ var Timing = function(){
 // デバイス名を作る
 function makeNodeName(client){
   var name = client.type;
-  if (client.type == "json") name += ": socket[" + client.socketId + "]"
+  if (client.type == "json") name += ": " + client.name + " socket[" + client.socketId + "]"
   if (client.type == "midi") name += ": " + client.name
   if (client.type == "osc" ) name += ": " + client.host + "(" + client.port + ")"
   return name
@@ -147,7 +147,7 @@ var ctrl = {
   },
 
   join_as_wsjson: function() {
-    this.socket.emit("join_as_wsjson");
+    this.socket.emit("join_as_wsjson", { "name": "mw1"} );
     this.showJsonClient(true);
   },
 

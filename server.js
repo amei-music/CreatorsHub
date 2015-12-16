@@ -16,16 +16,17 @@ var OSC_INPORT_BEGIN = 12345;
 //==============================================================================
 // 全体の管理情報
 //==============================================================================
-function ClientJson(/*direction,*/ socketId){
+function ClientJson(/*direction,*/ socketId, name){
   return {
     type:      "json",
     socketId:  socketId,
-
+    name:      name,
+    
     deliver: function(msg, msg_from){
       g_io.to(this.socketId).emit("message_json", convert.convertMessage(msg, msg_from, "json"));
     },
 
-    simplify: function(){ return {type: "json", socketId: this.socketId} },
+    simplify: function(){ return {type: "json", socketId: this.socketId, name: this.name} },
   };
 }
 
@@ -209,15 +210,16 @@ function App(){ return{
   },
 
   // wsjsonクライアントとしてネットワークに参加する
-  join_as_wsjson : function(socket) {
+  join_as_wsjson : function(socket, param) {
     var changed = false;
+    var name = param && param.name ? param.name : socket.id; // nameパラメータがなければidを使用
     if (this.clients.socketId2InputClientId(socket.id) < 0){
-      var inputId  = this.clients.addNewClientInput (ClientJson(socket.id));
+      var inputId  = this.clients.addNewClientInput (ClientJson(socket.id, name));
       console.log("[Web Socket #'" + socket.id + "'] joined as JSON input client [id=" + inputId + "]");
       changed = true;
     }
     if (this.clients.socketId2OutputClientId(socket.id) < 0){
-      var outputId = this.clients.addNewClientOutput(ClientJson(socket.id));
+      var outputId = this.clients.addNewClientOutput(ClientJson(socket.id, name));
       console.log("[Web Socket #'" + socket.id + "'] joined as JSON output client [id=" + outputId + "]");
       changed = true;
     }

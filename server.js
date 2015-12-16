@@ -227,11 +227,10 @@ function App(){ return{
 
   // ネットワークから離脱する
   exit_wsjson : function(socket) {
-    var existed = false;
-    existed = existed || this.clients.deleteClientInput (this.clients.socketId2InputClientId (socket.id));
-    existed = existed || this.clients.deleteClientOutput(this.clients.socketId2OutputClientId(socket.id));
+    var inputExisted = this.clients.deleteClientInput (this.clients.socketId2InputClientId (socket.id));
+    var outputExisted = this.clients.deleteClientOutput(this.clients.socketId2OutputClientId(socket.id));
 
-    if(existed){
+    if(inputExisted || outputExisted){
       console.log("[Web Socket #'" + socket.id + "'] exited.");
     }
 

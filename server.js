@@ -288,6 +288,24 @@ function App(){ return{
     this.update_list(); // クライアントのネットワーク表示更新
   },
 
+  //  - このサーバーのOSC受信ポートを削除する
+  close_osc_input : function(obj) {
+    var inputId = obj.inputId;
+    if(this.clients.deleteClientInput (inputId)){
+      console.log("close_osc_input:" + inputId);
+    }
+    this.update_list(); // クライアントのネットワーク表示更新
+  },
+  
+  //  - このサーバーのOSC送信ポートを削除する
+  close_osc_output : function(obj) {
+    var outputId = obj.outputId;
+    if(this.clients.deleteClientOutput (outputId)){
+      console.log("close_osc_output:" + outputId);
+    }
+    this.update_list(); // クライアントのネットワーク表示更新
+  },
+  
   // websocketとしての応答内容を記述
   onWebSocket : function(socket){
     this.update_list(); // websocket接続時に一度現状を送る
@@ -307,8 +325,8 @@ function App(){ return{
     // (3)のためのAPI
     socket.on("open_new_osc_input",  this.open_new_osc_input.bind(this) );       // OSC受信ポートを増やす
     socket.on("open_new_osc_output", this.open_new_osc_output.bind(this) );      // OSC送信先を登録する
-    socket.on("close_osc_input",     function(){ console.log("unimplemented")}); // 開いた受信ポートを閉じる
-    socket.on("close_osc_output",    function(){ console.log("unimplemented")}); // OSC送信先を閉じる
+    socket.on("close_osc_input",     this.close_osc_input.bind(this) );          // 開いた受信ポートを閉じる
+    socket.on("close_osc_output",    this.close_osc_output.bind(this) );         // OSC送信先を閉じる
     // oscアプリ本体とこのserver.jsのoscモジュールが直接メッセージをやり取りするので、
     // oscクライアントとの実通信にWebSocketは絡まない。あくまでコネクション管理のみ
 

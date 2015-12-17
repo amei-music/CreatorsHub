@@ -151,6 +151,11 @@ var ctrl = {
     this.showJsonClient(true);
   },
 
+  exit_wsjson: function() {
+    this.socket.emit("exit_wsjson");
+    this.showJsonClient(false);
+  },
+
   open_new_osc_input: function() {
     this.socket.emit("open_new_osc_input");
   },

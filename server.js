@@ -200,6 +200,24 @@ function Clients(){ return {
 
   },
 
+  cleanupConnectionHistory: function(){
+    // 使われていない結線情報を削除する
+    for(var inputKey in this.connections){
+      if(this.key2ClientId(inputKey, this.inputs) === undefined){
+        delete this.connections[inputKey];
+        console.log("cleanupConnectionHistory: " + inputKey + " -> *");
+      }else{
+        for(var outputKey in this.connections[inputKey]){
+          if(this.key2ClientId(outputKey, this.outputs) === undefined){
+            delete this.connections[inputKey][outputKey];
+            console.log("cleanupConnectionHistory: " + inputKey + " -> " + outputKey);
+          }
+        }
+      }
+    }
+    this.updateConnectionsById();
+  },
+
   //==============================================================================
   // 設定管理
   //==============================================================================
@@ -343,6 +361,13 @@ function App(){ return{
     }
   },
 
+  // 現在使われていないノード間の結線情報を削除する
+  cleanup_connection_history : function(){
+    this.clients.cleanupConnectionHistory();
+    this.clients.saveSettings();
+    this.update_list();
+  },
+  
   // wsjsonクライアントとしてネットワークに参加する
   join_as_wsjson : function(socket, param) {
     var changed = false;
@@ -472,6 +497,7 @@ function App(){ return{
 
     // (1)のためのAPI
     socket.on("add_connection",      this.add_connection.bind(this) );
+    socket.on("cleanup_connection_history", this.cleanup_connection_history.bind(this) );
 
     // (2)のためのAPI
     socket.on("join_as_wsjson",      this.join_as_wsjson.bind(this, socket) ); // wsjsonクライアントとしてネットワークに参加する

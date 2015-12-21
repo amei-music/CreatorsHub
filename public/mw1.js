@@ -192,6 +192,10 @@ var ctrl = {
     console.log("add_connection: " + JSON.stringify(param));
     this.socket.emit("add_connection", param);
   },
+  
+  cleanup_connection_history : function(){
+    this.socket.emit("cleanup_connection_history");
+  },
 
   join_as_wsjson: function() {
     this.socket.emit("join_as_wsjson", { "name": "mw1"} );

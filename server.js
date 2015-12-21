@@ -140,10 +140,13 @@ function Clients(){ return {
     var existed = (clientId in this.inputs);
     if(existed){
       var inputKey = this.inputs[clientId].key;
+      var type = this.inputs[clientId].type;
       delete this.inputs[clientId];
   
-      for(var outputKey in this.connections[inputKey]){
-        this.deleteConnection(inputKey, outputKey);
+      if(type == "osc"){
+        for(var outputKey in this.connections[inputKey]){
+          this.deleteConnection(inputKey, outputKey);
+        }
       }
   
       this.updateConnectionsById();
@@ -155,12 +158,15 @@ function Clients(){ return {
   deleteClientOutput: function(clientId){
     var existed = (clientId in this.outputs);
     if(existed){
+      var type = this.outputs[clientId].type;
       delete this.outputs[clientId];
   
-      for(var inputKey in this.connections){
-        for(var outputKey in this.connections[inputKey]){
-          var outputId = this.key2ClientId(outputKey, this.outputs);
-          if(outputId == clientId) this.deleteConnection(inputKey, outputKey);
+      if(type == "osc"){
+        for(var inputKey in this.connections){
+          for(var outputKey in this.connections[inputKey]){
+            var outputId = this.key2ClientId(outputKey, this.outputs);
+            if(outputId == clientId) this.deleteConnection(inputKey, outputKey);
+          }
         }
       }
       

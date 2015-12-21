@@ -384,25 +384,36 @@ function App(){ return{
     }
   },
 
+  // OSC送受信ポートアドレスの確認（仮）
+  is_valid_osc_port : function(host, port) {
+    // 無効なホストやポートの場合は false
+    if(!host || !port) return false; 
+    var p = parseInt(port);
+    if(p < 1 || p > 65535) return false;
+    return true;
+  },
+  
   //  - このサーバーのOSC受信ポートを追加する
   open_osc_input : function(obj) {
+    var inHost = "localhost";
     var inPort = obj.port;
- 
-    // 受信ハンドラ
-    var _onRead = function(inputId, msg, rinfo) {
-      console.log("message from input #" + inputId);
-
-      this.clients.deliver(inputId, msg); // 配信
+    if(this.is_valid_osc_port(inHost, inPort)){
+      // 受信ハンドラ
+      var _onRead = function(inputId, msg, rinfo) {
+        console.log("message from input #" + inputId);
+  
+        this.clients.deliver(inputId, msg); // 配信
+      }
+  
+      // socketのlistenに成功してからネットワークに登録したいので、idは先回りで受け取る
+      this.oscsocks[inPort] = dgram.createSocket("udp4", _onRead.bind(this, this.clients.id_input));
+      this.oscsocks[inPort].bind(inPort);
+  
+      // 接続ネットワークに参加する
+      var inputId  = this.clients.addNewClientInput (ClientOsc(inHost, inPort));
+  
+      console.log("Port:" + inPort + " opened for listening OSC (client id=" + inputId + ")");
     }
-
-    // socketのlistenに成功してからネットワークに登録したいので、idは先回りで受け取る
-    this.oscsocks[inPort] = dgram.createSocket("udp4", _onRead.bind(this, this.clients.id_input));
-    this.oscsocks[inPort].bind(inPort);
-
-    // 接続ネットワークに参加する
-    var inputId  = this.clients.addNewClientInput (ClientOsc("localhost", inPort));
-
-    console.log("Port:" + inPort + " opened for listening OSC (client id=" + inputId + ")");
   },
   open_new_osc_input : function() {
     // 受信ポートはサーバーが独自に決める
@@ -418,10 +429,12 @@ function App(){ return{
 
   //  - 指定のアドレス/ポート番号をoscクライアントとしてネットワークに追加する
   open_osc_output : function(obj) {
-    // 接続ネットワークに参加する
-    var outputId = this.clients.addNewClientOutput(ClientOsc(obj.host, obj.port));
-
-    console.log("[OSC #'" + obj.host + "'] joined as OSC client [id=" + outputId + "]");
+    if(this.is_valid_osc_port(obj.host, obj.port)){
+      // 接続ネットワークに参加する
+      var outputId = this.clients.addNewClientOutput(ClientOsc(obj.host, obj.port));
+  
+      console.log("[OSC #'" + obj.host + "'] joined as OSC client [id=" + outputId + "]");
+    }
   },
   open_new_osc_output : function(obj) {
     this.open_osc_output(obj);

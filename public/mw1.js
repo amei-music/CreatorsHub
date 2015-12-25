@@ -108,10 +108,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
       var btnRemove = document.createElement("input");
       btnRemove.type  = "button";
       btnRemove.value = "削除";
-      function getHandlerOnClickRemoveOscOutput(id){
-        return function(){ onRemoveOscOutput(id); };
-      }
-      btnRemove.addEventListener('click', getHandlerOnClickRemoveOscOutput(outputId) );
+      btnRemove.addEventListener('click', onRemoveOscOutput.bind(null, parseInt(outputId)));
       cell.appendChild(btnRemove);
     }
   }
@@ -127,10 +124,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
       var btnRemove = document.createElement("input");
       btnRemove.type  = "button";
       btnRemove.value = "削除";
-      function getHandlerOnClickRemoveOscInput(id){
-        return function(){ onRemoveOscInput(id); };
-      }
-      btnRemove.addEventListener('click', getHandlerOnClickRemoveOscInput(inputId));
+      btnRemove.addEventListener('click', onRemoveOscInput.bind(null, parseInt(inputId)));
       cell.appendChild(btnRemove);
     }
     for(var outputId in outputNames){
@@ -192,7 +186,7 @@ var ctrl = {
     console.log("add_connection: " + JSON.stringify(param));
     this.socket.emit("add_connection", param);
   },
-  
+
   cleanup_connection_history : function(){
     this.socket.emit("cleanup_connection_history");
   },

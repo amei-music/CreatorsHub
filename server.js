@@ -5,6 +5,7 @@ var serveStatic = require('serve-static');
 var socketio    = require("socket.io")
 var dgram       = require("dgram");
 var osc         = require('osc-min');
+var fs          = require('fs');
 
 var convert     = require('./convert')
 var mididevs    = require('./mididevices') // require('midi');
@@ -13,53 +14,63 @@ var LISTEN_PORT      = 16080;
 var PUBLIC_DIR       = __dirname + "/public"
 var OSC_INPORT_BEGIN = 12345;
 
+//ホームディレクトリに設定ファイルを保存
+var dirHome = process.env[process.platform == "win32" ? "USERPROFILE" : "HOME"];
+var SETTING_FILE = dirHome + "/fm_mw1_setting.json";
+
 //==============================================================================
 // 全体の管理情報
 //==============================================================================
-function ClientJson(/*direction,*/ socketId){
+function ClientJson(/*direction,*/ socketId, name){
+  var type = "json";
   return {
-    type:      "json",
+    type:      type,
     socketId:  socketId,
-
+    name:      name,
+    key:       type + ":" + name,
+    
     deliver: function(msg, msg_from){
-      g_io.to(this.socketId).emit("message_json", convert.convertMessage(msg, msg_from, "json"));
+      g_io.to(this.socketId).emit("message_json", convert.convertMessage(msg, msg_from, type));
     },
 
-    simplify: function(){ return {type: "json", socketId: this.socketId} },
+    simplify: function(){ return {type: type, socketId: this.socketId, name: this.name} },
   };
 }
 
 function ClientOsc(/*direction,*/ host, port){
+  var type = "osc";
   return {
-    type:      "osc",
+    type:      type,
     host:      host, // 受信時には使わない
     port:      port,
+    key:       type + ":" + host + ":" + port,
 
     deliver: function(msg, msg_from){
-      var buf = convert.convertMessage(msg, msg_from, "osc")
+      var buf = convert.convertMessage(msg, msg_from, type)
       // console.log("*********")
       // console.log(msg)
       // console.log(this.port, this.host)
       g_oscSender.send(buf, 0, buf.length, this.port, this.host);
     },
 
-    simplify: function(){ return {type: "osc", host: this.host, port: this.port} },
+    simplify: function(){ return {type: type, host: this.host, port: this.port} },
   }
 }
 
 function ClientMidi(/*direction,*/ name){
+  var type = "midi";
   return {
-    type:      "midi",
+    type:      type,
     name:      name,
-
+    key:       type + ":" + name,
 
     deliver: function(msg, msg_from){
-      var buf = convert.convertMessage(msg, msg_from, "midi")
+      var buf = convert.convertMessage(msg, msg_from, type)
       console.log("midi out ", "[" + buf.join(", ") + "]")
       g_midiDevs.outputs[this.name].sendMessage(buf);
     },
 
-    simplify: function(){ return {type: "midi", name: this.name} },
+    simplify: function(){ return {type: type, name: this.name} },
   };
 }
 
@@ -69,9 +80,44 @@ function ClientMidi(/*direction,*/ name){
 function Clients(){ return {
   inputs:      {},
   outputs:     {},
-  connections: {}, // {input_clientId: {output_clientId: true, ...}, ...}
+  connections: {}, // {input_clientKey: {output_clientKey: true, ...}, ...}
+  connectionsById: {}, // {input_clientId: {output_clientId: true, ...}, ...}
   id_input:    0, // 接続のユニークID
   id_output:   0, // 接続のユニークID
+
+  //==============================================================================
+  // id⇔key対応
+  //==============================================================================
+
+  key2ClientId: function(key, inputsOutputs){
+   // key→クライアントID取得
+   for(var id in inputsOutputs){
+      if(inputsOutputs[id].key == key){
+        return id;
+      }
+    }
+    return undefined;
+  },
+  
+  updateConnectionsById: function(){
+    // {input_clientId: {output_clientId: true, ...}, ...} 形式での接続情報を作成
+    var connectionsById = {};
+    for(var inputId in this.inputs){
+      var inputKey = this.inputs[inputId].key;
+      if(inputKey in this.connections){
+        connectionsById[inputId] = {};
+        for(var outputId in this.outputs){
+          var outputKey = this.outputs[outputId].key;
+          if(outputKey in this.connections[inputKey]){
+            if(this.connections[inputKey][outputKey]){
+              connectionsById[inputId][outputId] = true;
+            }
+          }
+        }
+      }
+    }
+    this.connectionsById = connectionsById;
+  },
 
   //==============================================================================
   // クライアント管理
@@ -79,38 +125,54 @@ function Clients(){ return {
   addNewClientInput: function(client){
     this.inputs[this.id_input] = client;
     this.id_input += 1;
+    this.updateConnectionsById();
     return this.id_input - 1;
   },
 
   addNewClientOutput: function(client){
     this.outputs[this.id_output] = client;
     this.id_output += 1;
+    this.updateConnectionsById();
     return this.id_output - 1;
   },
 
   deleteClientInput: function(clientId){
     var existed = (clientId in this.inputs);
-    delete this.inputs[clientId];
-
-    for(var outputId in this.connections[clientId]){
-      this.deleteConnection(clientId, outputId);
+    if(existed){
+      var inputKey = this.inputs[clientId].key;
+      var type = this.inputs[clientId].type;
+      delete this.inputs[clientId];
+  
+      if(type == "osc"){
+        for(var outputKey in this.connections[inputKey]){
+          this.deleteConnection(inputKey, outputKey);
+        }
+      }
+  
+      this.updateConnectionsById();
+      // console.log(this.connections)
     }
-
-    // console.log(this.connections)
     return existed;
   },
 
   deleteClientOutput: function(clientId){
     var existed = (clientId in this.outputs);
-    delete this.outputs[clientId];
-
-    for(var inputId in this.connections){
-      for(var outputId in this.connections[inputId]){
-        if(outputId == clientId) this.deleteConnection(inputId, outputId);
+    if(existed){
+      var type = this.outputs[clientId].type;
+      delete this.outputs[clientId];
+  
+      if(type == "osc"){
+        for(var inputKey in this.connections){
+          for(var outputKey in this.connections[inputKey]){
+            var outputId = this.key2ClientId(outputKey, this.outputs);
+            if(outputId == clientId) this.deleteConnection(inputKey, outputKey);
+          }
+        }
       }
+      
+      this.updateConnectionsById();
+      // console.log(this.connections)
     }
-
-    // console.log(this.connections)
     return existed;
   },
 
@@ -118,30 +180,101 @@ function Clients(){ return {
   // コネクション管理
   //==============================================================================
 
-  addConnection: function(input_clientId, output_clientId){
+  addConnection: function(input_clientKey, output_clientKey){
     // 結線情報を作る
-    if (! this.connections[input_clientId]){
-      this.connections[input_clientId] = {};
+    if (! this.connections[input_clientKey]){
+      this.connections[input_clientKey] = {};
     }
-    this.connections[input_clientId][output_clientId] = true;
+    this.connections[input_clientKey][output_clientKey] = true;
+    this.updateConnectionsById();
   },
 
-  deleteConnection: function(input_clientId, output_clientId){
+  deleteConnection: function(input_clientKey, output_clientKey){
     // 結線情報を切る
-    if (this.connections[input_clientId]){
-      delete this.connections[input_clientId][output_clientId];
+    if (this.connections[input_clientKey]){
+      delete this.connections[input_clientKey][output_clientKey];
+      this.updateConnectionsById();
     } else {
       // 何もしない
     }
 
   },
 
+  cleanupConnectionHistory: function(){
+    // 使われていない結線情報を削除する
+    for(var inputKey in this.connections){
+      if(this.key2ClientId(inputKey, this.inputs) === undefined){
+        delete this.connections[inputKey];
+        console.log("cleanupConnectionHistory: " + inputKey + " -> *");
+      }else{
+        for(var outputKey in this.connections[inputKey]){
+          if(this.key2ClientId(outputKey, this.outputs) === undefined){
+            delete this.connections[inputKey][outputKey];
+            console.log("cleanupConnectionHistory: " + inputKey + " -> " + outputKey);
+          }
+        }
+      }
+    }
+    this.updateConnectionsById();
+  },
+
+  //==============================================================================
+  // 設定管理
+  //==============================================================================
+  
+  emptySettings: function(){
+    return {
+      oscInputs: [],
+      oscOutputs: [],
+      connections: {}
+    };
+  },
+  
+  saveSettings: function(){
+    // 設定の保存
+    var settings = this.emptySettings();
+    
+    // OSC入力情報
+    for(var inputId in this.inputs){
+      if(this.inputs[inputId].type == "osc"){
+        settings.oscInputs.push(this.inputs[inputId].simplify());
+      }
+    }
+    
+    // OSC出力情報
+    for(var outputId in this.outputs){
+      if(this.outputs[outputId].type == "osc"){
+        settings.oscOutputs.push(this.outputs[outputId].simplify());
+      }
+    }
+
+    // 結線情報
+    settings.connections = this.connections;
+    
+    // 設定情報を保存
+    var buf = JSON.stringify(settings);
+    fs.writeFile(SETTING_FILE, buf, "utf-8", function (err) {
+      console.log("saveSettings");
+		});
+  },
+          
+  loadSettings: function(){
+    var settings = this.emptySettings();
+    // 設定の読み込み
+    if (fs.existsSync(SETTING_FILE)) {
+      // 設定情報を読み込み
+      var buf = fs.readFileSync(SETTING_FILE, "utf-8");
+      settings = JSON.parse(buf);
+    }
+    return settings;
+  },
+  
   //==============================================================================
   // データ送信管理
   //==============================================================================
   // inputに届いたメッセージをコネクション先に配信
   deliver: function(input_clientId, data){
-    for(var outputId in this.connections[input_clientId]){
+    for(var outputId in this.connectionsById[input_clientId]){
       var output = this.outputs[outputId];
       output.deliver(data, this.inputs[input_clientId].type); // いわゆるダブルディスパッチ
     }
@@ -183,41 +316,69 @@ function App(){ return{
   oscsocks: {}, // {input_oscport: {clientId: , sock: }} osc送受信オブジェクトを詰めておくところ
                 // socket一覧はio.socketsにある
 
+  // 初期化
+  init : function(){
+    var settings = this.clients.loadSettings();
+    for(var i in settings.oscInputs){
+       this.open_osc_input(settings.oscInputs[i]);
+    }
+    for(var i in settings.oscOutputs){
+       this.open_osc_output(settings.oscOutputs[i]);
+    }
+    this.clients.connections = settings.connections;
+    this.clients.updateConnectionsById();
+    this.update_list(); // ネットワーク更新
+  },
+  
   // ネットワーク接続者一覧を表示する(socketだからサーバー側からpush可能)
   update_list : function(){
     // メソッド類は削ぎ落として表示に必要な情報だけまとめる
     var inputs  = {}; for (var i in this.clients.inputs ) inputs [i] = this.clients.inputs [i].simplify();
     var outputs = {}; for (var o in this.clients.outputs) outputs[o] = this.clients.outputs[o].simplify();
-
     // broadcast all clients (including the sender)
-    g_io.sockets.emit("update_list", {inputs: inputs, outputs: outputs, connections: this.clients.connections});
+    g_io.sockets.emit("update_list", {inputs: inputs, outputs: outputs, connections: this.clients.connectionsById});
   },
 
   // ネットワークのノード間の接続/切断をする
   add_connection : function(obj){
     var inputId = obj.inputId, outputId = obj.outputId, connect = obj.connect
-
-    if (connect == true){
-      this.clients.addConnection(inputId, outputId) // 接続
-      console.log("input '" + inputId + "' connected to output '" + outputId + "'");
-    } else {
-      this.clients.deleteConnection(inputId, outputId) // 切断
-      console.log("input '" + inputId + "' and output '" + outputId + "' disconnected");
+    var inputExisted = inputId in this.clients.inputs;
+    var outputExisted = outputId in this.clients.outputs;
+    if(inputExisted && outputExisted){
+      var inputKey = this.clients.inputs[inputId].key;
+      var outputKey = this.clients.outputs[outputId].key;
+  
+      if (connect == true){
+        this.clients.addConnection(inputKey, outputKey) // 接続
+        console.log("input '" + inputKey + "' connected to output '" + outputKey + "'");
+      } else {
+        this.clients.deleteConnection(inputKey, outputKey) // 切断
+        console.log("input '" + inputKey + "' and output '" + outputKey + "' disconnected");
+      }
+  
+      this.clients.saveSettings();
+      this.update_list(); // ネットワーク更新
     }
-
-    this.update_list(); // ネットワーク更新
   },
 
+  // 現在使われていないノード間の結線情報を削除する
+  cleanup_connection_history : function(){
+    this.clients.cleanupConnectionHistory();
+    this.clients.saveSettings();
+    this.update_list();
+  },
+  
   // wsjsonクライアントとしてネットワークに参加する
-  join_as_wsjson : function(socket) {
+  join_as_wsjson : function(socket, param) {
     var changed = false;
+    var name = param && param.name ? param.name : socket.id; // nameパラメータがなければidを使用
     if (this.clients.socketId2InputClientId(socket.id) < 0){
-      var inputId  = this.clients.addNewClientInput (ClientJson(socket.id));
+      var inputId  = this.clients.addNewClientInput (ClientJson(socket.id, name));
       console.log("[Web Socket #'" + socket.id + "'] joined as JSON input client [id=" + inputId + "]");
       changed = true;
     }
     if (this.clients.socketId2OutputClientId(socket.id) < 0){
-      var outputId = this.clients.addNewClientOutput(ClientJson(socket.id));
+      var outputId = this.clients.addNewClientOutput(ClientJson(socket.id, name));
       console.log("[Web Socket #'" + socket.id + "'] joined as JSON output client [id=" + outputId + "]");
       changed = true;
     }
@@ -227,11 +388,10 @@ function App(){ return{
 
   // ネットワークから離脱する
   exit_wsjson : function(socket) {
-    var existed = false;
-    existed |= this.clients.deleteClientInput (this.clients.socketId2InputClientId (socket.id));
-    existed |= this.clients.deleteClientOutput(this.clients.socketId2OutputClientId(socket.id));
+    var inputExisted = this.clients.deleteClientInput (this.clients.socketId2InputClientId (socket.id));
+    var outputExisted = this.clients.deleteClientOutput(this.clients.socketId2OutputClientId(socket.id));
 
-    if(existed){
+    if(inputExisted || outputExisted){
       console.log("[Web Socket #'" + socket.id + "'] exited.");
     }
 
@@ -249,7 +409,37 @@ function App(){ return{
     }
   },
 
+  // OSC送受信ポートアドレスの確認（仮）
+  is_valid_osc_port : function(host, port) {
+    // 無効なホストやポートの場合は false
+    if(!host || !port) return false; 
+    var p = parseInt(port);
+    if(p < 1 || p > 65535) return false;
+    return true;
+  },
+  
   //  - このサーバーのOSC受信ポートを追加する
+  open_osc_input : function(obj) {
+    var inHost = "localhost";
+    var inPort = obj.port;
+    if(this.is_valid_osc_port(inHost, inPort)){
+      // 受信ハンドラ
+      var _onRead = function(inputId, msg, rinfo) {
+        console.log("message from input #" + inputId);
+  
+        this.clients.deliver(inputId, msg); // 配信
+      }
+  
+      // socketのlistenに成功してからネットワークに登録したいので、idは先回りで受け取る
+      this.oscsocks[inPort] = dgram.createSocket("udp4", _onRead.bind(this, this.clients.id_input));
+      this.oscsocks[inPort].bind(inPort);
+  
+      // 接続ネットワークに参加する
+      var inputId  = this.clients.addNewClientInput (ClientOsc(inHost, inPort));
+  
+      console.log("Port:" + inPort + " opened for listening OSC (client id=" + inputId + ")");
+    }
+  },
   open_new_osc_input : function() {
     // 受信ポートはサーバーが独自に決める
     var inPort = OSC_INPORT_BEGIN;
@@ -257,36 +447,46 @@ function App(){ return{
       var i = parseInt(_i);
       if (inPort <= i) inPort = i+1;
     }
-
-    // 受信ハンドラ
-    var _onRead = function(inputId, msg, rinfo) {
-      console.log("message from input #" + inputId);
-
-      this.clients.deliver(inputId, msg); // 配信
-    }
-
-    // socketのlistenに成功してからネットワークに登録したいので、idは先回りで受け取る
-    this.oscsocks[inPort] = dgram.createSocket("udp4", _onRead.bind(this, this.clients.id_input));
-    this.oscsocks[inPort].bind(inPort);
-
-    // 接続ネットワークに参加する
-    var inputId  = this.clients.addNewClientInput (ClientOsc("OSC arrived at", inPort));
-
-    console.log("Port:" + inPort + " opened for listening OSC (client id=" + inputId + ")");
-
+    this.open_osc_input({port: inPort});
+    this.clients.saveSettings()
     this.update_list(); // クライアントのネットワーク表示更新
   },
 
   //  - 指定のアドレス/ポート番号をoscクライアントとしてネットワークに追加する
+  open_osc_output : function(obj) {
+    if(this.is_valid_osc_port(obj.host, obj.port)){
+      // 接続ネットワークに参加する
+      var outputId = this.clients.addNewClientOutput(ClientOsc(obj.host, obj.port));
+  
+      console.log("[OSC #'" + obj.host + "'] joined as OSC client [id=" + outputId + "]");
+    }
+  },
   open_new_osc_output : function(obj) {
-    // 接続ネットワークに参加する
-    var outputId = this.clients.addNewClientOutput(ClientOsc(obj.host, obj.port));
-
-    console.log("[OSC #'" + obj.host + "'] joined as OSC client [id=" + outputId + "]");
-
+    this.open_osc_output(obj);
+    this.clients.saveSettings()
     this.update_list(); // クライアントのネットワーク表示更新
   },
 
+  //  - このサーバーのOSC受信ポートを削除する
+  close_osc_input : function(obj) {
+    var inputId = obj.inputId;
+    if(this.clients.deleteClientInput (inputId)){
+      console.log("close_osc_input:" + inputId);
+    }
+    this.clients.saveSettings()
+    this.update_list(); // クライアントのネットワーク表示更新
+  },
+  
+  //  - このサーバーのOSC送信ポートを削除する
+  close_osc_output : function(obj) {
+    var outputId = obj.outputId;
+    if(this.clients.deleteClientOutput (outputId)){
+      console.log("close_osc_output:" + outputId);
+    }
+    this.clients.saveSettings()
+    this.update_list(); // クライアントのネットワーク表示更新
+  },
+  
   // websocketとしての応答内容を記述
   onWebSocket : function(socket){
     this.update_list(); // websocket接続時に一度現状を送る
@@ -297,6 +497,7 @@ function App(){ return{
 
     // (1)のためのAPI
     socket.on("add_connection",      this.add_connection.bind(this) );
+    socket.on("cleanup_connection_history", this.cleanup_connection_history.bind(this) );
 
     // (2)のためのAPI
     socket.on("join_as_wsjson",      this.join_as_wsjson.bind(this, socket) ); // wsjsonクライアントとしてネットワークに参加する
@@ -306,8 +507,8 @@ function App(){ return{
     // (3)のためのAPI
     socket.on("open_new_osc_input",  this.open_new_osc_input.bind(this) );       // OSC受信ポートを増やす
     socket.on("open_new_osc_output", this.open_new_osc_output.bind(this) );      // OSC送信先を登録する
-    socket.on("close_osc_input",     function(){ console.log("unimplemented")}); // 開いた受信ポートを閉じる
-    socket.on("close_osc_output",    function(){ console.log("unimplemented")}); // OSC送信先を閉じる
+    socket.on("close_osc_input",     this.close_osc_input.bind(this) );          // 開いた受信ポートを閉じる
+    socket.on("close_osc_output",    this.close_osc_output.bind(this) );         // OSC送信先を閉じる
     // oscアプリ本体とこのserver.jsのoscモジュールが直接メッセージをやり取りするので、
     // oscクライアントとの実通信にWebSocketは絡まない。あくまでコネクション管理のみ
 
@@ -393,6 +594,9 @@ for (var dev in interfaces) {
   });
 }
 console.log("================================================");
+
+// 初期化
+g_app.init();
 
 //==============================================================================
 // graceful shutdown

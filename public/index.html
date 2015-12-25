@@ -54,6 +54,7 @@
   <div id=jsonclient>
     <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
     <button onclick="ctrl.publishMessage();">JSONを送る</button>
+    <button onclick="ctrl.exit_wsjson();">切断</button>
     <p id=errormsg> </p>
     <div id="msg"></div>
 
@@ -71,6 +72,9 @@
     tempo: <span id="tempo"> </span>
 
   </div>
+  <br>======================================================================<br>
+
+  <button onclick="ctrl.cleanup_connection_history();">結線情報の履歴をクリア</button><br>
 
   <br>
 </body>

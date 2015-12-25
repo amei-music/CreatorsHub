@@ -41,10 +41,15 @@ var Timing = function(){
 // デバイス名を作る
 function makeNodeName(client){
   var name = client.type;
-  if (client.type == "json") name += ": socket[" + client.socketId + "]"
+  if (client.type == "json") name += ": " + client.name + " socket[" + client.socketId + "]"
   if (client.type == "midi") name += ": " + client.name
   if (client.type == "osc" ) name += ": " + client.host + "(" + client.port + ")"
   return name
+}
+
+// 削除可能なOSC入出力かどうか
+function isClientRemovableOsc(client){
+  return client.type == "osc"; // OSCはすべて削除可能
 }
 
 // プレーンテキストで接続状態を表示する
@@ -68,21 +73,60 @@ function makeConnectionString(inputs, outputs, connections){
 
 
 // N個のdevice名を記した配列を受け取ってその接続マトリックスのhtmlを作る
-function makeConnectionTable(inputNames, outputNames, connections, onChange){
+function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput){
+  //////////////////////////////
+  // 表示用情報作成
+
+  // 入力側の表示情報作成
+  var inputNames  = {};
+  var isRemovableOscInputs  = {};
+  for(var inputId  in obj.inputs ){
+    inputNames[inputId] = makeNodeName(obj.inputs[inputId]);
+    isRemovableOscInputs[inputId] = isClientRemovableOsc(obj.inputs[inputId]);
+  }
+  // 出力側の表示情報作成
+  var outputNames = {};
+  var isRemovableOscOutputs  = {};
+  for(var outputId in obj.outputs){
+    outputNames[outputId] = makeNodeName(obj.outputs[outputId]);
+    isRemovableOscOutputs[outputId] = isClientRemovableOsc(obj.outputs[outputId]);
+  }
+  // 接続状態
+  var connections = obj.connections;
+
+  //////////////////////////////
+  // テーブル作成
+
   var table = document.createElement('table');
   // タイトル行
   var tr = table.insertRow(-1)
   tr.insertCell(-1).outputHTML = "";
   for(var outputId in outputNames){
-    tr.insertCell(-1).innerHTML = outputNames[outputId];
+    var cell = tr.insertCell(-1);
+    cell.innerHTML = outputNames[outputId];
+    if(isRemovableOscOutputs[outputId]){
+      var btnRemove = document.createElement("input");
+      btnRemove.type  = "button";
+      btnRemove.value = "削除";
+      btnRemove.addEventListener('click', onRemoveOscOutput.bind(null, parseInt(outputId)));
+      cell.appendChild(btnRemove);
+    }
   }
   table.appendChild(tr);
 
   // データ行
   console.log("connections: ", JSON.stringify(connections));
   for(var inputId in inputNames){
-    var tr = table.insertRow(-1)
-    tr.insertCell(-1).innerHTML = inputNames[inputId];
+    var tr = table.insertRow(-1);
+    var cell = tr.insertCell(-1);
+    cell.innerHTML = inputNames[inputId];
+    if(isRemovableOscInputs[inputId]){
+      var btnRemove = document.createElement("input");
+      btnRemove.type  = "button";
+      btnRemove.value = "削除";
+      btnRemove.addEventListener('click', onRemoveOscInput.bind(null, parseInt(inputId)));
+      cell.appendChild(btnRemove);
+    }
     for(var outputId in outputNames){
       (function(inputId, outputId){ // capture variables
         var isNowConnected = (inputId in connections) && (outputId in connections[inputId]);
@@ -120,12 +164,9 @@ var ctrl = {
   },
 
   onUpdateList: function(obj){
-    var inputNames  = {}; for(var inputId  in obj.inputs ) inputNames [inputId ] = makeNodeName(obj.inputs [inputId ]);
-    var outputNames = {}; for(var outputId in obj.outputs) outputNames[outputId] = makeNodeName(obj.outputs[outputId]);
-
     // htmlのtableでコネクションマトリックスを作る
     // マトリックス内のボタンクリックでサーバーに接続変更を指示する
-    var table = makeConnectionTable(inputNames, outputNames, obj.connections, this.add_connection.bind(this));
+    var table = makeConnectionTable(obj, this.add_connection.bind(this), this.close_osc_input.bind(this), this.close_osc_output.bind(this));
     var networkArea = document.getElementById("network");
     networkArea.textContent = null;
     networkArea.appendChild(table);
@@ -146,9 +187,18 @@ var ctrl = {
     this.socket.emit("add_connection", param);
   },
 
+  cleanup_connection_history : function(){
+    this.socket.emit("cleanup_connection_history");
+  },
+
   join_as_wsjson: function() {
-    this.socket.emit("join_as_wsjson");
+    this.socket.emit("join_as_wsjson", { "name": "mw1"} );
     this.showJsonClient(true);
+  },
+
+  exit_wsjson: function() {
+    this.socket.emit("exit_wsjson");
+    this.showJsonClient(false);
   },
 
   open_new_osc_input: function() {
@@ -159,6 +209,18 @@ var ctrl = {
     var host = document.getElementById('osc_host');
     var port = document.getElementById('osc_port');
     this.socket.emit("open_new_osc_output", {host: host.value, port: port.value});
+  },
+
+  close_osc_input: function(inputId) {
+    var param = {inputId: inputId};
+    console.log("close_osc_input: " + JSON.stringify(param));
+    this.socket.emit("close_osc_input", param);
+  },
+
+  close_osc_output: function(outputId) {
+    var param = {outputId: outputId};
+    console.log("close_osc_output: " + JSON.stringify(param));
+    this.socket.emit("close_osc_output", param);
   },
 
   publishMessage: function(msg, callback) {

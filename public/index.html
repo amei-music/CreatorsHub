@@ -16,6 +16,8 @@
   }
   //-->
   </style>
+  <!-- スタイルシート　-->
+  <link rel="stylesheet" href="/mw1.css" type="text/css" media="all">
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/mw1.js"></script> <!-- クライアント側の機能が詰まったctrlオブジェクトの読み込み -->
@@ -29,11 +31,12 @@
 
 </head>
 <body>
-  <h2>接続中のデバイス</h2>
+  <h1>接続中のデバイス</h1>	
   <div id="network"></div>
 
-  <br>======================================================================<br>
-  OSC接続をネットワークに登録する<br>
+  <hr><!------------------------------------------------------------------->
+
+  <h3>OSC接続をネットワークに登録する</h3>
   <table>
     <tr>
       <td>サーバーの受信ポートを追加</td>
@@ -47,9 +50,12 @@
     </tr>
   </table>
 
-  <br>======================================================================<br>
-  このページをJSONクライアントとしてネットワーク参加する
+  <hr><!------------------------------------------------------------------->
+
+  <h3>このページをJSONクライアントとしてネットワーク参加する</h3>
+  <div id=jsonclient_join>
   <button onclick="ctrl.join_as_wsjson();">参加</button><br>
+  </div>
 
   <div id=jsonclient>
     <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
@@ -72,10 +78,9 @@
     tempo: <span id="tempo"> </span>
 
   </div>
-  <br>======================================================================<br>
+  <hr><!------------------------------------------------------------------->
 
-  <button onclick="ctrl.cleanup_connection_history();">結線情報の履歴をクリア</button><br>
-
-  <br>
+  <h3>結線情報の履歴をクリアする</h3>
+  <button onclick="ctrl.cleanup_connection_history();">クリア</button><br>
 </body>
 </html>

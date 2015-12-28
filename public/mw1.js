@@ -40,10 +40,17 @@ var Timing = function(){
 
 // デバイス名を作る
 function makeNodeName(client){
-  var name = client.type;
-  if (client.type == "json") name += ": " + client.name + " socket[" + client.socketId + "]"
-  if (client.type == "midi") name += ": " + client.name
-  if (client.type == "osc" ) name += ": " + client.host + "(" + client.port + ")"
+  var name = client.type + "> ";
+  if (client.type == "json"){
+    if(client.name){
+      name += client.name;
+    }else{
+      name += client.name + " socket[" + client.socketId + "]";
+    }
+
+  }
+  if (client.type == "midi") name += client.name;
+  if (client.type == "osc" ) name += client.host + ":" + client.port;
   return name
 }
 
@@ -98,32 +105,39 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
   // テーブル作成
 
   var table = document.createElement('table');
+  // thead
+  var thead = table.createTHead();
   // タイトル行
-  var tr = table.insertRow(-1)
-  tr.insertCell(-1).outputHTML = "";
+  var tr = thead.insertRow(-1)
+  var cell = document.createElement('th');
+  tr.appendChild(cell);
+  cell.innerHTML = "I/O"; 
   for(var outputId in outputNames){
-    var cell = tr.insertCell(-1);
+    var cell = document.createElement('th');
+    tr.appendChild(cell);
+
     cell.innerHTML = outputNames[outputId];
     if(isRemovableOscOutputs[outputId]){
-      var btnRemove = document.createElement("input");
-      btnRemove.type  = "button";
-      btnRemove.value = "削除";
+      var btnRemove = document.createElement("button");
+      btnRemove.innerText = "削除";
       btnRemove.addEventListener('click', onRemoveOscOutput.bind(null, parseInt(outputId)));
       cell.appendChild(btnRemove);
     }
   }
-  table.appendChild(tr);
+  //thead.appendChild(tr);
 
+  // tbody
+  var tbody = table.createTBody();
   // データ行
   console.log("connections: ", JSON.stringify(connections));
   for(var inputId in inputNames){
-    var tr = table.insertRow(-1);
-    var cell = tr.insertCell(-1);
+    var tr = tbody.insertRow(-1);
+    var cell = document.createElement('th');
+    tr.appendChild(cell);
     cell.innerHTML = inputNames[inputId];
     if(isRemovableOscInputs[inputId]){
-      var btnRemove = document.createElement("input");
-      btnRemove.type  = "button";
-      btnRemove.value = "削除";
+      var btnRemove = document.createElement("button");
+      btnRemove.innerText = "削除";
       btnRemove.addEventListener('click', onRemoveOscInput.bind(null, parseInt(inputId)));
       cell.appendChild(btnRemove);
     }
@@ -132,11 +146,17 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
         var isNowConnected = (inputId in connections) && (outputId in connections[inputId]);
 
         // 接続/切断ボタンを作って追加
-        var btn = document.createElement("input");
-        btn.type  = "button";
-        btn.value = isNowConnected ? "o" : "x";
-        btn.addEventListener('click', function(){ onChange(inputId, outputId, (! isNowConnected)) } );
-        tr.insertCell(-1).appendChild(btn);
+        var cell = document.createElement('td');
+        if(isNowConnected){
+          cell.className = "connected";
+          cell.innerText = "Connected";
+        }else{
+          cell.className = "disconnected";
+          cell.innerText = "-";
+        }
+        cell.addEventListener('click', function(){ onChange(inputId, outputId, (! isNowConnected)) } );
+        tr.appendChild(cell);
+
       })(inputId, outputId);
     }
   }
@@ -256,6 +276,7 @@ var ctrl = {
   // jsonクライアントの表示/非表示を切り替える
   showJsonClient : function(onoff){
     document.getElementById("jsonclient").style.display = (onoff ? "block" : "none");
+    document.getElementById("jsonclient_join").style.display = (onoff ? "none" : "block");
   },
 
   // members

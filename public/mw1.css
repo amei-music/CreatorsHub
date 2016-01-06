@@ -1,23 +1,35 @@
 @import url(http://fonts.googleapis.com/css?family=Lato:300,400,700);
+@import url(http://fonts.googleapis.com/earlyaccess/notosansjapanese.css);
 body {
-	font-family: 'Lato', 'Noto Sans', Verdana, 'Meiryo', Arial, sans-serif;
+	font-family: 'Lato', 'Noto Sans Japanese', Verdana, Arial, sans-serif;
 	color: #7c8d87;
 	background: #f8f8f8;
+    margin: 0 0;
+}
+
+h1, h2, h3 {
+    margin-top: 0.75em;
+    margin-left: 1%;
 }
 
 /* テーブル属性 */
 table {
     border-collapse: collapse;
-    margin-bottom: 3em;
-    width: 100%;
+    margin-left: 2%;
+    margin-right: 2%;
+    width: 96%;
     background: #fff;
-	border: 0;
+    border: 0;
 }
 td, th {
     padding: 0.75em 0.5em;
 	font-size: 0.8em;
     text-align: left;
-	border: 0;
+    border: 0;
+}
+thead th {
+	text-align: center;
+    padding: 0.25em 0.5em 0em;
 }
 td.connected {
 		background-color: #e98249;
@@ -59,12 +71,37 @@ tbody tr:nth-child(2n) th {
 	background-color: #26a071;
 }
 */
-tbody tr:nth-child(2n-1) {
+#network tbody tr:nth-child(2n-1) {
     background-color: #eef2ee;
     transition: all .125s ease-in-out;
 }
-tbody tr:hover {
+#network tbody tr:hover {
     background-color: rgba(129,208,177,.3);
+}
+
+.tableCorner {
+/*   background: -webkit-gradient(linear, right bottom, left top, from(white), color-stop(0.5, white), color-stop(0.5, gray), to(gray)); 
+*/
+/*
+   width: 0;
+   height: 0;
+   line-height: 0;
+   overflow: hidden;
+   border-top: 300px solid #ccffcc;
+   border-left: 500px solid #ffcccc;
+   border-right: none; 
+   border-bottom: none; 
+   position: absolute;
+   */
+   /*	
+    background-color: rgba(0,0,0,0);
+    height: 100%;
+    width: 100%;
+    border-top: solid gray 1px;
+    transform: matrix(1, 0.75, 0, 1, 0, 15);
+    border:0;
+    background: lightgray
+    */
 }
 
 /* ボタン */
@@ -105,9 +142,9 @@ input:focus {
 
 /* 区切り */
 hr {
-    margin: 20px 0px 0px;
+    margin-top: 3%;
 	width: 100%; 
-	height: 4px;
+	height: 8px;
 	border: 0;
-	box-shadow: 0 10px 10px -10px #ccc inset;
+	box-shadow: 0 6px 6px -6px #ccc inset;
 }

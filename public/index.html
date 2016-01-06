@@ -54,33 +54,43 @@
 
   <h3>このページをJSONクライアントとしてネットワーク参加する</h3>
   <div id=jsonclient_join>
-  <button onclick="ctrl.join_as_wsjson();">参加</button><br>
+      <table><tr><td>
+      <button onclick="ctrl.join_as_wsjson();">参加</button><br>
+      </td></tr></table>
   </div>
 
   <div id=jsonclient>
-    <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
-    <button onclick="ctrl.publishMessage();">JSONを送る</button>
-    <button onclick="ctrl.exit_wsjson();">切断</button>
-    <p id=errormsg> </p>
-    <div id="msg"></div>
-
-    filter:
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/timing"> timing
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/noteon"> noteon
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/noteoff"> noteoff
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/notepressure"> notepressure
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/controlchange"> controlchange
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/programchange"> programchange
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/channelpressure"> channelpressure
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/pitchbend"> pitchbend
-
-    <br>
-    tempo: <span id="tempo"> </span>
-
+    <table>
+        <tr><td>
+            <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
+            <button onclick="ctrl.publishMessage();">JSONを送る</button>
+            <button onclick="ctrl.exit_wsjson();">切断</button>
+        </td></tr>
+        <tr><td>
+            <p id=errormsg> </p>
+            <div id="msg"></div>
+        </td></tr>
+        <tr><td>
+            filter:
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/timing"> timing
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/noteon"> noteon
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/noteoff"> noteoff
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/notepressure"> notepressure
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/controlchange"> controlchange
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/programchange"> programchange
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/channelpressure"> channelpressure
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/pitchbend"> pitchbend
+       </td></tr>
+       <tr><td>
+            tempo: <span id="tempo"> </span>
+       </td></tr>
+    </table>
   </div>
   <hr><!------------------------------------------------------------------->
 
   <h3>結線情報の履歴をクリアする</h3>
-  <button onclick="ctrl.cleanup_connection_history();">クリア</button><br>
+     <table><tr><td>
+     <button onclick="ctrl.cleanup_connection_history();">クリア</button><br>
+     </td></tr></table>
 </body>
 </html>

@@ -108,23 +108,34 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
   // thead
   var thead = table.createTHead();
   // タイトル行
-  var tr = thead.insertRow(-1)
-  var cell = document.createElement('th');
-  tr.appendChild(cell);
-  cell.innerHTML = "I/O"; 
-  for(var outputId in outputNames){
+  for(var i = 0; i <= 1; i++){
+    var tr = thead.insertRow(-1)
     var cell = document.createElement('th');
     tr.appendChild(cell);
-
-    cell.innerHTML = outputNames[outputId];
-    if(isRemovableOscOutputs[outputId]){
-      var btnRemove = document.createElement("button");
-      btnRemove.innerText = "削除";
-      btnRemove.addEventListener('click', onRemoveOscOutput.bind(null, parseInt(outputId)));
-      cell.appendChild(btnRemove);
+    if(i == 0){
+      cell.innerHTML = "OUT";
+      cell.style.textAlign = "right";
+    }else{
+      cell.innerHTML = "IN"; 
+      cell.style.textAlign = "left";
+    }
+    for(var outputId in outputNames){
+      var cell = document.createElement('th');
+      tr.appendChild(cell);
+      if(i == 0){
+        cell.innerHTML = outputNames[outputId];
+        if(isRemovableOscOutputs[outputId]){
+          var btnRemove = document.createElement("button");
+          btnRemove.innerText = "削除";
+          btnRemove.addEventListener('click', onRemoveOscOutput.bind(null, parseInt(outputId)));
+          cell.appendChild(btnRemove);
+        }
+      }else{
+        cell.innerHTML = "▲";
+      }
     }
   }
-  //thead.appendChild(tr);
+
 
   // tbody
   var tbody = table.createTBody();
@@ -134,7 +145,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
     var tr = tbody.insertRow(-1);
     var cell = document.createElement('th');
     tr.appendChild(cell);
-    cell.innerHTML = inputNames[inputId];
+    cell.innerHTML = "▶ " + inputNames[inputId];
     if(isRemovableOscInputs[inputId]){
       var btnRemove = document.createElement("button");
       btnRemove.innerText = "削除";

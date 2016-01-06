@@ -86,18 +86,33 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
 
   // 入力側の表示情報作成
   var inputNames  = {};
+  var inputIdList = [];
   var isRemovableOscInputs  = {};
   for(var inputId  in obj.inputs ){
     inputNames[inputId] = makeNodeName(obj.inputs[inputId]);
     isRemovableOscInputs[inputId] = isClientRemovableOsc(obj.inputs[inputId]);
+    inputIdList.push(inputId);
   }
   // 出力側の表示情報作成
   var outputNames = {};
+  var outputIdList = [];
   var isRemovableOscOutputs  = {};
   for(var outputId in obj.outputs){
     outputNames[outputId] = makeNodeName(obj.outputs[outputId]);
     isRemovableOscOutputs[outputId] = isClientRemovableOsc(obj.outputs[outputId]);
+    outputIdList.push(outputId);
   }
+  // 入出力IDを名前順にソート
+  inputIdList.sort(function(a, b){
+    if(inputNames[a] < inputNames[b]) return -1;
+    if(inputNames[a] > inputNames[b]) return 1;
+    return 0;
+  });
+  outputIdList.sort(function(a, b){
+    if(outputNames[a] < outputNames[b]) return -1;
+    if(outputNames[a] > outputNames[b]) return 1;
+    return 0;
+  });
   // 接続状態
   var connections = obj.connections;
 
@@ -119,7 +134,8 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
       cell.innerHTML = "IN"; 
       cell.style.textAlign = "left";
     }
-    for(var outputId in outputNames){
+    for(var o = 0; o < outputIdList.length; o++){
+      var outputId = outputIdList[o];
       var cell = document.createElement('th');
       tr.appendChild(cell);
       if(i == 0){
@@ -141,7 +157,8 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
   var tbody = table.createTBody();
   // データ行
   console.log("connections: ", JSON.stringify(connections));
-  for(var inputId in inputNames){
+  for(var i = 0; i < inputIdList.length; i++){
+    var inputId = inputIdList[i];
     var tr = tbody.insertRow(-1);
     var cell = document.createElement('th');
     tr.appendChild(cell);
@@ -152,7 +169,8 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
       btnRemove.addEventListener('click', onRemoveOscInput.bind(null, parseInt(inputId)));
       cell.appendChild(btnRemove);
     }
-    for(var outputId in outputNames){
+    for(var o = 0; o < outputIdList.length; o++){
+      var outputId = outputIdList[o];
       (function(inputId, outputId){ // capture variables
         var isNowConnected = (inputId in connections) && (outputId in connections[inputId]);
 

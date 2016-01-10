@@ -16,6 +16,8 @@
   }
   //-->
   </style>
+  <!-- スタイルシート　-->
+  <link rel="stylesheet" href="/mw1.css" type="text/css" media="all">
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/mw1.js"></script> <!-- クライアント側の機能が詰まったctrlオブジェクトの読み込み -->
@@ -29,11 +31,12 @@
 
 </head>
 <body>
-  <h2>接続中のデバイス</h2>
+  <h1>接続中のデバイス</h1>	
   <div id="network"></div>
 
-  <br>======================================================================<br>
-  OSC接続をネットワークに登録する<br>
+  <hr><!------------------------------------------------------------------->
+
+  <h3>OSC接続をネットワークに登録する</h3>
   <table>
     <tr>
       <td>サーバーの受信ポートを追加</td>
@@ -47,35 +50,47 @@
     </tr>
   </table>
 
-  <br>======================================================================<br>
-  このページをJSONクライアントとしてネットワーク参加する
-  <button onclick="ctrl.join_as_wsjson();">参加</button><br>
+  <hr><!------------------------------------------------------------------->
+
+  <h3>このページをJSONクライアントとしてネットワーク参加する</h3>
+  <div id=jsonclient_join>
+      <table><tr><td>
+      <button onclick="ctrl.join_as_wsjson();">参加</button><br>
+      </td></tr></table>
+  </div>
 
   <div id=jsonclient>
-    <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
-    <button onclick="ctrl.publishMessage();">JSONを送る</button>
-    <button onclick="ctrl.exit_wsjson();">切断</button>
-    <p id=errormsg> </p>
-    <div id="msg"></div>
-
-    filter:
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/timing"> timing
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/noteon"> noteon
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/noteoff"> noteoff
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/notepressure"> notepressure
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/controlchange"> controlchange
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/programchange"> programchange
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/channelpressure"> channelpressure
-    <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/pitchbend"> pitchbend
-
-    <br>
-    tempo: <span id="tempo"> </span>
-
+    <table>
+        <tr><td>
+            <textarea name="msg_input" id="msg_input", cols="60", rows="8"> </textarea>
+            <button onclick="ctrl.publishMessage();">JSONを送る</button>
+            <button onclick="ctrl.exit_wsjson();">切断</button>
+        </td></tr>
+        <tr><td>
+            <p id=errormsg> </p>
+            <div id="msg"></div>
+        </td></tr>
+        <tr><td>
+            filter:
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/timing"> timing
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/noteon"> noteon
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/noteoff"> noteoff
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/notepressure"> notepressure
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/controlchange"> controlchange
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/programchange"> programchange
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/channelpressure"> channelpressure
+            <input type="checkbox" onclick="ctrl.filterSet(this);" value="/fm/pitchbend"> pitchbend
+       </td></tr>
+       <tr><td>
+            tempo: <span id="tempo"> </span>
+       </td></tr>
+    </table>
   </div>
-  <br>======================================================================<br>
+  <hr><!------------------------------------------------------------------->
 
-  <button onclick="ctrl.cleanup_connection_history();">結線情報の履歴をクリア</button><br>
-
-  <br>
+  <h3>結線情報の履歴をクリアする</h3>
+     <table><tr><td>
+     <button onclick="ctrl.cleanup_connection_history();">クリア</button><br>
+     </td></tr></table>
 </body>
 </html>

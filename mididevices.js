@@ -3,6 +3,7 @@ module.exports = {
 }
 
 var midi        = require('midi');
+var rtpmidi     = require('rtpmidi');
 
 // ALSAがデフォルトで作るこれをopenPortすると即座にもう一個ポートが増えるらしく、無限増殖する
 // ので、とりあえず名前で除外しておく(どうするのが正しい？)
@@ -32,6 +33,12 @@ function MidiDevices(onAddNewInput, onDeleteInput, onAddNewOutput, onDeleteOutpu
     onDeleteInput:  onDeleteInput,  // inputが切断されたときに呼ばれる
     onAddNewOutput: onAddNewOutput, // outputが新規追加されたときに呼ばれる
     onDeleteOutput: onDeleteOutput, // outputが新規追加されたときに呼ばれる
+
+    session: rtpmidi.manager.createSession({
+      localName: 'Session 1',
+      bonjourName: 'FM_MW1',
+      port: 5008
+    }),
 
     // input deviceを監視して、新規追加、削除があれば上流に通知する
     updateInputDevices: function(){
@@ -113,6 +120,28 @@ function MidiDevices(onAddNewInput, onDeleteInput, onAddNewOutput, onDeleteOutpu
 
   // obj.input.closePort();  // なぜかこれをやっておかないとMacでsegmentation faultが起きる
   // obj.output.closePort(); // なぜかこれをやっておかないとMacでsegmentation faultが起きる
+
+  // Create the virtual midi ports
+  var virtualPortName = obj.session.bonjourName + ":" + obj.session.port;
+  obj.input.openVirtualPort(virtualPortName);
+  obj.output.openVirtualPort(virtualPortName);
+
+  // Route the messages
+  obj.session.on('message', function(deltaTime, message) {
+  // message is a Buffer so we convert it to an array to pass it to the midi output.
+    var commands = Array.prototype.slice.call(message, 0);
+    //console.log('received a network message', commands);
+    obj.output.sendMessage(commands);
+  });
+    
+  obj.input.on('message', function(deltaTime, message) {
+    //console.log('received a local message', message);
+    obj.session.sendMessage(deltaTime, message);
+  });
+  
+  // Connect to a remote session
+  //obj.session.connect({ address: '127.0.0.1', port: 5004 });
+  //obj.session.connect({ address: '192.168.1.12', port: 5004 });
 
   setInterval(obj.updateDevices.bind(obj), 500);
 

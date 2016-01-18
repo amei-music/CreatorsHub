@@ -6,6 +6,7 @@ var socketio    = require("socket.io")
 var dgram       = require("dgram");
 var osc         = require('osc-min');
 var fs          = require('fs');
+var yargs       = require('yargs');
 
 var convert     = require('./convert')
 var mididevs    = require('./mididevices') // require('midi');
@@ -560,6 +561,15 @@ function App(){ return{
   }
 
 }}
+
+//==============================================================================
+// command line parse
+//==============================================================================
+var argv = yargs
+    .help   ('h').alias('h', 'help')
+    .boolean('t').alias('t', 'test').default('t', false)
+    // .options('x', {alias : 'xxxx', default : ""})
+    .argv;
 
 //==============================================================================
 // start!

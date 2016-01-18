@@ -7,6 +7,7 @@ var dgram       = require("dgram");
 var osc         = require('osc-min');
 var fs          = require('fs');
 var yargs       = require('yargs');
+var usage       = require('usage');
 
 var convert     = require('./convert')
 var mididevs    = require('./mididevices') // require('midi');
@@ -570,6 +571,14 @@ var argv = yargs
     .boolean('t').alias('t', 'test').default('t', false)
     // .options('x', {alias : 'xxxx', default : ""})
     .argv;
+
+if(argv.test){
+  setInterval(function (){
+    usage.lookup(process.pid, function(err, result) {
+      console.log('[USAGE] cpu: ' + result.cpu + ', memory: ' + result.memory);
+    });
+  }, 1000);
+}
 
 //==============================================================================
 // start!

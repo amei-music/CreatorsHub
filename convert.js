@@ -229,6 +229,10 @@ function fromBuffer(msgbuf){
   // osc.fromBufferは丁寧すぎるレイアウトで返すので使いづらい
   // とりあえず自前で作ってみる。例外処理全然できてない
   var msg  = osc.fromBuffer(msgbuf);
+   if (msg.oscType == "bundle") {
+    msg = msg.elements[0];
+  }
+
   var args = new Array(msg.args.length);
   for (var i in msg.args){
     args[i] = msg.args[i].value;

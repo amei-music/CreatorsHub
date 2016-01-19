@@ -99,7 +99,7 @@ function midi2obj(msg){
 
   } else if ( msg.length == 1 && msg[0] == 0xF8 ){
     // timing clock
-    console.log("timing");
+    // console.log("timing");
     return {
       address: prefix("/timing"),
       args:    []
@@ -107,7 +107,7 @@ function midi2obj(msg){
 
   } else if ( msg.length == 1 && msg[0] == 0xFA ){
     // start
-    console.log("start");
+    // console.log("start");
     return {
       address: prefix("/start"),
       args:    []
@@ -122,7 +122,7 @@ function midi2obj(msg){
 
   } else if ( msg.length == 1 && msg[0] == 0xFC ){
     // stop
-    console.log("stop");
+    // console.log("stop");
     return {
       address: prefix("/stop"),
       args:    []
@@ -132,7 +132,7 @@ function midi2obj(msg){
     // 追加挿入のtemplateにマッチするかチェック
     var obj = convertible(msg, yamahaStyle);
     if (obj != undefined){
-      console.log(obj);
+      // console.log(obj);
       return obj;
     } else {
       // マッチしなければそのまま送信

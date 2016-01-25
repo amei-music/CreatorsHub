@@ -264,7 +264,12 @@ function Clients(){ return {
     if (fs.existsSync(SETTING_FILE)) {
       // 設定情報を読み込み
       var buf = fs.readFileSync(SETTING_FILE, "utf-8");
-      settings = JSON.parse(buf);
+      try {
+          settings = JSON.parse(buf);
+      }
+      catch(e){
+          console.log("loadSettings: File " + SETTING_FILE + " is broken. Ignored.");
+      }
     }
     return settings;
   },

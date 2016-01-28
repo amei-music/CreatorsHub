@@ -5,6 +5,7 @@ var serveStatic = require('serve-static');
 var socketio    = require("socket.io")
 var dgram       = require("dgram");
 var osc         = require('osc-min');
+var rtpmidi     = require('rtpmidi');
 var fs          = require('fs');
 
 var convert     = require('./convert')
@@ -78,6 +79,22 @@ function ClientMidi(/*direction,*/ name){
       var buf = convert.convertMessage(msg, msg_from, type)
       console.log("midi out ", "[" + buf.join(", ") + "]")
       g_midiDevs.outputs[this.name].sendMessage(buf);
+    },
+
+    simplify: function(){ return {type: type, name: this.name} },
+  };
+}
+
+function ClientRtpMidi(/*direction,*/ name){
+  var type = "rtp";
+  return {
+    type:      type,
+    name:      name,
+    key:       type + ":" + name,
+
+    deliver: function(msg, msg_from){
+      var buf = convert.convertMessage(msg, msg_from, type)
+      g_rtpSession.sendMessage(0, buf);
     },
 
     simplify: function(){ return {type: type, name: this.name} },
@@ -334,12 +351,18 @@ function App(){ return{
   // 初期化
   init : function(){
     var settings = this.clients.loadSettings();
+    // OSCポートオープン
     for(var i in settings.oscInputs){
        this.open_osc_input(settings.oscInputs[i]);
     }
     for(var i in settings.oscOutputs){
        this.open_osc_output(settings.oscOutputs[i]);
     }
+    // RtpMidi
+    var name = g_rtpSession.bonjourName + ":" + g_rtpSession.port;
+    this.open_rtpmidi_input(name);
+    this.open_rtpmidi_output(name);
+    // 接続情報
     this.clients.connections = settings.connections;
     this.clients.updateConnectionsById();
     this.update_list(); // ネットワーク更新
@@ -502,6 +525,25 @@ function App(){ return{
     this.update_list(); // クライアントのネットワーク表示更新
   },
   
+  //  - このサーバーのRtpMidi受信ポートを追加する
+  open_rtpmidi_input : function(name) {
+    // ネットワークに登録
+    var inputId  = this.clients.addNewClientInput (ClientRtpMidi(name));
+    console.log("RtpMidi Input [" + name + "] (client id=" + inputId + ").");
+
+    // コールバック
+    g_rtpSession.on('message', function(deltaTime, message) {
+      var obj = Array.prototype.slice.call(message, 0);
+      this.clients.deliver(inputId, obj); // 配信
+    }.bind(this));
+  },
+  //  - このサーバーのRtpMidi送信ポートを追加する
+  open_rtpmidi_output : function(name) {
+    // 接続ネットワークに参加する
+    var outputId = this.clients.addNewClientOutput(ClientRtpMidi(name));
+    console.log("RtpMidi Output [" + name + "] (client id=" + outputId + ").");
+  },
+ 
   // websocketとしての応答内容を記述
   onWebSocket : function(socket){
     this.update_list(); // websocket接続時に一度現状を送る
@@ -588,6 +630,13 @@ var g_midiDevs  = mididevs.MidiDevices(
   g_app.onAddNewMidiOutput.bind(g_app),
   g_app.onDeleteMidiOutput.bind(g_app)
 );
+
+// RtpMidi
+var g_rtpSession = rtpmidi.manager.createSession({
+  localName: 'Session 1',
+  bonjourName: 'FM_MW1',
+  port: 5008
+});
 
 // PUBLIC_DIR以下を普通のhttpサーバーとしてlisten
 var g_httpApp = connect();

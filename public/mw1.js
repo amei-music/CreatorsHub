@@ -149,6 +149,13 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
       }else{
         cell.innerHTML = "▲";
       }
+      // エラー表示
+      if(obj.outputs[outputId].error){
+        if(i == 1){
+            cell.innerHTML = "×";
+        }
+        cell.className = "error";
+      }
     }
   }
 

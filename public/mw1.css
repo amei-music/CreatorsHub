@@ -58,6 +58,9 @@ th {
     color: #fff;
     white-space: nowrap;
 }
+th.error {
+    background-color: #ff0000;
+}
 /*
 th:nth-child(2n) {
     background-color: #29b47e;

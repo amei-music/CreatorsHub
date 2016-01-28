@@ -43,6 +43,7 @@ function ClientOsc(/*direction,*/ host, port){
     type:      type,
     host:      host, // 受信時には使わない
     port:      port,
+    error:     false,
     key:       type + ":" + host + ":" + port,
 
     deliver: function(msg, msg_from){
@@ -50,10 +51,19 @@ function ClientOsc(/*direction,*/ host, port){
       // console.log("*********")
       // console.log(msg)
       // console.log(this.port, this.host)
-      g_oscSender.send(buf, 0, buf.length, this.port, this.host);
+      g_oscSender.send(buf, 0, buf.length, this.port, this.host, function(e){
+        if(e){
+          // OSC送信時にエラーが発生した場合
+          if(!this.error){
+            // エラーフラグを立ててクライアントの表示更新
+            this.error = true;
+            g_app.update_list();
+          } 
+        }
+      }.bind(this));
     },
 
-    simplify: function(){ return {type: type, host: this.host, port: this.port} },
+    simplify: function(){ return {type: type, host: this.host, port: this.port, error: this.error} },
   }
 }
 
@@ -571,6 +581,7 @@ function App(){ return{
 //==============================================================================
 var g_app       = App();
 var g_oscSender = dgram.createSocket("udp4")
+g_oscSender.on("error", function(){}); // OSCのエラーハンドラ（落ちないためのもの。エラーはsendのコールバックで処理するのでここは空にしておく）
 var g_midiDevs  = mididevs.MidiDevices(
   g_app.onAddNewMidiInput.bind(g_app),
   g_app.onDeleteMidiInput.bind(g_app),

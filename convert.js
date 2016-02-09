@@ -241,13 +241,13 @@ function convertMessage(msg, msg_from, msg_to){
 
   if(msg_from == "json"){
     if(msg_to == "osc" ) return osc.toBuffer(msg);
-    if(msg_to == "midi" || msg_to == "rtp") return obj2midi(msg);
+    if(msg_to == "midi" || msg_from == "vmidi" || msg_to == "rtp") return obj2midi(msg);
   }
   if(msg_from == "osc"){
     if(msg_to == "json") return fromBuffer(msg); // 失敗するとthrow
-    if(msg_to == "midi" || msg_to == "rtp") return obj2midi(fromBuffer(msg));
+    if(msg_to == "midi" || msg_from == "vmidi" || msg_to == "rtp") return obj2midi(fromBuffer(msg));
   }
-  if(msg_from == "midi" || msg_from == "rtp"){
+  if(msg_from == "midi" || msg_from == "vmidi" || msg_from == "rtp"){
     if(msg_to == "json") return midi2obj(msg); // OSCっぽいjsonなのでそのまま送信可
     if(msg_to == "osc" ) return osc.toBuffer(midi2obj(msg)); // 文字列にする
     return msg;

@@ -49,14 +49,14 @@ function makeNodeName(client){
     }
 
   }
-  if (client.type == "midi" || client.type == "rtp") name += client.name;
+  if (client.type == "midi" || client.type == "vmidi" || client.type == "rtp") name += client.name;
   if (client.type == "osc" ) name += client.host + ":" + client.port;
   return name
 }
 
-// 削除可能なOSC入出力かどうか
-function isClientRemovableOsc(client){
-  return client.type == "osc"; // OSCはすべて削除可能
+// 削除可能な入出力かどうか
+function isClientRemovableIO(client){
+  return client.type == "osc" || client.type == "vmidi"; // OSCと仮想MIDIは削除可能
 }
 
 // プレーンテキストで接続状態を表示する
@@ -87,19 +87,19 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
   // 入力側の表示情報作成
   var inputNames  = {};
   var inputIdList = [];
-  var isRemovableOscInputs  = {};
+  var isRemovableInputs  = {};
   for(var inputId  in obj.inputs ){
     inputNames[inputId] = makeNodeName(obj.inputs[inputId]);
-    isRemovableOscInputs[inputId] = isClientRemovableOsc(obj.inputs[inputId]);
+    isRemovableInputs[inputId] = isClientRemovableIO(obj.inputs[inputId]);
     inputIdList.push(inputId);
   }
   // 出力側の表示情報作成
   var outputNames = {};
   var outputIdList = [];
-  var isRemovableOscOutputs  = {};
+  var isRemovableOutputs  = {};
   for(var outputId in obj.outputs){
     outputNames[outputId] = makeNodeName(obj.outputs[outputId]);
-    isRemovableOscOutputs[outputId] = isClientRemovableOsc(obj.outputs[outputId]);
+    isRemovableOutputs[outputId] = isClientRemovableIO(obj.outputs[outputId]);
     outputIdList.push(outputId);
   }
   // 入出力IDを名前順にソート
@@ -140,7 +140,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
       tr.appendChild(cell);
       if(i == 0){
         cell.innerHTML = outputNames[outputId];
-        if(isRemovableOscOutputs[outputId]){
+        if(isRemovableOutputs[outputId]){
           var btnRemove = document.createElement("button");
           btnRemove.innerText = "削除";
           btnRemove.addEventListener('click', onRemoveOscOutput.bind(null, parseInt(outputId)));
@@ -170,7 +170,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
     var cell = document.createElement('th');
     tr.appendChild(cell);
     cell.innerHTML = "▶ " + inputNames[inputId];
-    if(isRemovableOscInputs[inputId]){
+    if(isRemovableInputs[inputId]){
       var btnRemove = document.createElement("button");
       btnRemove.innerText = "削除";
       btnRemove.addEventListener('click', onRemoveOscInput.bind(null, parseInt(inputId)));
@@ -277,6 +277,24 @@ var ctrl = {
     var param = {outputId: outputId};
     console.log("close_osc_output: " + JSON.stringify(param));
     this.socket.emit("close_osc_output", param);
+  },
+
+  open_new_virtualmidi_input: function() {
+    this.socket.emit("open_new_virtualmidi_input");
+  },
+
+  open_new_virtualmidi_output: function() {
+    this.socket.emit("open_new_virtualmidi_output");
+  },
+
+  close_virtualmidi_input: function(inputId) {
+    var param = {inputId: inputId};
+    this.socket.emit("close_virtualmidi_input", param);
+  },
+
+  close_virtualmidi_output: function(outputId) {
+    var param = {outputId: outputId};
+    this.socket.emit("close_virtualmidi_output", param);
   },
 
   publishMessage: function(msg, callback) {

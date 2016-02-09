@@ -52,6 +52,20 @@
 
   <hr><!------------------------------------------------------------------->
 
+  <h3>仮想MIDI接続をネットワークに登録する</h3>
+  <table>
+    <tr>
+      <td>仮想MIDI INを追加</td>
+      <td><button onclick="ctrl.open_new_virtualmidi_input();">追加</button></td>
+    </tr>
+    <tr>
+      <td>仮想MIDI OUTを追加</td>
+      <td><button onclick="ctrl.open_new_virtualmidi_output();">追加</button></td>
+    </tr>
+  </table>
+  
+  <hr><!------------------------------------------------------------------->
+
   <h3>このページをJSONクライアントとしてネットワーク参加する</h3>
   <div id=jsonclient_join>
       <table><tr><td>

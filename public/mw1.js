@@ -222,7 +222,7 @@ var ctrl = {
   onUpdateList: function(obj){
     // htmlのtableでコネクションマトリックスを作る
     // マトリックス内のボタンクリックでサーバーに接続変更を指示する
-    var table = makeConnectionTable(obj, this.add_connection.bind(this), this.close_osc_input.bind(this), this.close_osc_output.bind(this));
+    var table = makeConnectionTable(obj, this.add_connection.bind(this), this.close_input.bind(this), this.close_output.bind(this));
     var networkArea = document.getElementById("network");
     networkArea.textContent = null;
     networkArea.appendChild(table);
@@ -267,18 +267,6 @@ var ctrl = {
     this.socket.emit("open_new_osc_output", {host: host.value, port: port.value});
   },
 
-  close_osc_input: function(inputId) {
-    var param = {inputId: inputId};
-    console.log("close_osc_input: " + JSON.stringify(param));
-    this.socket.emit("close_osc_input", param);
-  },
-
-  close_osc_output: function(outputId) {
-    var param = {outputId: outputId};
-    console.log("close_osc_output: " + JSON.stringify(param));
-    this.socket.emit("close_osc_output", param);
-  },
-
   open_new_virtualmidi_input: function() {
     this.socket.emit("open_new_virtualmidi_input");
   },
@@ -287,14 +275,16 @@ var ctrl = {
     this.socket.emit("open_new_virtualmidi_output");
   },
 
-  close_virtualmidi_input: function(inputId) {
+  close_input: function(inputId) {
     var param = {inputId: inputId};
-    this.socket.emit("close_virtualmidi_input", param);
+    console.log("close_input: " + JSON.stringify(param));
+    this.socket.emit("close_input", param);
   },
 
-  close_virtualmidi_output: function(outputId) {
+  close_output: function(outputId) {
     var param = {outputId: outputId};
-    this.socket.emit("close_virtualmidi_output", param);
+    console.log("close_output: " + JSON.stringify(param));
+    this.socket.emit("close_output", param);
   },
 
   publishMessage: function(msg, callback) {

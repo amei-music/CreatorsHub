@@ -55,12 +55,14 @@
   <h3>仮想MIDI接続をネットワークに登録する</h3>
   <table>
     <tr>
-      <td>仮想MIDI INを追加</td>
-      <td><button onclick="ctrl.open_new_virtualmidi_input();">追加</button></td>
+      <td>仮想MIDI受信ポートを追加</td>
+      <td>名前<input  type="text" id="vmidi_in" style="width:120px;" />
+      <button onclick="ctrl.open_new_virtualmidi_input();">追加</button></td>
     </tr>
     <tr>
-      <td>仮想MIDI OUTを追加</td>
-      <td><button onclick="ctrl.open_new_virtualmidi_output();">追加</button></td>
+      <td>仮想MIDI出力ポートを追加</td>
+      <td>名前<input  type="text" id="vmidi_out" style="width:120px;" />
+      <button onclick="ctrl.open_new_virtualmidi_output();">追加</button></td>
     </tr>
   </table>
   

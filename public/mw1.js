@@ -268,11 +268,13 @@ var ctrl = {
   },
 
   open_new_virtualmidi_input: function() {
-    this.socket.emit("open_new_virtualmidi_input");
+    var name = document.getElementById('vmidi_in');
+    this.socket.emit("open_new_virtualmidi_input", {name: name.value});
   },
 
   open_new_virtualmidi_output: function() {
-    this.socket.emit("open_new_virtualmidi_output");
+    var name = document.getElementById('vmidi_out');
+    this.socket.emit("open_new_virtualmidi_output", {name: name.value});
   },
 
   close_input: function(inputId) {

@@ -27,6 +27,9 @@ td, th {
     text-align: left;
     border: 0;
 }
+table tr td:first-child {
+    width: 25%;
+}
 thead th {
 	text-align: center;
     padding: 0.25em 0.5em 0em;

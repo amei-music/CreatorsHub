@@ -14,7 +14,6 @@ var mididevs    = require('./mididevices') // require('midi');
 var LISTEN_PORT      = 16080;
 var PUBLIC_DIR       = __dirname + "/public"
 var OSC_INPORT_BEGIN = 12345;
-var NUM_MAX_VMIDI    = 4; // 最大仮想MIDIポート数
 
 //ホームディレクトリに設定ファイルを保存
 var dirHome = process.env[process.platform == "win32" ? "USERPROFILE" : "HOME"];
@@ -583,26 +582,18 @@ function App(){ return{
     console.log("RtpMidi Output [" + name + "] (client id=" + outputId + ").");
   },
  
-  open_new_virtualmidi_input : function() {
-    for(var i = 1; i <= NUM_MAX_VMIDI; i++){
-        var name = "Virtual MIDI IN " + i;
-        if(this.open_virtualmidi_input(name)){
-            this.clients.saveSettings()
-            this.update_list(); // クライアントのネットワーク表示更新
-            break;
-        }
+  open_new_virtualmidi_input : function(obj) {
+    if(this.open_virtualmidi_input(obj.name)){
+        this.clients.saveSettings()
+        this.update_list(); // クライアントのネットワーク表示更新
     }
   },
   
-  open_new_virtualmidi_output : function() {
-     for(var i = 1; i <= NUM_MAX_VMIDI; i++){
-        var name = "Virtual MIDI OUT " + i;
-        if(this.open_virtualmidi_output(name)){
-            this.clients.saveSettings()
-            this.update_list(); // クライアントのネットワーク表示更新
-            break;            
-        }
-     }
+  open_new_virtualmidi_output : function(obj) {
+    if(this.open_virtualmidi_output(obj.name)){
+        this.clients.saveSettings()
+        this.update_list(); // クライアントのネットワーク表示更新
+    }
   },
   
   //  - このサーバーの仮想Midi受信ポートを追加する

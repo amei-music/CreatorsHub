@@ -8,6 +8,8 @@ var osc         = require('osc-min');
 
 var prefix = function(path){ return "/fm" + path; }
 
+var keyvalue = "/keyvalue";
+
 // yamaha専用MIDIを試験的にパースしてみる
 var yamahaStyle = {
   "/yamaha/style/sectioncontrol": [0xF0, 0x43, 0x7E, 0x00, 0xFF, 0xFF, 0xF7],
@@ -225,6 +227,31 @@ function obj2midi(msg){
   }
 }
 
+function toBuffer(msg){
+    var address = msg.address;
+    var args = msg.args;
+    if(address && args){
+        // argsがArrayではない場合プロパティ名をアルファベット順に並べてアドレス側に書く
+        // (例) /address/keyvalue_aa_bb_xx
+        if(! Array.isArray(args)){
+            var props = Object.getOwnPropertyNames(args);
+            props.sort();
+            address += keyvalue;
+            var newargs = [];
+            for(var i = 0; i < props.length; i++){
+                address += "_" + props[i];
+                newargs[i] = args[props[i]];
+            }
+            args = newargs;
+        }
+    }else{
+        address = "";
+        args = [];
+        console.log("toBuffer: bad format")
+    }
+    return osc.toBuffer({address: address, args: args});
+}
+
 function fromBuffer(msgbuf){
   // osc.fromBufferは丁寧すぎるレイアウトで返すので使いづらい
   // とりあえず自前で作ってみる。例外処理全然できてない
@@ -237,14 +264,24 @@ function fromBuffer(msgbuf){
   for (var i in msg.args){
     args[i] = msg.args[i].value;
   }
-  return {address: msg.address, args: args}
+  var address = msg.address.split(keyvalue + "_");
+  if(address.length > 1){
+      // アドレスがkeyvalueを含む場合Objectに変換する
+      var props = address[1].split("_");
+      var newargs = {};
+      for(var i = 0; i < props.length; i++){
+          newargs[props[i]] = args[i];
+      }
+      args = newargs;
+  }
+  return {address: address[0], args: args}
 }
 
 function convertMessage(msg, msg_from, msg_to){
   if(msg_from == msg_to) return msg; // そのまま
 
   if(msg_from == "json"){
-    if(msg_to == "osc" ) return osc.toBuffer(msg);
+    if(msg_to == "osc" ) return toBuffer(msg);
     if(msg_to == "midi") return obj2midi(msg);
   }
   if(msg_from == "osc"){
@@ -253,6 +290,6 @@ function convertMessage(msg, msg_from, msg_to){
   }
   if(msg_from == "midi"){
     if(msg_to == "json") return midi2obj(msg); // OSCっぽいjsonなのでそのまま送信可
-    if(msg_to == "osc" ) return osc.toBuffer(midi2obj(msg)); // 文字列にする
+    if(msg_to == "osc" ) return toBuffer(midi2obj(msg)); // 文字列にする
   }
 }

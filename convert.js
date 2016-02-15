@@ -231,18 +231,20 @@ function toBuffer(msg){
     var address = msg.address;
     var args = msg.args;
     if(address && args){
-        // argsがArrayではない場合プロパティ名をアルファベット順に並べてアドレス側に書く
+        // argsがObjectの場合はプロパティ名をアルファベット順に並べてアドレス側に書く
         // (例) /address/keyvalue_aa_bb_xx
-        if(! Array.isArray(args)){
-            var props = Object.getOwnPropertyNames(args);
-            props.sort();
-            address += keyvalue;
-            var newargs = [];
-            for(var i = 0; i < props.length; i++){
-                address += "_" + props[i];
-                newargs[i] = args[props[i]];
+        if(!(args instanceof Array)){
+            if(args instanceof Object){
+                var props = Object.getOwnPropertyNames(args);
+                props.sort();
+                address += keyvalue;
+                var newargs = [];
+                for(var i = 0; i < props.length; i++){
+                    address += "_" + props[i];
+                    newargs[i] = args[props[i]];
+                }
+                args = newargs;
             }
-            args = newargs;
         }
     }else{
         address = "";

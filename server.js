@@ -105,6 +105,22 @@ function ClientRtpMidi(/*direction,*/ name){
   };
 }
 
+function ClientVirtualMidi(/*direction,*/ name){
+  var type = "vmidi";
+  return {
+    type:      type,
+    name:      name,
+    key:       type + ":" + name,
+
+    deliver: function(msg, msg_from){
+      var buf = convert.convertMessage(msg, msg_from, type)
+      g_midiDevs.voutputs[this.name].sendMessage(buf);
+    },
+
+    simplify: function(){ return {type: type, name: this.name} },
+  };
+}
+
 //==============================================================================
 // プロトコルに依存しないクライアント一覧, コネクション設定に関する部分
 //==============================================================================
@@ -170,16 +186,18 @@ function Clients(){ return {
   deleteClientInput: function(clientId){
     var existed = (clientId in this.inputs);
     if(existed){
-      var inputKey = this.inputs[clientId].key;
-      var type = this.inputs[clientId].type;
+      var obj = this.inputs[clientId];
       delete this.inputs[clientId];
-
-      if(type == "osc"){
-        for(var outputKey in this.connections[inputKey]){
-          this.deleteConnection(inputKey, outputKey);
+  
+      if(obj.type == "osc"){
+        for(var outputKey in this.connections[obj.key]){
+          this.deleteConnection(obj.key, outputKey);
         }
       }
-
+      if(obj.type == "vmidi"){
+        g_midiDevs.removeVirtualInput(obj.name);
+      }
+  
       this.updateConnectionsById();
       // console.log(this.connections)
     }
@@ -189,10 +207,10 @@ function Clients(){ return {
   deleteClientOutput: function(clientId){
     var existed = (clientId in this.outputs);
     if(existed){
-      var type = this.outputs[clientId].type;
+      var obj = this.outputs[clientId];
       delete this.outputs[clientId];
-
-      if(type == "osc"){
+  
+      if(obj.type == "osc"){
         for(var inputKey in this.connections){
           for(var outputKey in this.connections[inputKey]){
             var outputId = this.key2ClientId(outputKey, this.outputs);
@@ -200,7 +218,10 @@ function Clients(){ return {
           }
         }
       }
-
+      if(obj.type == "vmidi"){
+        g_midiDevs.removeVirtualOutput(obj.name);
+      }
+      
       this.updateConnectionsById();
       // console.log(this.connections)
     }
@@ -257,6 +278,8 @@ function Clients(){ return {
     return {
       oscInputs: [],
       oscOutputs: [],
+      vmidiInputs: [],
+      vmidiOutputs: [],
       connections: {}
     };
   },
@@ -264,18 +287,26 @@ function Clients(){ return {
   saveSettings: function(){
     // 設定の保存
     var settings = this.emptySettings();
-
-    // OSC入力情報
+    
     for(var inputId in this.inputs){
+      // OSC入力情報
       if(this.inputs[inputId].type == "osc"){
         settings.oscInputs.push(this.inputs[inputId].simplify());
       }
+      // 仮想MIDI入力情報
+      if(this.inputs[inputId].type == "vmidi"){
+        settings.vmidiInputs.push(this.inputs[inputId].simplify());
+      }
     }
-
-    // OSC出力情報
+    
     for(var outputId in this.outputs){
+      // OSC出力情報
       if(this.outputs[outputId].type == "osc"){
         settings.oscOutputs.push(this.outputs[outputId].simplify());
+      }
+      // 仮想MIDI出力情報
+      if(this.outputs[outputId].type == "vmidi"){
+        settings.vmidiOutputs.push(this.outputs[outputId].simplify());
       }
     }
 
@@ -361,6 +392,13 @@ function App(){ return{
     }
     for(var i in settings.oscOutputs){
        this.open_osc_output(settings.oscOutputs[i]);
+    }
+    // 仮想MIDIポートオープン
+    for(var i in settings.vmidiInputs){
+       this.open_virtualmidi_input(settings.vmidiInputs[i].name);
+    }
+    for(var i in settings.vmidiOutputs){
+       this.open_virtualmidi_output(settings.vmidiOutputs[i].name);
     }
     // RtpMidi
     var name = g_rtpSession.bonjourName + ":" + g_rtpSession.port;
@@ -509,21 +547,21 @@ function App(){ return{
     this.update_list(); // クライアントのネットワーク表示更新
   },
 
-  //  - このサーバーのOSC受信ポートを削除する
-  close_osc_input : function(obj) {
+  //  - このサーバーの受信ポートを削除する
+  close_input : function(obj) {
     var inputId = obj.inputId;
     if(this.clients.deleteClientInput (inputId)){
-      console.log("close_osc_input:" + inputId);
+      console.log("close_input:" + inputId);
     }
     this.clients.saveSettings()
     this.update_list(); // クライアントのネットワーク表示更新
   },
-
-  //  - このサーバーのOSC送信ポートを削除する
-  close_osc_output : function(obj) {
+  
+  //  - このサーバーの送信ポートを削除する
+  close_output : function(obj) {
     var outputId = obj.outputId;
     if(this.clients.deleteClientOutput (outputId)){
-      console.log("close_osc_output:" + outputId);
+      console.log("close_output:" + outputId);
     }
     this.clients.saveSettings()
     this.update_list(); // クライアントのネットワーク表示更新
@@ -548,6 +586,47 @@ function App(){ return{
     console.log("RtpMidi Output [" + name + "] (client id=" + outputId + ").");
   },
  
+  open_new_virtualmidi_input : function(obj) {
+    if(this.open_virtualmidi_input(obj.name)){
+        this.clients.saveSettings()
+        this.update_list(); // クライアントのネットワーク表示更新
+    }
+  },
+  
+  open_new_virtualmidi_output : function(obj) {
+    if(this.open_virtualmidi_output(obj.name)){
+        this.clients.saveSettings()
+        this.update_list(); // クライアントのネットワーク表示更新
+    }
+  },
+  
+  //  - このサーバーの仮想Midi受信ポートを追加する
+  open_virtualmidi_input : function(name) {
+    var vin = g_midiDevs.createVirtualInput(name);
+    if(vin){
+        // ネットワークに登録
+        var inputId  = this.clients.addNewClientInput (ClientVirtualMidi(name));
+        console.log("VirtualMidi Input [" + name + "] (client id=" + inputId + ").");
+
+        // コールバック
+        vin.on('message', function(deltaTime, message) {
+            var obj = Array.prototype.slice.call(message, 0);
+            this.clients.deliver(inputId, obj); // 配信
+        }.bind(this));
+    }
+    return vin;
+  },
+  //  - このサーバーの仮想Midi送信ポートを追加する
+  open_virtualmidi_output : function(name) {
+    var vout = g_midiDevs.createVirtualOutput(name);
+    if(vout){
+        // 接続ネットワークに参加する
+        var outputId = this.clients.addNewClientOutput(ClientVirtualMidi(name));
+        console.log("VirtualMidi Output [" + name + "] (client id=" + outputId + ").");
+    }
+    return vout;
+  },
+  
   // websocketとしての応答内容を記述
   onWebSocket : function(socket){
     this.update_list(); // websocket接続時に一度現状を送る
@@ -568,10 +647,16 @@ function App(){ return{
     // (3)のためのAPI
     socket.on("open_new_osc_input",  this.open_new_osc_input.bind(this) );       // OSC受信ポートを増やす
     socket.on("open_new_osc_output", this.open_new_osc_output.bind(this) );      // OSC送信先を登録する
-    socket.on("close_osc_input",     this.close_osc_input.bind(this) );          // 開いた受信ポートを閉じる
-    socket.on("close_osc_output",    this.close_osc_output.bind(this) );         // OSC送信先を閉じる
     // oscアプリ本体とこのserver.jsのoscモジュールが直接メッセージをやり取りするので、
     // oscクライアントとの実通信にWebSocketは絡まない。あくまでコネクション管理のみ
+
+    // 仮想MIDIのためのAPI
+    socket.on("open_new_virtualmidi_input",  this.open_new_virtualmidi_input.bind(this) );  // 仮想MIDI INを増やす
+    socket.on("open_new_virtualmidi_output", this.open_new_virtualmidi_output.bind(this) ); // 仮想MIDI OUTを増やす
+
+    // OSC, 仮想MIDIを閉じる
+    socket.on("close_input",     this.close_input.bind(this) );          // 開いた受信ポートを閉じる
+    socket.on("close_output",    this.close_output.bind(this) );         // 送信ポートを閉じる
 
     // ソケット自体の接続終了
     socket.on("disconnect",          this.exit_wsjson.bind(this, socket) );

@@ -13,6 +13,11 @@ function foundInIngnoreList(name){
   }
   return false;
 }
+function appendIngnoreList(name){
+    if(IGNORE_PATTERNS.indexOf(name) < 0){
+        IGNORE_PATTERNS.push(name);
+    }
+}
 
 //==============================================================================
 // MIDIデバイスの増減をcallback式で通知してくれる人
@@ -27,6 +32,9 @@ function MidiDevices(onAddNewInput, onDeleteInput, onAddNewOutput, onDeleteOutpu
 
     inputs : {}, // 開いたportにつながっているmidiオブジェクト
     outputs: {}, // 開いたportにつながっているmidiオブジェクト
+
+    vinputs : {}, // 仮想MIDI INオブジェクト
+    voutputs: {}, // 仮想MIDI OUTオブジェクト
 
     onAddNewInput:  onAddNewInput,  // inputが新規追加されたときに呼ばれる(戻り値に受信ハンドラを返すこと)
     onDeleteInput:  onDeleteInput,  // inputが切断されたときに呼ばれる
@@ -108,6 +116,50 @@ function MidiDevices(onAddNewInput, onDeleteInput, onAddNewOutput, onDeleteOutpu
       for(var portNum=0; portNum<this.output.getPortCount(); ++portNum){
         console.log("output", portNum, this.output.getPortName(portNum))
       }
+    },
+    
+    // 仮想MidiInを追加する
+    createVirtualInput: function(name){
+        // すでに同名の仮想MIDIINがある場合はnullを返す
+        if(obj.vinputs[name]) return null;
+
+        // 仮想MIDI INデバイスが出力側に出てこないようにする
+        appendIngnoreList(name);
+
+        var vin = new midi.input();
+        vin.openVirtualPort(name);
+        obj.vinputs[name] = vin;
+        return vin;
+    },
+
+    // 仮想MidiOutを作成する
+    createVirtualOutput: function(name){
+        // すでに同名の仮想MIDIINがある場合はnullを返す
+        if(obj.voutputs[name]) return null;
+        
+        // 仮想MIDI OUTデバイスが入力側に出てこないようにする
+        appendIngnoreList(name);
+        
+        var vout = new midi.output();
+        vout.openVirtualPort(name);
+        obj.voutputs[name] = vout;
+        return vout;
+    },
+
+    // 仮想MidiInを破棄する
+   removeVirtualInput: function(name){
+        if(obj.vinputs[name]){
+            obj.vinputs[name].closePort();
+            delete obj.vinputs[name];
+        }
+    },
+
+    // 仮想MidiOutを破棄する
+    removeVirtualOutput: function(name){
+        if(obj.voutputs[name]){
+            obj.voutputs[name].closePort();
+            delete obj.voutputs[name];
+        }
     },
   }
 

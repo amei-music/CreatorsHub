@@ -49,7 +49,7 @@ function makeNodeName(client){
     }
 
   }
-  if (client.type == "midi") name += client.name;
+  if (client.type == "midi" || client.type == "rtp") name += client.name;
   if (client.type == "osc" ) name += client.host + ":" + client.port;
   return name
 }
@@ -148,6 +148,13 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
         }
       }else{
         cell.innerHTML = "▲";
+      }
+      // エラー表示
+      if(obj.outputs[outputId].error){
+        if(i == 1){
+            cell.innerHTML = "×";
+        }
+        cell.className = "error";
       }
     }
   }

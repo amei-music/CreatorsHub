@@ -5,6 +5,7 @@ var serveStatic = require('serve-static');
 var socketio    = require("socket.io")
 var dgram       = require("dgram");
 var osc         = require('osc-min');
+var rtpmidi     = require('rtpmidi');
 var fs          = require('fs');
 var yargs       = require('yargs');
 var usage       = require('usage');
@@ -46,6 +47,7 @@ function ClientOsc(/*direction,*/ host, port){
     type:      type,
     host:      host, // 受信時には使わない
     port:      port,
+    error:     false,
     key:       type + ":" + host + ":" + port,
 
     deliver: function(msg, msg_from){
@@ -54,10 +56,19 @@ function ClientOsc(/*direction,*/ host, port){
       // console.log(msg)
       // console.log(this.port, this.host)
       verboseLog("[sent to osc  client]", msg)
-      g_oscSender.send(buf, 0, buf.length, this.port, this.host);
+      g_oscSender.send(buf, 0, buf.length, this.port, this.host, function(e){
+        if(e){
+          // OSC送信時にエラーが発生した場合
+          if(!this.error){
+            // エラーフラグを立ててクライアントの表示更新
+            this.error = true;
+            g_app.update_list();
+          } 
+        }
+      }.bind(this));
     },
 
-    simplify: function(){ return {type: type, host: this.host, port: this.port} },
+    simplify: function(){ return {type: type, host: this.host, port: this.port, error: this.error} },
   }
 }
 
@@ -72,6 +83,22 @@ function ClientMidi(/*direction,*/ name){
       var buf = convert.convertMessage(msg, msg_from, type)
       verboseLog("[sent to midi client]", "[" + buf.join(", ") + "]")
       g_midiDevs.outputs[this.name].sendMessage(buf);
+    },
+
+    simplify: function(){ return {type: type, name: this.name} },
+  };
+}
+
+function ClientRtpMidi(/*direction,*/ name){
+  var type = "rtp";
+  return {
+    type:      type,
+    name:      name,
+    key:       type + ":" + name,
+
+    deliver: function(msg, msg_from){
+      var buf = convert.convertMessage(msg, msg_from, type)
+      g_rtpSession.sendMessage(0, buf);
     },
 
     simplify: function(){ return {type: type, name: this.name} },
@@ -268,7 +295,12 @@ function Clients(){ return {
     if (fs.existsSync(SETTING_FILE)) {
       // 設定情報を読み込み
       var buf = fs.readFileSync(SETTING_FILE, "utf-8");
-      settings = JSON.parse(buf);
+      try {
+          settings = JSON.parse(buf);
+      }
+      catch(e){
+          console.log("loadSettings: File " + SETTING_FILE + " is broken. Ignored.");
+      }
     }
     return settings;
   },
@@ -323,12 +355,18 @@ function App(){ return{
   // 初期化
   init : function(){
     var settings = this.clients.loadSettings();
+    // OSCポートオープン
     for(var i in settings.oscInputs){
        this.open_osc_input(settings.oscInputs[i]);
     }
     for(var i in settings.oscOutputs){
        this.open_osc_output(settings.oscOutputs[i]);
     }
+    // RtpMidi
+    var name = g_rtpSession.bonjourName + ":" + g_rtpSession.port;
+    this.open_rtpmidi_input(name);
+    this.open_rtpmidi_output(name);
+    // 接続情報
     this.clients.connections = settings.connections;
     this.clients.updateConnectionsById();
     this.update_list(); // ネットワーク更新
@@ -490,7 +528,26 @@ function App(){ return{
     this.clients.saveSettings()
     this.update_list(); // クライアントのネットワーク表示更新
   },
+  
+  //  - このサーバーのRtpMidi受信ポートを追加する
+  open_rtpmidi_input : function(name) {
+    // ネットワークに登録
+    var inputId  = this.clients.addNewClientInput (ClientRtpMidi(name));
+    console.log("RtpMidi Input [" + name + "] (client id=" + inputId + ").");
 
+    // コールバック
+    g_rtpSession.on('message', function(deltaTime, message) {
+      var obj = Array.prototype.slice.call(message, 0);
+      this.clients.deliver(inputId, obj); // 配信
+    }.bind(this));
+  },
+  //  - このサーバーのRtpMidi送信ポートを追加する
+  open_rtpmidi_output : function(name) {
+    // 接続ネットワークに参加する
+    var outputId = this.clients.addNewClientOutput(ClientRtpMidi(name));
+    console.log("RtpMidi Output [" + name + "] (client id=" + outputId + ").");
+  },
+ 
   // websocketとしての応答内容を記述
   onWebSocket : function(socket){
     this.update_list(); // websocket接続時に一度現状を送る
@@ -592,12 +649,20 @@ if(argv.test){
 //==============================================================================
 var g_app       = App();
 var g_oscSender = dgram.createSocket("udp4")
+g_oscSender.on("error", function(){}); // OSCのエラーハンドラ（落ちないためのもの。エラーはsendのコールバックで処理するのでここは空にしておく）
 var g_midiDevs  = mididevs.MidiDevices(
   g_app.onAddNewMidiInput.bind(g_app),
   g_app.onDeleteMidiInput.bind(g_app),
   g_app.onAddNewMidiOutput.bind(g_app),
   g_app.onDeleteMidiOutput.bind(g_app)
 );
+
+// RtpMidi
+var g_rtpSession = rtpmidi.manager.createSession({
+  localName: 'Session 1',
+  bonjourName: 'FM_MW1',
+  port: 5008
+});
 
 // PUBLIC_DIR以下を普通のhttpサーバーとしてlisten
 var g_httpApp = connect();

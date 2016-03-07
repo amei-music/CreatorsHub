@@ -49,7 +49,7 @@ function makeNodeName(client){
     }
 
   }
-  if (client.type == "midi") name += client.name;
+  if (client.type == "midi" || client.type == "analyzer") name += client.name;
   if (client.type == "osc" ) name += client.host + ":" + client.port;
   return name
 }

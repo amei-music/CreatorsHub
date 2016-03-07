@@ -244,15 +244,16 @@ function convertMessage(msg, msg_from, msg_to){
   if(msg_from == msg_to) return msg; // そのまま
 
   if(msg_from == "json"){
-    if(msg_to == "osc" ) return osc.toBuffer(msg);
+    if(msg_to == "osc") return osc.toBuffer(msg);
     if(msg_to == "midi") return obj2midi(msg);
+    if(msg_to == "json") return msg;
   }
   if(msg_from == "osc"){
-    if(msg_to == "json") return fromBuffer(msg); // 失敗するとthrow
+    if(msg_to == "json" || msg_to == "analyzer") return fromBuffer(msg); // 失敗するとthrow
     if(msg_to == "midi") return obj2midi(fromBuffer(msg));
   }
   if(msg_from == "midi"){
-    if(msg_to == "json") return midi2obj(msg); // OSCっぽいjsonなのでそのまま送信可
-    if(msg_to == "osc" ) return osc.toBuffer(midi2obj(msg)); // 文字列にする
+    if(msg_to == "json" || msg_to == "analyzer") return midi2obj(msg); // OSCっぽいjsonなのでそのまま送信可
+    if(msg_to == "osc") return osc.toBuffer(midi2obj(msg)); // 文字列にする
   }
 }

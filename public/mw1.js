@@ -201,6 +201,7 @@ var ctrl = {
     this.socket = io.connect(/*'http://localhost:8080'*/);
     this.socket.on("update_list",  this.onUpdateList.bind(this));
     this.socket.on("message_json", this.onMessageJson.bind(this));
+    this.socket.on("message_analyzer", this.onMessageAnalyzer.bind(this));
     this.socket.on("disconnect",   this.onDisconnect.bind(this));
 
     // UIを初期化
@@ -224,6 +225,83 @@ var ctrl = {
   onMessageJson : function(obj){
     this.addMessage(obj);
     this.timing.get(obj);
+  },
+
+  onMessageAnalyzer : function(obj){
+    //console.log(obj.name, obj.output.peak);
+    var table = document.getElementById("analyzer");
+    var tr = table.rows.namedItem(obj.name);
+
+    // 新規行
+    if(!tr){
+      tr = table.insertRow(-1);
+      tr.id = obj.name;
+
+      var td = tr.insertCell(-1);
+      td.innerText = obj.name;
+      td.id = "name";
+
+      function addGraph(id){
+        td = tr.insertCell(-1);
+        td.id = id;
+
+        var canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 32;
+        td.appendChild(canvas);
+      }
+
+      addGraph("signal");
+      addGraph("magnitudes");
+
+      td = tr.insertCell(-1);
+      td.id = "peak";
+    }
+
+    // 更新
+    if(tr){
+      var cells = tr.cells;
+
+      var td = cells.namedItem("peak");
+      if(td){
+        td.innerText = "Peak=" + obj.output.freq + "Hz";
+      }
+
+      // グラフ更新
+      function updateGraph(id, val){
+        // max, min
+        var max = 1;
+        for(var i = 0; i < val.length; i++){
+          if(max < val[i]){
+            max = val[i];
+          }
+        }
+
+        // 描画
+        td = cells.namedItem(id);
+        var canvas = td.childNodes[0];
+        var w = canvas.width;
+        var h = canvas.height;
+
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, w, h);
+
+        ctx.strokeStyle = "#2ea879"//#8f2";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+
+        for(var i = 0; i < val.length; i++){
+          var x = i * w / val.length;
+          var y = h - val[i] * h / max;
+          ctx.lineTo(x, y);
+        }
+        ctx.stroke();        
+      }
+
+      updateGraph("signal", obj.output.signal);
+      updateGraph("magnitudes", obj.output.magnitudes);
+    }
   },
 
   onDisconnect : function(){

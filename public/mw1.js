@@ -251,7 +251,22 @@ var ctrl = {
         td.appendChild(canvas);
       }
 
+      function addSVG(id){
+        td = tr.insertCell(-1);
+        td.id = id;
+
+        //var svg = document.createElement("svg");
+        //svg.style.width = 256;
+        //svg.style.height = 32;
+        //td.appendChild(svg);
+
+        var div = document.createElement("div");
+        td.appendChild(div);
+      }
+
       addGraph("signal");
+      addSVG("sig");
+      //addSVG("sig2");
       addGraph("magnitudes");
 
       td = tr.insertCell(-1);
@@ -265,18 +280,29 @@ var ctrl = {
       var td = cells.namedItem("peak");
       if(td){
         td.innerText = "Peak=" + obj.output.freq + "Hz";
+        if(obj.output.sd){
+        //    td.innerText += ", A=" + obj.output.sd.A + ", B=" + obj.output.sd.B + ", r=" + obj.output.sd.r;
+        }
       }
 
       // グラフ更新
-      function updateGraph(id, val){
+      function updateGraph(id, val, min, max){
         // max, min
+        /*
         var max = 1;
         for(var i = 0; i < val.length; i++){
           if(max < val[i]){
             max = val[i];
           }
         }
+        */
 
+        var range = max - min;
+        if(range == 0){
+          min = 0;
+          range = 1;
+        }
+        
         // 描画
         td = cells.namedItem(id);
         var canvas = td.childNodes[0];
@@ -293,14 +319,140 @@ var ctrl = {
 
         for(var i = 0; i < val.length; i++){
           var x = i * w / val.length;
-          var y = h - val[i] * h / max;
+          var y = h - (val[i] - min) * h / range;
           ctx.lineTo(x, y);
         }
-        ctx.stroke();        
+        ctx.stroke();
       }
 
-      updateGraph("signal", obj.output.signal);
-      updateGraph("magnitudes", obj.output.magnitudes);
+      //-------------------------
+      var svgWidth = 256;
+      var svgHeight = 32;
+      var svgRadius = 3;
+
+      function getSVG(id){
+        td = cells.namedItem(id);
+
+        var div = td.childNodes[0];
+        div.innerHTML = "";
+        var svg = d3.select(div).append("svg")
+        //var svg = d3.select(td.childNodes[0]);
+        //svg.innerHTML = "";
+        svg.attr({
+          width: svgWidth,
+          height: svgHeight
+        });
+
+        return(svg);
+      }
+      //-------------------------
+      // 縦軸が値、横軸が時間
+      var svgScaleX = d3.scale.linear()
+                            .domain([obj.output.lastAnalyzeTime - obj.output.sampleDuration, obj.output.lastAnalyzeTime])
+                            .range([svgRadius, svgWidth - svgRadius]);
+      var svgScaleY = d3.scale.linear()
+                            .domain([obj.output.valMin, obj.output.valMax])
+                            .range([svgHeight - svgRadius, svgRadius]);
+      function updateSVG(id, obj){
+        var svg = getSVG(id);
+        svg.style("background-color", "#fff0f0");
+        
+        var circles = svg.selectAll("circle")
+         .data(obj.events)
+         .enter()
+         .append("circle");
+
+         circles.attr("cx", function(d, i) {
+             //return i * 4;
+             return svgScaleX(d[0]);
+         })
+         .attr("cy", function(d, i) {
+             //return i * 4;
+             return svgScaleY(d[1]);
+         })
+         .attr("r", function(d) {
+              return svgRadius;
+         })
+         .attr("fill","red");
+ 
+         circles.transition().delay(500).duration(1000).attr("r", 1);
+      }
+      //-------------------------
+      // 縦軸が時間、横軸が値
+      var svg2ScaleX = d3.scale.linear()
+                            .domain([obj.output.valMin, obj.output.valMax])
+                            .range([svgRadius, svgWidth - svgRadius]);
+      var svg2ScaleY = d3.scale.linear()
+                            .domain([obj.output.lastAnalyzeTime - obj.output.sampleDuration, obj.output.lastAnalyzeTime])
+                            .range([svgRadius, svgHeight - svgRadius]);
+      var svg2ScaleR = d3.scale.linear()
+                            .domain([obj.output.lastAnalyzeTime - obj.output.sampleDuration, obj.output.lastAnalyzeTime])
+                            .range([1, svgRadius]);
+      function updateSVG2(id, obj){
+        var svg = getSVG(id);
+        svg.style("background-color", "#f8f8f8");
+
+        var circles = svg.selectAll("circle")
+         .data(obj.events)
+         .enter()
+         .append("circle");
+
+         circles.attr("cx", function(d, i) {
+             return svg2ScaleX(d[1]);
+         })
+         .attr("cy", function(d, i) {
+             return svg2ScaleY(d[0]);
+         })
+         .attr("r", function(d) {
+              return svg2ScaleR(d[0]);
+         })
+         .attr("fill","orange");
+
+        svg.append("text")
+          .attr("x", 0)
+          .attr("y", svgHeight)
+          .attr("text-anchor", "start")
+          .text(obj.valMin);
+
+        svg.append("text")
+          .attr("x", svgWidth)
+          .attr("y", svgHeight)
+          .attr("text-anchor", "end")
+          .text(obj.valMax);
+
+        var t1 = obj.lastAnalyzeTime - obj.sampleDuration;
+        var t2 = obj.lastAnalyzeTime;
+        var v1 = obj.sd.A + obj.sd.B * t1;
+        var v2 = obj.sd.A + obj.sd.B * t2;
+        svg.append("line")
+          .attr("x1",svg2ScaleX(v1))
+          .attr("x2",svg2ScaleX(v2))
+          .attr("y1",svg2ScaleY(t1))
+          .attr("y2",svg2ScaleY(t2))
+          .attr("stroke-width",1)
+          .attr("stroke","green");
+      }
+      //-------------------------
+
+      // 折れ線を生成
+      /*
+var line = d3.svg.line()
+.x(function(d, i){ return i * svgWidth/(list.length-1); })  // 横方向はSVG領域に合わせて調整。データは最低2個あるのが前提
+.y(function(d){ return svgHeight-d; })  // 縦方向は数値そのままでスケール等しない
+// 折れ線グラフを描画
+svg.append("path")
+.attr("d", line(list))  // 線を描画
+.attr("stroke", "black")    // 線の色を指定
+.attr("fill", "none");  // 塗り潰しなし。指定しないと黒色で塗り潰される
+*/
+      updateGraph("signal", obj.output.signal, obj.output.valMin, obj.output.valMax);
+      updateGraph("magnitudes", obj.output.magnitudes, obj.output.magMin, obj.output.magMax);
+      if(obj.output.sd){
+        updateSVG2("sig", obj.output);
+      }else{
+        updateSVG("sig", obj.output);
+      }
+      //updateSVG("mag", obj.output.magnitudes);
     }
   },
 

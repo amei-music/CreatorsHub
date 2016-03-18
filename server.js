@@ -8,11 +8,10 @@ var osc         = require('osc-min');
 var fs          = require('fs');
 var yargs       = require('yargs');
 var usage       = require('usage');
-var fft         = require('fft-js').fft;
-var fftUtil     = require('fft-js').util;
 
 var convert     = require('./convert')
 var mididevs    = require('./mididevices') // require('midi');
+var analyzer    = require('./analyzer')
 
 var LISTEN_PORT      = 16080;
 var PUBLIC_DIR       = __dirname + "/public"
@@ -93,114 +92,13 @@ function ClientAnalyzer(/*direction,*/ name){
 
     deliver: function(msg, msg_from){
       var buf = convert.convertMessage(msg, msg_from, type)
-      analysis(buf);
+      g_oscAnalyzer.analyze(buf, function(obj){
+        g_io.sockets.emit("message_analyzer", {name: obj.name, output: obj});                
+      });
     },
 
     simplify: function(){ return {type: type, name: this.name} },
   };
-}
-
-var analysysBuffer = {};
-var fftSize = 32*2;
-var sampleRate = 16*2;
-var duration = fftSize * 1000 / sampleRate;
-var minPeriod = 200;//duration / 4;
-function analysis(msg){
-    var bufs = analysysBuffer[msg.address];
-    if(! bufs){
-        // addressがなければ新規作成
-        bufs = [];
-        for(var i = 0; i < msg.args.length; i++){
-            bufs[i] = {
-                events: [],
-                signal: new Array(fftSize),
-                magnitudes: new Array(fftSize),
-                peak: -1,
-                freq: 0,
-                lastTime: 0,
-            };
-        }
-        analysysBuffer[msg.address] = bufs;
-
-        console.log("analysis:" + msg.address + " with " + msg.args.length + " params.");
-    }
-    if(bufs){
-        var t = Date.now();
-        var tOrigin = t - duration;
-        
-        for(var i = 0; i < msg.args.length; i++){
-            var obj = bufs[i];
-            var ev = obj.events;
-            var sig = obj.signal;
-            
-            // 新しいデータを追加
-            ev.push([t, msg.args[i]]);
-            
-            // 最小間隔以上の時間が経過していれば分析処理
-            // (タイマ使った方がいいが暫定)
-            if(t >= obj.lastTime + minPeriod){
-                obj.lastTime = t;
-                
-                // 古いデータを除外
-                for(var j = 0; j < ev.length; j++){
-                    if(ev[j][0] > tOrigin){
-                        if(j > 0){
-                            ev.splice(0, j);
-                        }
-                        break;
-                    }
-                }
-                
-                // FFT準備
-                for(var j = 0; j < sig.length; j++){
-                    sig[j] = 0;
-                }
-                for(var j = 0; j < ev.length; j++){
-                    var dt = t - ev[j][0];
-                    var p = fftSize - 1 - Math.floor(dt * fftSize / duration);
-                    sig[p] = ev[j][1];
-                }
-                
-                // FFT
-                var phasors = fft(sig);
-                var mag = fftUtil.fftMag(phasors); 
-                obj.magnitudes = mag;
-
-                for(var j = 0; j < mag.length; j++){
-                    mag[j] *= 1 - j / mag.length;
-                }
-                if(true){
-                    // 表示しやすいように
-                    mag[0] = 0;
-                    // 整数化
-                    for(var j = 0; j < mag.length; j++){
-                        mag[j] = Math.round(mag[j]);
-                    }
-                    //console.log(magnitudes);
-                }
-               
-                // ピーク検出
-                var max = 0;
-                var newpeak = 0;
-                for(var j = 1; j < mag.length-1; j++){
-                    var a = mag[j-1] + mag[j] + mag[j+1];
-                    if(mag[j] > max){
-                        max = mag[j];
-                        newpeak = j;
-                    }
-                }
-                if(obj.peak != newpeak){
-                    obj.peak = newpeak;
-                    obj.freq = newpeak * sampleRate / fftSize;
-                    console.log("analysis:" + msg.address + "[" + i + "], ", obj.freq + "[Hz]", max);
-                }
-                
-                // 送信
-                var name = msg.address + "/" + i;
-                g_io.sockets.emit("message_analyzer", {name: name, output: obj});                
-            }
-        }
-    }    
 }
 
 //==============================================================================
@@ -732,6 +630,7 @@ var g_midiDevs  = mididevs.MidiDevices(
   g_app.onAddNewMidiOutput.bind(g_app),
   g_app.onDeleteMidiOutput.bind(g_app)
 );
+var g_oscAnalyzer = analyzer.OscAnalyzer();
 
 // PUBLIC_DIR以下を普通のhttpサーバーとしてlisten
 var g_httpApp = connect();

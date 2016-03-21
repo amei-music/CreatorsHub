@@ -392,6 +392,88 @@ var ctrl = {
         var svg = getSVG(id);
         svg.style("background-color", "#f8f8f8");
 
+        // 分布
+        if(obj.histogram){
+          // クラスタ
+          if(obj.clusters && obj.clusters.length > 1){
+            svg.selectAll("rect")
+              .data(obj.clusters)
+              .enter()
+              .append("rect")
+              .attr("x", function(d){
+                return d[0] * svgWidth / obj.histogram.length;
+              })
+              .attr("y", 0)
+              .attr("width", function(d){
+                return (d[1] - d[0] + 1) * svgWidth / obj.histogram.length;
+              })
+              .attr("height", svgHeight)
+              .attr("fill", "#ffe0e0");
+
+            // 数
+            /*
+            svg.selectAll("text")
+              .data(obj.clusters)
+              .enter()
+              .append("text")
+              .attr("x", function(d){
+                return ((d[0] + d[1]) / 2 + 0.5) * svgWidth / obj.histogram.length;
+              })
+              .attr("y", 0)
+              .attr("text-anchor", "middle")
+              .attr("dominant-baseline", "hanging")
+              .attr("fill", "#ff8080")
+              .text(function(d,i){return i+1;});
+            */
+          }
+
+          // 頻度
+          var line = d3.svg.line()
+            .x(function(d, i){
+               return (i + 0.5) * svgWidth / obj.histogram.length;
+            })
+            .y(function(d){
+               return svgHeight * (1 - d);
+            })
+          svg.append("path")
+            .attr("d", line(obj.histogram))
+            .attr("stroke", "#c0c0c0")
+            .attr("fill", "none");
+        }
+
+        // 回帰直線
+        /*
+        var t1 = obj.lastAnalyzeTime - obj.sampleDuration;
+        var t2 = obj.lastAnalyzeTime;
+        var v1 = obj.sd.A + obj.sd.B * t1;
+        var v2 = obj.sd.A + obj.sd.B * t2;
+        */
+        var v1 = obj.valMin;
+        var v2 = obj.valMax;
+        var t1 = obj.sd.A_ + obj.sd.B_ * v1;
+        var t2 = obj.sd.A_ + obj.sd.B_ * v2;
+        var width = 1;
+        var alpha = Math.abs(obj.sd.r / 0.05);
+        if(alpha > 1){
+          width *= alpha;
+        }
+
+        svg.append("line")
+          .attr("x1",svg2ScaleX(v1))
+          .attr("x2",svg2ScaleX(v2))
+          .attr("y1",svg2ScaleY(t1))
+          .attr("y2",svg2ScaleY(t2))
+          .attr("stroke-width",width)
+          .attr("stroke","rgba(0,128,0,"+alpha+")");
+        /*
+        svg.append("text")
+            .attr("x", 0)
+            .attr("y", svg2ScaleY(t1))
+            .attr("text-anchor", "start")
+            .text(obj.sd.r);
+            */
+
+        // 散布
         var circles = svg.selectAll("circle")
          .data(obj.events)
          .enter()
@@ -408,6 +490,7 @@ var ctrl = {
          })
          .attr("fill","orange");
 
+        // 最大最小値
         svg.append("text")
           .attr("x", 0)
           .attr("y", svgHeight)
@@ -419,38 +502,15 @@ var ctrl = {
           .attr("y", svgHeight)
           .attr("text-anchor", "end")
           .text(obj.valMax);
-
-        var t1 = obj.lastAnalyzeTime - obj.sampleDuration;
-        var t2 = obj.lastAnalyzeTime;
-        var v1 = obj.sd.A + obj.sd.B * t1;
-        var v2 = obj.sd.A + obj.sd.B * t2;
-        svg.append("line")
-          .attr("x1",svg2ScaleX(v1))
-          .attr("x2",svg2ScaleX(v2))
-          .attr("y1",svg2ScaleY(t1))
-          .attr("y2",svg2ScaleY(t2))
-          .attr("stroke-width",1)
-          .attr("stroke","green");
       }
       //-------------------------
 
-      // 折れ線を生成
-      /*
-var line = d3.svg.line()
-.x(function(d, i){ return i * svgWidth/(list.length-1); })  // 横方向はSVG領域に合わせて調整。データは最低2個あるのが前提
-.y(function(d){ return svgHeight-d; })  // 縦方向は数値そのままでスケール等しない
-// 折れ線グラフを描画
-svg.append("path")
-.attr("d", line(list))  // 線を描画
-.attr("stroke", "black")    // 線の色を指定
-.attr("fill", "none");  // 塗り潰しなし。指定しないと黒色で塗り潰される
-*/
       updateGraph("signal", obj.output.signal, obj.output.valMin, obj.output.valMax);
       updateGraph("magnitudes", obj.output.magnitudes, obj.output.magMin, obj.output.magMax);
       if(obj.output.sd){
         updateSVG2("sig", obj.output);
       }else{
-        updateSVG("sig", obj.output);
+        //updateSVG("sig", obj.output);
       }
       //updateSVG("mag", obj.output.magnitudes);
     }

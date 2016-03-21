@@ -143,6 +143,7 @@ function OscAnalyzer(){
             console.log("analysis:" + this.name, this.freq + "[Hz]", max);
         }
     }
+    //--------------------------------    
     EventBuffer.prototype.calcSD = function(){
         var  sd = {
             sx: 0,
@@ -153,18 +154,23 @@ function OscAnalyzer(){
             A: 0, // 回帰式の定数
             B: 0, // 回帰式の回帰係数
             r: 0, // 相関係数
-            n: this.events.length
+            A_: 0, // 回帰式の定数(x,y逆)
+            B_: 0, // 回帰式の回帰係数(x,y逆)
+            n: 0
         };
-        if(sd.n){
-            for(var i = 0; i < sd.n; i++){
+        if(this.events.length){
+            for(var i = 0; i < this.events.length; i++){
                 var x = this.events[i][0];
                 var y = this.events[i][1];
+                var w = 1; // 重み付け
+                //w += i;
                 
-                sd.sx += x;
-                sd.sy += y;
-                sd.sxy += x * y;
-                sd.sx2 += x * x;
-                sd.sy2 += y * y;
+                sd.sx += w * x;
+                sd.sy += w * y;
+                sd.sxy += w * x * y;
+                sd.sx2 += w * x * x;
+                sd.sy2 += w * y * y;
+                sd.n += w;
             }
             
             //
@@ -175,11 +181,87 @@ function OscAnalyzer(){
                 sd.B = xy / xx;
                 sd.A = (sd.sy - sd.B * sd.sx) / sd.n;
                 sd.r = xy / Math.sqrt(Math.abs(xx) * Math.abs(yy));
+                
+                sd.B_ = xy / yy;
+                sd.A_ = (sd.sx - sd.B_ * sd.sy) / sd.n;
             }
         }
         this.sd = sd;
     }
-    
+    //--------------------------------    
+    EventBuffer.prototype.calcHistogram = function(){
+        var numClass = 16;
+        var histogram = Array(numClass);
+
+        for(var i = 0; i < numClass; i++){
+            histogram[i] = 0;
+        }
+
+        var valWidth = this.valMax - this.valMin;      
+        if(this.events.length && valWidth > 0){
+            // ヒストグラム
+            for(var i = 0; i < this.events.length; i++){
+                var val = this.events[i][1];
+                var p = Math.min(Math.floor((val - this.valMin) * numClass / valWidth), numClass - 1);
+                histogram[p]++;
+                // 前後のカウントも上げておく
+                if(p - 1 >= 0){
+                    histogram[p - 1]++;
+                }
+                if(p + 1 < numClass){
+                    histogram[p + 1]++;
+                }
+            }
+            
+            // 正規化
+            var max = 0;
+            for(var i = 0; i < numClass; i++){
+                if(max < histogram[i]){
+                    max = histogram[i];
+                }
+            }
+            for(var i = 0; i < numClass; i++){
+                histogram[i] /= max;
+            }
+        }
+        this.histogram = histogram;
+    }
+    EventBuffer.prototype.clustering = function(){
+        var clusters = [];
+        if(this.histogram){
+            // しきい値L以上で最大値がしきい値Hを超える範囲を求める
+            var threshold_h = 0.5; // しきい値 H
+            var threshold_l = 0.25; // しきい値 L
+            var cluster_begin = undefined;
+            var cluster_end = undefined;
+            var valid_cluster = false;
+            for(var i = 0; i <= this.histogram.length; i++){
+                var count = i < this.histogram.length ? this.histogram[i] : 0;
+                if(cluster_begin === undefined){
+                    if(count >= threshold_l){
+                        cluster_begin = i;
+                        cluster_end = i;
+                    }
+                }
+                if(cluster_begin !== undefined){
+                    if(count >= threshold_h){
+                        valid_cluster = true;
+                    }
+                    if(count >= threshold_l){
+                        cluster_end = i;
+                    }else{
+                        if(valid_cluster){
+                            clusters.push([cluster_begin, cluster_end]);
+                            valid_cluster = false;
+                        }
+                        cluster_begin = undefined;
+                    }
+                }
+            }
+        }
+        this.clusters = clusters;
+    }
+   
     //--------------------------------    
     var MsgBuffer = function(msg){
         this.msgEvent = new EventBuffer(msg.address, 32, 2000);
@@ -212,10 +294,14 @@ function OscAnalyzer(){
                         obj.removeOldEvent();
                         // FFT準備
                         if(val === undefined){
+                            // メッセージの頻度を分析
                             obj.prepareFFTSignal0();
                         }else{
+                            // パラメータの値を分析
                             obj.prepareFFTSignal1();
                             obj.calcSD();
+                            obj.calcHistogram();
+                            obj.clustering();
                         }
                         // FFT
                         obj.FFT();
@@ -229,8 +315,10 @@ function OscAnalyzer(){
                 };
                 
                 if(msg.args.length){ // パラメータのあるものだけを分析
+                    // メッセージの頻度を分析
                     doAnalyze(msgBuf.msgEvent, undefined);
                     for(var i = 0; i < msg.args.length; i++){
+                        // パラメータの値を分析
                         doAnalyze(msgBuf.paramEvent[i], msg.args[i]);
                     }
                 }

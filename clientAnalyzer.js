@@ -1,12 +1,13 @@
+//==============================================================================
+// メッセージ分析クライアントモジュール
+//==============================================================================
+
 module.exports = {
-  OscAnalyzer: OscAnalyzer,
+  create: ClientAnalyzer,
 }
 
 var fft         = require('fft-js').fft;
 var fftUtil     = require('fft-js').util;
-
-function OscAnalyzer(){
-}
 
 function OscAnalyzer(){
     //var sampleRate = 32; // Hz
@@ -327,3 +328,34 @@ function OscAnalyzer(){
     };
     return(analyzer);
 };
+
+function ClientAnalyzer(name, emitter){
+  var type = "analyzer";
+  return {
+    type:      type,
+    name:      name,
+    key:       type + ":" + name,
+
+    oscAnalyzer: new OscAnalyzer(),
+    
+    sendMessage: function(msg){
+      this.oscAnalyzer.analyze(msg, function(obj){
+        if(emitter){
+            emitter(msg);
+        }
+      });
+    },
+
+    decodeMessage: function(msg){
+      var buf = msg;//convert.convertMessage(msg, this.type, "json");
+      return buf;
+    },
+    
+    encodeMessage: function(buf){
+      var msg = buf;//convert.convertMessage(buf, "json", this.type);
+      return msg;
+    },
+    
+    simplify: function(){ return {type: type, name: this.name} },
+  };
+}

@@ -4,14 +4,15 @@ var connect     = require('connect');
 var serveStatic = require('serve-static');
 var socketio    = require("socket.io")
 var dgram       = require("dgram");
-var osc         = require('osc-min');
 var fs          = require('fs');
 var yargs       = require('yargs');
 var usage       = require('usage');
+var mididevs    = require('./mididevices'); // require('midi');
 
-var convert     = require('./convert')
-var mididevs    = require('./mididevices') // require('midi');
-var analyzer    = require('./analyzer')
+var clientJson     = require('./clientJson');
+var clientOsc      = require('./clientOsc');
+var clientMidi     = require('./clientMidi');
+var clientAnalyzer = require('./clientAnalyzer');
 
 var LISTEN_PORT      = 16080;
 var PUBLIC_DIR       = __dirname + "/public"
@@ -20,86 +21,6 @@ var OSC_INPORT_BEGIN = 12345;
 //ホームディレクトリに設定ファイルを保存
 var dirHome = process.env[process.platform == "win32" ? "USERPROFILE" : "HOME"];
 var SETTING_FILE = dirHome + "/fm_mw1_setting.json";
-
-//==============================================================================
-// 全体の管理情報
-//==============================================================================
-function ClientJson(/*direction,*/ socketId, name){
-  var type = "json";
-  return {
-    type:      type,
-    socketId:  socketId,
-    name:      name,
-    key:       type + ":" + name,
-
-    deliver: function(msg, msg_from){
-      verboseLog("[sent to json client]", msg)
-      g_io.to(this.socketId).emit("message_json", convert.convertMessage(msg, msg_from, type));
-    },
-
-    simplify: function(){ return {type: type, socketId: this.socketId, name: this.name} },
-  };
-}
-
-function ClientOsc(/*direction,*/ host, port){
-  var type = "osc";
-  return {
-    type:      type,
-    host:      host, // 受信時には使わない
-    port:      port,
-    key:       type + ":" + host + ":" + port,
-
-    deliver: function(msg, msg_from){
-      var buf = convert.convertMessage(msg, msg_from, type)
-      // console.log("*********")
-      // console.log(msg)
-      // console.log(this.port, this.host)
-      verboseLog("[sent to osc  client]", msg)
-      g_oscSender.send(buf, 0, buf.length, this.port, this.host);
-    },
-
-    simplify: function(){ return {type: type, host: this.host, port: this.port} },
-  }
-}
-
-function ClientMidi(/*direction,*/ name){
-  var type = "midi";
-  return {
-    type:      type,
-    name:      name,
-    key:       type + ":" + name,
-
-    deliver: function(msg, msg_from){
-      var buf = convert.convertMessage(msg, msg_from, type)
-      verboseLog("[sent to midi client]", "[" + buf.join(", ") + "]")
-      g_midiDevs.outputs[this.name].sendMessage(buf);
-    },
-
-    simplify: function(){ return {type: type, name: this.name} },
-  };
-}
-
-//==============================================================================
-// 分析
-//==============================================================================
-
-function ClientAnalyzer(/*direction,*/ name){
-  var type = "analyzer";
-  return {
-    type:      type,
-    name:      name,
-    key:       type + ":" + name,
-
-    deliver: function(msg, msg_from){
-      var buf = convert.convertMessage(msg, msg_from, type)
-      g_oscAnalyzer.analyze(buf, function(obj){
-        g_io.sockets.emit("message_analyzer", {name: obj.name, output: obj});                
-      });
-    },
-
-    simplify: function(){ return {type: type, name: this.name} },
-  };
-}
 
 //==============================================================================
 // プロトコルに依存しないクライアント一覧, コネクション設定に関する部分
@@ -301,9 +222,12 @@ function Clients(){ return {
   //==============================================================================
   // inputに届いたメッセージをコネクション先に配信
   deliver: function(input_clientId, data){
+    var input = this.inputs[input_clientId];
+    var buf = input.decodeMessage(data);
     for(var outputId in this.connectionsById[input_clientId]){
       var output = this.outputs[outputId];
-      output.deliver(data, this.inputs[input_clientId].type); // いわゆるダブルディスパッチ
+      var msg = output.encodeMessage(buf);
+      output.sendMessage(msg); // いわゆるダブルディスパッチ
     }
   },
 
@@ -403,12 +327,17 @@ function App(){ return{
     var changed = false;
     var name = param && param.name ? param.name : socket.id; // nameパラメータがなければidを使用
     if (this.clients.socketId2InputClientId(socket.id) < 0){
-      var inputId  = this.clients.addNewClientInput (ClientJson(socket.id, name));
+      var input = clientJson.create(name);
+      var inputId  = this.clients.addNewClientInput (input);
       console.log("[Web Socket #'" + socket.id + "'] joined as JSON input client [id=" + inputId + "]");
       changed = true;
     }
     if (this.clients.socketId2OutputClientId(socket.id) < 0){
-      var outputId = this.clients.addNewClientOutput(ClientJson(socket.id, name));
+      var output = clientJson.create(name, function(msg){
+        verboseLog("[sent to json client]", msg);
+        g_io.to(socket.id).emit("message_json", msg);
+      })
+      var outputId = this.clients.addNewClientOutput(output);
       console.log("[Web Socket #'" + socket.id + "'] joined as JSON output client [id=" + outputId + "]");
       changed = true;
     }
@@ -465,7 +394,9 @@ function App(){ return{
       this.oscsocks[inPort].bind(inPort);
 
       // 接続ネットワークに参加する
-      var inputId  = this.clients.addNewClientInput (ClientOsc(inHost, inPort));
+      var name = inHost + ":" + inPort;
+      var input = clientOsc.create(name);
+      var inputId  = this.clients.addNewClientInput (input);
 
       console.log("Port:" + inPort + " opened for listening OSC (client id=" + inputId + ")");
     }
@@ -486,8 +417,12 @@ function App(){ return{
   open_osc_output : function(obj) {
     if(this.is_valid_osc_port(obj.host, obj.port)){
       // 接続ネットワークに参加する
-      var outputId = this.clients.addNewClientOutput(ClientOsc(obj.host, obj.port));
-
+      var name = obj.host + ":" + obj.port;
+      var output = clientOsc.create(name, function(msg){
+          g_oscSender.send(msg, 0, msg.length, obj.port, obj.host);
+      });
+      var outputId = this.clients.addNewClientOutput(output);
+ 
       console.log("[OSC #'" + obj.host + "'] joined as OSC client [id=" + outputId + "]");
     }
   },
@@ -519,7 +454,10 @@ function App(){ return{
 
   //  - このサーバーの仮想Midi送信ポートを追加する
   open_analyzer_output : function(name) {
-    var outputId = this.clients.addNewClientOutput(ClientAnalyzer(name));
+    var output = clientAnalyzer.create(name, function(obj){
+      g_io.sockets.emit("message_analyzer", {name: obj.name, output: obj});                
+    });
+    var outputId = this.clients.addNewClientOutput(output);
     console.log("Analyzer Output [" + name + "] (client id=" + outputId + ").");
   },
 
@@ -556,7 +494,8 @@ function App(){ return{
   onAddNewMidiInput : function(midiIn, name){
     // ネットワークに登録
     console.log("MIDI Input [" + name + "] connected.");
-    var inputId  = this.clients.addNewClientInput (ClientMidi(name));
+    var input = clientMidi.create(name);
+    var inputId  = this.clients.addNewClientInput (input);
     this.update_list(); // クライアントのネットワーク表示更新
 
     // コールバックを作る(影でinputIdをキャプチャする)
@@ -584,7 +523,11 @@ function App(){ return{
   onAddNewMidiOutput : function(midiOut, name){
     // ネットワークに登録
     console.log("MIDI Output [" + name + "] connected.");
-    this.clients.addNewClientOutput(ClientMidi(name));
+    var output = clientMidi.create(name, function(msg){
+      verboseLog("[sent to midi client]", "[" + msg.join(", ") + "]")
+      g_midiDevs.outputs[name].sendMessage(msg);
+    });
+    this.clients.addNewClientOutput(output);
     this.update_list(); // クライアントのネットワーク表示更新
   },
 
@@ -630,7 +573,6 @@ var g_midiDevs  = mididevs.MidiDevices(
   g_app.onAddNewMidiOutput.bind(g_app),
   g_app.onDeleteMidiOutput.bind(g_app)
 );
-var g_oscAnalyzer = analyzer.OscAnalyzer();
 
 // PUBLIC_DIR以下を普通のhttpサーバーとしてlisten
 var g_httpApp = connect();

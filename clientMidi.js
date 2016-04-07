@@ -1,10 +1,10 @@
-module.exports = {
-  yamahaStyle:    yamahaStyle,
-  convertMessage: convertMessage,
-  prefix:         prefix,
-}
+//==============================================================================
+// MIDIクライアント
+//==============================================================================
 
-var osc         = require('osc-min');
+module.exports = {
+  create: ClientMidi,
+}
 
 var prefix = function(path){ return "/fm" + path; }
 
@@ -225,35 +225,29 @@ function obj2midi(msg){
   }
 }
 
-function fromBuffer(msgbuf){
-  // osc.fromBufferは丁寧すぎるレイアウトで返すので使いづらい
-  // とりあえず自前で作ってみる。例外処理全然できてない
-  var msg  = osc.fromBuffer(msgbuf);
-   if (msg.oscType == "bundle") {
-    msg = msg.elements[0];
-  }
+function ClientMidi(name, emitter){
+  var type = "midi";
+  return {
+    type:      type,
+    name:      name,
+    key:       type + ":" + name,
 
-  var args = new Array(msg.args.length);
-  for (var i in msg.args){
-    args[i] = msg.args[i].value;
-  }
-  return {address: msg.address, args: args}
-}
+    sendMessage: function(msg){
+      if(emitter){
+          emitter(msg);
+      }
+    },
 
-function convertMessage(msg, msg_from, msg_to){
-  if(msg_from == msg_to) return msg; // そのまま
+    decodeMessage: function(msg){
+      var buf = midi2obj(msg);
+      return buf;
+    },
+    
+    encodeMessage: function(buf){
+      var msg = obj2midi(buf);
+      return msg;
+    },
 
-  if(msg_from == "json"){
-    if(msg_to == "osc") return osc.toBuffer(msg);
-    if(msg_to == "midi") return obj2midi(msg);
-    if(msg_to == "json") return msg;
-  }
-  if(msg_from == "osc"){
-    if(msg_to == "json" || msg_to == "analyzer") return fromBuffer(msg); // 失敗するとthrow
-    if(msg_to == "midi") return obj2midi(fromBuffer(msg));
-  }
-  if(msg_from == "midi"){
-    if(msg_to == "json" || msg_to == "analyzer") return midi2obj(msg); // OSCっぽいjsonなのでそのまま送信可
-    if(msg_to == "osc") return osc.toBuffer(midi2obj(msg)); // 文字列にする
-  }
+    simplify: function(){ return {type: type, name: this.name} }
+  };
 }

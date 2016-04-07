@@ -41,16 +41,11 @@ var Timing = function(){
 // デバイス名を作る
 function makeNodeName(client){
   var name = client.type + "> ";
-  if (client.type == "json"){
-    if(client.name){
-      name += client.name;
-    }else{
-      name += client.name + " socket[" + client.socketId + "]";
-    }
-
+  if(client.name){
+    name += client.name;
+  //}else{
+  //  name += "socket[" + client.socketId + "]";
   }
-  if (client.type == "midi" || client.type == "analyzer") name += client.name;
-  if (client.type == "osc" ) name += client.host + ":" + client.port;
   return name
 }
 

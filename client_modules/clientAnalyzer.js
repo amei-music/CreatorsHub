@@ -2,8 +2,20 @@
 // メッセージ分析クライアントモジュール
 //==============================================================================
 
+var type = "analyzer";
 module.exports = {
-  create: ClientAnalyzer,
+  type: type,
+  createInput: ClientAnalyzer,
+  createOutput: ClientAnalyzer,
+  
+  init: function(serverHost){
+    var name = "Analyzer";
+    var output = this.createOutput(name, function(obj){
+      serverHost.g_io.sockets.emit("message_analyzer", {name: obj.name, output: obj});                
+    }.bind(serverHost));
+    var outputId = serverHost.clients.addNewClientOutput(output);
+    console.log("Analyzer Output [" + name + "] (client id=" + outputId + ").");
+  }
 }
 
 var fft         = require('fft-js').fft;
@@ -330,18 +342,18 @@ function OscAnalyzer(){
 };
 
 function ClientAnalyzer(name, emitter){
-  var type = "analyzer";
   return {
     type:      type,
     name:      name,
     key:       type + ":" + name,
+    id:        undefined,
 
     oscAnalyzer: new OscAnalyzer(),
     
     sendMessage: function(msg){
       this.oscAnalyzer.analyze(msg, function(obj){
         if(emitter){
-            emitter(msg);
+            emitter(obj);
         }
       });
     },

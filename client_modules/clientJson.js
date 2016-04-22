@@ -2,16 +2,21 @@
 // JSONクライアント
 //==============================================================================
 
+var type = "json";
 module.exports = {
-  create: ClientJson,
+  type: type,
+  createInput: ClientJson,
+  createOutput: ClientJson,
+  init: function(serverHost){
+  }
 }
 
 function ClientJson(name, emitter){
-  var type = "json";
   return {
     type:      type,
     name:      name,
     key:       type + ":" + name,
+    id:        undefined,
 
     sendMessage: function(msg){
       if(emitter){

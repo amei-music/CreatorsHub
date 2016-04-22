@@ -2,8 +2,73 @@
 // MIDIクライアント
 //==============================================================================
 
+var mididevs    = require('./mididevices'); // require('midi');
+
+var type = "midi";
 module.exports = {
-  create: ClientMidi,
+  type: type,
+  createInput: ClientMidi,
+  createOutput: ClientMidi,
+
+  serverHost : undefined,
+  g_midiDevs : undefined,
+  init: function(serverHost){
+    this.serverHost = serverHost;
+    this.g_midiDevs  = mididevs.MidiDevices(
+      this.onAddNewMidiInput.bind(this),
+      this.onDeleteMidiInput.bind(this),
+      this.onAddNewMidiOutput.bind(this),
+      this.onDeleteMidiOutput.bind(this)
+    );
+  },
+  
+  // 新規MIDI入力デバイスの登録
+  onAddNewMidiInput : function(midiIn, name){
+    // ネットワークに登録
+    console.log("MIDI Input [" + name + "] connected.");
+    var input = this.createInput(name);
+    var inputId  = this.serverHost.clients.addNewClientInput(input);
+    this.serverHost.update_list(); // クライアントのネットワーク表示更新
+
+    // コールバックを作る(影でinputIdをキャプチャする)
+    return (function(deltaTime, message) {
+      // The message is an array of numbers corresponding to the MIDI bytes:
+      //   [status, data1, data2]
+      // https://www.cs.cf.ac.uk/Dave/Multimedia/node158.html has some helpful
+      // information interpreting the messages.
+      var msg = {'msg': message, 'delta': deltaTime};
+
+      // if (message.length != 1 || message[0] != 0xF8) console.log(msg); // log
+
+      this.serverHost.clients.deliver(inputId, message); // 配信
+    }).bind(this);
+  },
+
+  // MIDI入力デバイスの切断通知
+  onDeleteMidiInput : function(midiIn, name){
+    console.log("MIDI Input [" + name + "] disconnected.");
+    this.serverHost.clients.deleteClientInput(this.serverHost.clients.name2InputClientId("midi", name));
+    this.serverHost.update_list(); // クライアントのネットワーク表示更新
+  },
+
+  // 新規MIDI出力デバイスの登録
+  onAddNewMidiOutput : function(midiOut, name){
+    // ネットワークに登録
+    console.log("MIDI Output [" + name + "] connected.");
+    var output = this.createOutput(name, function(msg){
+      //verboseLog("[sent to midi client]", "[" + msg.join(", ") + "]")
+      this.g_midiDevs.outputs[name].sendMessage(msg);
+    }.bind(this));
+    this.serverHost.clients.addNewClientOutput(output);
+    this.serverHost.update_list(); // クライアントのネットワーク表示更新
+  },
+
+  // MIDI出力デバイスの切断通知
+  onDeleteMidiOutput : function(midiOut, name){
+    console.log("MIDI Output [" + name + "] disconnected.");
+    this.serverHost.clients.deleteClientOutput(this.serverHost.clients.name2OutputClientId("midi", name));
+    this.serverHost.update_list(); // クライアントのネットワーク表示更新
+  }
 }
 
 var prefix = function(path){ return "/fm" + path; }
@@ -226,11 +291,11 @@ function obj2midi(msg){
 }
 
 function ClientMidi(name, emitter){
-  var type = "midi";
   return {
     type:      type,
     name:      name,
     key:       type + ":" + name,
+    id:        undefined,
 
     sendMessage: function(msg){
       if(emitter){

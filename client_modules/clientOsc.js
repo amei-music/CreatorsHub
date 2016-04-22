@@ -2,11 +2,18 @@
 // OSCクライアント
 //==============================================================================
 
+var type = "osc";
 module.exports = {
-  create: ClientOsc,
+  type: type,
+  createInput: ClientOsc,
+  createOutput: ClientOsc,
+  init: function(serverHost){
+  }
 }
 
 var osc         = require('osc-min');
+var dgram       = require("dgram");
+var g_oscSender = dgram.createSocket("udp4");
 
 function fromBuffer(msgbuf){
   // osc.fromBufferは丁寧すぎるレイアウトで返すので使いづらい
@@ -24,16 +31,20 @@ function fromBuffer(msgbuf){
 }
 
 function ClientOsc(name, emitter){
-  var type = "osc";
+  var addr = name.split(':');
+  var host = addr[0];
+  var port = parseInt(addr[1]);
   return {
     type:      type,
     name:      name,
     key:       type + ":" + name,
-    
+    id:        undefined,
+   
     sendMessage: function(msg){
-      if(emitter){
+      /*if(emitter){
           emitter(msg);
-      }
+      }*/
+      g_oscSender.send(msg, 0, msg.length, port, host);
     },
 
     decodeMessage: function(msg){
@@ -47,5 +58,5 @@ function ClientOsc(name, emitter){
     },
 
     simplify: function(){ return {type: type, name: this.name } },
-  }
+  };
 }

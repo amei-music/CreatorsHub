@@ -526,35 +526,55 @@ var ctrl = {
   },
 
   join_as_wsjson: function() {
-    this.socket.emit("join_as_wsjson", { "name": "mw1"} );
+    this.socket.emit("open_input", { type: "json", name: "mw1"} );
+    this.socket.emit("open_output", { type: "json", name: "mw1"} );
+    //this.socket.emit("join_as_wsjson", { "name": "mw1"} );
     this.showJsonClient(true);
   },
 
   exit_wsjson: function() {
-    this.socket.emit("exit_wsjson");
+    this.socket.emit("close_input", { type: "json", name: "mw1"} );
+    this.socket.emit("close_output", { type: "json", name: "mw1"} );
+    //this.socket.emit("exit_wsjson");
     this.showJsonClient(false);
   },
 
+  // OSC送受信ポートアドレスの作成（仮）
+  make_osc_name : function(host, port) {
+    // 無効なホストやポートの場合は undefined
+    if(!host || !port) return undefined;
+    var p = parseInt(port);
+    if(p < 1 || p > 65535) return undefined;
+    return host + ":" + port;
+  },
+
   open_new_osc_input: function() {
-    this.socket.emit("open_new_osc_input");
+    var port = document.getElementById('osc_input_port');
+    var oscName = this.make_osc_name("localhost", port.value);
+    if(oscName){
+      this.socket.emit("open_input", { type: "osc", name: oscName} );
+    }
   },
 
   open_new_osc_output: function() {
-    var host = document.getElementById('osc_host');
-    var port = document.getElementById('osc_port');
-    this.socket.emit("open_new_osc_output", {host: host.value, port: port.value});
+    var host = document.getElementById('osc_output_host');
+    var port = document.getElementById('osc_output_port');
+    var oscName = this.make_osc_name(host.value, port.value);
+    if(oscName){
+      this.socket.emit("open_output", { type: "osc", name: oscName} );
+    }
   },
 
   close_osc_input: function(inputId) {
     var param = {inputId: inputId};
     console.log("close_osc_input: " + JSON.stringify(param));
-    this.socket.emit("close_osc_input", param);
+    this.socket.emit("close_input", param);
   },
 
   close_osc_output: function(outputId) {
     var param = {outputId: outputId};
     console.log("close_osc_output: " + JSON.stringify(param));
-    this.socket.emit("close_osc_output", param);
+    this.socket.emit("close_output", param);
   },
 
   publishMessage: function(msg, callback) {

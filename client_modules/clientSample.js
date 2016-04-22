@@ -2,11 +2,15 @@
 // 空のクライアント
 //==============================================================================
 
-module.exports = {
-  create: ClientModule,
-}
-
 var type = "sample";  // モジュールタイプ識別子（モジュールごとに一意な文字列）
+
+module.exports = {
+  type: type,
+  createInput: ClientModule,
+  createOutput: ClientModule,
+  init: function(serverHost){
+  }
+}
 
 /* 
 var clientSample = require('./clientSample');
@@ -27,6 +31,7 @@ function ClientModule(name, emitter){
     type:      type,
     name:      name,
     key:       type + ":" + name,
+    id:        undefined,
     
     // 出力
     sendMessage: function(msg){

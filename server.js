@@ -136,7 +136,7 @@ function ClientAnalyzer(/*direction,*/ name){
     deliver: function(msg, msg_from){
       var buf = convert.convertMessage(msg, msg_from, type)
       g_oscAnalyzer.analyze(buf, function(obj){
-        g_io.sockets.emit("message_analyzer", {name: obj.name, output: obj});                
+        g_io.sockets.emit("message_analyzer", {name: obj.name, output: obj});
       });
     },
 

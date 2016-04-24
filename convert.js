@@ -285,14 +285,15 @@ function convertMessage(msg, msg_from, msg_to){
   if(msg_from == "json"){
     if(msg_to == "osc" ) return toBuffer(msg);
     if(msg_to == "midi" || msg_to == "vmidi" || msg_to == "rtp") return obj2midi(msg);
+    if(msg_to == "analyzer") return msg;
   }
   if(msg_from == "osc"){
-    if(msg_to == "json") return fromBuffer(msg); // 失敗するとthrow
+    if(msg_to == "json" || msg_to == "analyzer") return fromBuffer(msg); // 失敗するとthrow
     if(msg_to == "midi" || msg_to == "vmidi" || msg_to == "rtp") return obj2midi(fromBuffer(msg));
   }
   if(msg_from == "midi" || msg_from == "vmidi" || msg_from == "rtp"){
     if(msg_to == "midi" || msg_to == "vmidi" || msg_to == "rtp") return msg;
-    if(msg_to == "json") return midi2obj(msg); // OSCっぽいjsonなのでそのまま送信可
+    if(msg_to == "json" || msg_to == "analyzer") return midi2obj(msg); // OSCっぽいjsonなのでそのまま送信可
     if(msg_to == "osc" ) return toBuffer(midi2obj(msg)); // 文字列にする
   }
 }

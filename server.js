@@ -12,6 +12,7 @@ var usage       = require('usage');
 
 var convert     = require('./convert')
 var mididevs    = require('./mididevices') // require('midi');
+var analyzer    = require('./analyzer')
 
 var LISTEN_PORT      = 16080;
 var PUBLIC_DIR       = __dirname + "/public"
@@ -115,6 +116,28 @@ function ClientVirtualMidi(/*direction,*/ name){
     deliver: function(msg, msg_from){
       var buf = convert.convertMessage(msg, msg_from, type)
       g_midiDevs.voutputs[this.name].sendMessage(buf);
+    },
+
+    simplify: function(){ return {type: type, name: this.name} },
+  };
+}
+
+//==============================================================================
+// 分析
+//==============================================================================
+
+function ClientAnalyzer(/*direction,*/ name){
+  var type = "analyzer";
+  return {
+    type:      type,
+    name:      name,
+    key:       type + ":" + name,
+
+    deliver: function(msg, msg_from){
+      var buf = convert.convertMessage(msg, msg_from, type)
+      g_oscAnalyzer.analyze(buf, function(obj){
+        g_io.sockets.emit("message_analyzer", {name: obj.name, output: obj});                
+      });
     },
 
     simplify: function(){ return {type: type, name: this.name} },
@@ -404,6 +427,10 @@ function App(){ return{
     var name = g_rtpSession.bonjourName + ":" + g_rtpSession.port;
     this.open_rtpmidi_input(name);
     this.open_rtpmidi_output(name);
+
+    // Analyzer
+    this.open_analyzer_output("Analyzer");
+
     // 接続情報
     this.clients.connections = settings.connections;
     this.clients.updateConnectionsById();
@@ -626,6 +653,12 @@ function App(){ return{
     }
     return vout;
   },
+
+  //  - このサーバーのアナライザ送信ポートを追加する
+  open_analyzer_output : function(name) {
+    var outputId = this.clients.addNewClientOutput(ClientAnalyzer(name));
+    console.log("Analyzer Output [" + name + "] (client id=" + outputId + ").");
+  },
   
   // websocketとしての応答内容を記述
   onWebSocket : function(socket){
@@ -741,6 +774,7 @@ var g_midiDevs  = mididevs.MidiDevices(
   g_app.onAddNewMidiOutput.bind(g_app),
   g_app.onDeleteMidiOutput.bind(g_app)
 );
+var g_oscAnalyzer = analyzer.OscAnalyzer();
 
 // RtpMidi
 var g_rtpSession = rtpmidi.manager.createSession({

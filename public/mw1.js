@@ -49,7 +49,7 @@ function makeNodeName(client){
     }
 
   }
-  if (client.type == "midi" || client.type == "vmidi" || client.type == "rtp") name += client.name;
+  if (client.type == "midi" || client.type == "vmidi" || client.type == "rtp" || client.type == "analyzer") name += client.name;
   if (client.type == "osc" ) name += client.host + ":" + client.port;
   return name
 }
@@ -208,6 +208,7 @@ var ctrl = {
     this.socket = io.connect(/*'http://localhost:8080'*/);
     this.socket.on("update_list",  this.onUpdateList.bind(this));
     this.socket.on("message_json", this.onMessageJson.bind(this));
+    this.socket.on("message_analyzer", this.onMessageAnalyzer.bind(this));
     this.socket.on("disconnect",   this.onDisconnect.bind(this));
 
     // UIを初期化
@@ -231,6 +232,295 @@ var ctrl = {
   onMessageJson : function(obj){
     this.addMessage(obj);
     this.timing.get(obj);
+  },
+
+  onMessageAnalyzer : function(obj){
+    //console.log(obj.name, obj.output.peak);
+    var table = document.getElementById("analyzer");
+    var tr = table.rows.namedItem(obj.name);
+
+    // 新規行
+    if(!tr){
+      tr = table.insertRow(-1);
+      tr.id = obj.name;
+
+      var td = tr.insertCell(-1);
+      td.innerText = obj.name;
+      td.id = "name";
+
+      function addGraph(id){
+        td = tr.insertCell(-1);
+        td.id = id;
+
+        var canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 32;
+        td.appendChild(canvas);
+      }
+
+      function addSVG(id){
+        td = tr.insertCell(-1);
+        td.id = id;
+
+        //var svg = document.createElement("svg");
+        //svg.style.width = 256;
+        //svg.style.height = 32;
+        //td.appendChild(svg);
+
+        var div = document.createElement("div");
+        td.appendChild(div);
+      }
+
+      addGraph("signal");
+      addSVG("sig");
+      //addSVG("sig2");
+      addGraph("magnitudes");
+
+      td = tr.insertCell(-1);
+      td.id = "peak";
+    }
+
+    // 更新
+    if(tr){
+      var cells = tr.cells;
+
+      var td = cells.namedItem("peak");
+      if(td){
+        td.innerText = "Peak=" + obj.output.freq + "Hz";
+        if(obj.output.sd){
+        //    td.innerText += ", A=" + obj.output.sd.A + ", B=" + obj.output.sd.B + ", r=" + obj.output.sd.r;
+        }
+      }
+
+      // グラフ更新
+      function updateGraph(id, val, min, max){
+        // max, min
+        /*
+        var max = 1;
+        for(var i = 0; i < val.length; i++){
+          if(max < val[i]){
+            max = val[i];
+          }
+        }
+        */
+
+        var range = max - min;
+        if(range == 0){
+          min = 0;
+          range = 1;
+        }
+        
+        // 描画
+        td = cells.namedItem(id);
+        var canvas = td.childNodes[0];
+        var w = canvas.width;
+        var h = canvas.height;
+
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, w, h);
+
+        ctx.strokeStyle = "#2ea879"//#8f2";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+
+        for(var i = 0; i < val.length; i++){
+          var x = i * w / val.length;
+          var y = h - (val[i] - min) * h / range;
+          ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      //-------------------------
+      var svgWidth = 256;
+      var svgHeight = 32;
+      var svgRadius = 3;
+
+      function getSVG(id){
+        td = cells.namedItem(id);
+
+        var div = td.childNodes[0];
+        div.innerHTML = "";
+        var svg = d3.select(div).append("svg")
+        //var svg = d3.select(td.childNodes[0]);
+        //svg.innerHTML = "";
+        svg.attr({
+          width: svgWidth,
+          height: svgHeight
+        });
+
+        return(svg);
+      }
+      //-------------------------
+      // 縦軸が値、横軸が時間
+      var svgScaleX = d3.scale.linear()
+                            .domain([obj.output.lastAnalyzeTime - obj.output.sampleDuration, obj.output.lastAnalyzeTime])
+                            .range([svgRadius, svgWidth - svgRadius]);
+      var svgScaleY = d3.scale.linear()
+                            .domain([obj.output.valMin, obj.output.valMax])
+                            .range([svgHeight - svgRadius, svgRadius]);
+      function updateSVG(id, obj){
+        var svg = getSVG(id);
+        svg.style("background-color", "#fff0f0");
+        
+        var circles = svg.selectAll("circle")
+         .data(obj.events)
+         .enter()
+         .append("circle");
+
+         circles.attr("cx", function(d, i) {
+             //return i * 4;
+             return svgScaleX(d[0]);
+         })
+         .attr("cy", function(d, i) {
+             //return i * 4;
+             return svgScaleY(d[1]);
+         })
+         .attr("r", function(d) {
+              return svgRadius;
+         })
+         .attr("fill","red");
+ 
+         circles.transition().delay(500).duration(1000).attr("r", 1);
+      }
+      //-------------------------
+      // 縦軸が時間、横軸が値
+      var svg2ScaleX = d3.scale.linear()
+                            .domain([obj.output.valMin, obj.output.valMax])
+                            .range([svgRadius, svgWidth - svgRadius]);
+      var svg2ScaleY = d3.scale.linear()
+                            .domain([obj.output.lastAnalyzeTime - obj.output.sampleDuration, obj.output.lastAnalyzeTime])
+                            .range([svgRadius, svgHeight - svgRadius]);
+      var svg2ScaleR = d3.scale.linear()
+                            .domain([obj.output.lastAnalyzeTime - obj.output.sampleDuration, obj.output.lastAnalyzeTime])
+                            .range([1, svgRadius]);
+      function updateSVG2(id, obj){
+        var svg = getSVG(id);
+        svg.style("background-color", "#f8f8f8");
+
+        // 分布
+        if(obj.histogram){
+          // クラスタ
+          if(obj.clusters && obj.clusters.length > 1){
+            svg.selectAll("rect")
+              .data(obj.clusters)
+              .enter()
+              .append("rect")
+              .attr("x", function(d){
+                return d[0] * svgWidth / obj.histogram.length;
+              })
+              .attr("y", 0)
+              .attr("width", function(d){
+                return (d[1] - d[0] + 1) * svgWidth / obj.histogram.length;
+              })
+              .attr("height", svgHeight)
+              .attr("fill", "#ffe0e0");
+
+            // 数
+            /*
+            svg.selectAll("text")
+              .data(obj.clusters)
+              .enter()
+              .append("text")
+              .attr("x", function(d){
+                return ((d[0] + d[1]) / 2 + 0.5) * svgWidth / obj.histogram.length;
+              })
+              .attr("y", 0)
+              .attr("text-anchor", "middle")
+              .attr("dominant-baseline", "hanging")
+              .attr("fill", "#ff8080")
+              .text(function(d,i){return i+1;});
+            */
+          }
+
+          // 頻度
+          var line = d3.svg.line()
+            .x(function(d, i){
+               return (i + 0.5) * svgWidth / obj.histogram.length;
+            })
+            .y(function(d){
+               return svgHeight * (1 - d);
+            })
+          svg.append("path")
+            .attr("d", line(obj.histogram))
+            .attr("stroke", "#c0c0c0")
+            .attr("fill", "none");
+        }
+
+        // 回帰直線
+        /*
+        var t1 = obj.lastAnalyzeTime - obj.sampleDuration;
+        var t2 = obj.lastAnalyzeTime;
+        var v1 = obj.sd.A + obj.sd.B * t1;
+        var v2 = obj.sd.A + obj.sd.B * t2;
+        */
+        var v1 = obj.valMin;
+        var v2 = obj.valMax;
+        var t1 = obj.sd.A_ + obj.sd.B_ * v1;
+        var t2 = obj.sd.A_ + obj.sd.B_ * v2;
+        var width = 1;
+        var alpha = Math.abs(obj.sd.r / 0.05);
+        if(alpha > 1){
+          width *= alpha;
+        }
+
+        svg.append("line")
+          .attr("x1",svg2ScaleX(v1))
+          .attr("x2",svg2ScaleX(v2))
+          .attr("y1",svg2ScaleY(t1))
+          .attr("y2",svg2ScaleY(t2))
+          .attr("stroke-width",width)
+          .attr("stroke","rgba(0,128,0,"+alpha+")");
+        /*
+        svg.append("text")
+            .attr("x", 0)
+            .attr("y", svg2ScaleY(t1))
+            .attr("text-anchor", "start")
+            .text(obj.sd.r);
+            */
+
+        // 散布
+        var circles = svg.selectAll("circle")
+         .data(obj.events)
+         .enter()
+         .append("circle");
+
+         circles.attr("cx", function(d, i) {
+             return svg2ScaleX(d[1]);
+         })
+         .attr("cy", function(d, i) {
+             return svg2ScaleY(d[0]);
+         })
+         .attr("r", function(d) {
+              return svg2ScaleR(d[0]);
+         })
+         .attr("fill","orange");
+
+        // 最大最小値
+        svg.append("text")
+          .attr("x", 0)
+          .attr("y", svgHeight)
+          .attr("text-anchor", "start")
+          .text(obj.valMin);
+
+        svg.append("text")
+          .attr("x", svgWidth)
+          .attr("y", svgHeight)
+          .attr("text-anchor", "end")
+          .text(obj.valMax);
+      }
+      //-------------------------
+
+      updateGraph("signal", obj.output.signal, obj.output.valMin, obj.output.valMax);
+      updateGraph("magnitudes", obj.output.magnitudes, obj.output.magMin, obj.output.magMax);
+      if(obj.output.sd){
+        updateSVG2("sig", obj.output);
+      }else{
+        //updateSVG("sig", obj.output);
+      }
+      //updateSVG("mag", obj.output.magnitudes);
+    }
   },
 
   onDisconnect : function(){

@@ -1,3 +1,6 @@
+/**
+ controlchangeイベントを送る
+ */
 function sendContrlChange() {
 	var value = $( "#slider" ).slider( "value" );
 	var log_sld = document.getElementById('log_sld');
@@ -5,6 +8,16 @@ function sendContrlChange() {
 	gSocket.emit('message_json',{address: '/fm/controlchange',args: [0,11,value]});
 }
 
+/**
+ jQueryでsliderを作る
+ 
+ $()はjQuery()のエイリアス
+ console.log($);
+	function ( selector, context ) {
+		// The jQuery object is actually just the init constructor 'enhanced'
+		return new jQuery.fn.init( selector, context, rootjQuery );
+	}
+ */
 jQuery(function() {
 	$( "#slider" ).slider({
 		orientation: "horizontal",

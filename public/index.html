@@ -69,6 +69,22 @@
   </table>
 
   <hr><!------------------------------------------------------------------->
+
+  <h3>RTP-MIDIをネットワークに登録する</h3>
+  <table>
+    <tr>
+      <td>RTP-MIDI INポートを追加</td>
+      <td>名前<input type="text" id="rtpmidi_input" style="width:240px;" />
+      <button onclick="ctrl.open_new_rtpmidi_input();">追加</button></td>
+    </tr>
+    <tr>
+      <td>RTP-MIDI OUTポートを追加</td>
+      <td>名前<input type="text" id="rtpmidi_output" style="width:240px;" />
+      <button onclick="ctrl.open_new_rtpmidi_output();">追加</button></td>
+    </tr>
+  </table>
+
+  <hr><!------------------------------------------------------------------->
   <h3>メッセージ分析</h3>
   <table id="analyzer">
   </table>

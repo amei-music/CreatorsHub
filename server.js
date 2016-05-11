@@ -32,6 +32,7 @@ var g_server   = serverHost.create();
 g_server.appendModule('./client_modules/clientJson');
 g_server.appendModule('./client_modules/clientOsc');
 g_server.appendModule('./client_modules/clientMidi');
+g_server.appendModule('./client_modules/clientRtpMidi');
 g_server.appendModule('./client_modules/clientAnalyzer');
 
 g_server.init();

@@ -591,6 +591,21 @@ var ctrl = {
     }
   },
 
+
+  open_new_rtpmidi_input: function() {
+    var name = document.getElementById('rtpmidi_input');
+    if(name.value){
+      this.socket.emit("open_input", { type: "rtp", name: name.value} );
+    }
+  },
+  
+  open_new_rtpmidi_output: function() {
+    var name = document.getElementById('rtpmidi_output');
+    if(name.value){
+      this.socket.emit("open_output", { type: "rtp", name: name.value} );
+    }
+  },
+    
   publishMessage: function(msg, callback) {
     var textInput = document.getElementById('msg_input');
     try{

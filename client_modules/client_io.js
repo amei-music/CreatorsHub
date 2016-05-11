@@ -2,31 +2,21 @@
 // 空のクライアント
 //==============================================================================
 
-var type = "sample";  // モジュールタイプ識別子（モジュールごとに一意な文字列）
-
-module.exports = {
-  type: type,
-  createInput: ClientModule,
-  createOutput: ClientModule,
-  init: function(hostAPI){
-  }
-}
-
 /* 
-var clientSample = require('./clientSample');
+var client_io = require('./client_io');
 
-// 入力を作成する場合(emitterは使わない)
+// 入力を作成する場合
+var type = "foo";  // タイプ
 var name = "hoge"; // 表示用の名前・任意
-var input = clientSample.create(name);
+var input = client_io(type, name);
 
 // 出力を作成する場合
-var emitter = function(msg){
-    // emitterはsendMessageからコールバックされる
+var output = client_io(type, name);
+output.sendMessage = function(msg){
     // デバイスへの出力はここで行う
 };
-var output = clientSample.create(name, emitter);
 */
-function ClientModule(name, emitter){
+module.exports = function(type, name){
   return {
     type:      type,
     name:      name,
@@ -35,11 +25,7 @@ function ClientModule(name, emitter){
     
     // 出力
     sendMessage: function(msg){
-      // encodeMessageの出力がmsgとして渡される
-      // そのままemitterに渡してよければこのままでよい
-      if(emitter){
-          emitter(msg);
-      }
+      // 初期値は空のファンクション
     },
 
     // デコード
@@ -59,7 +45,7 @@ function ClientModule(name, emitter){
      encodeMessage: function(buf){
       var msg = buf;
       /*
-      // bufをemitterで出力するフォーマットに変換する
+      // bufをsendMessageで出力するフォーマットに変換する
       */
       return msg;
     },

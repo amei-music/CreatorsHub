@@ -31,10 +31,40 @@ function ServerHost(){ return{
     var module = require(name);
     if(module){
       this.modules[module.type] = module;
-      module.init(this);
+      module.init(this.hostAPIs4ClientModule());
     }else{
       console.log("appendModule: " + name + " not found.");
     }
+  },
+  
+  // クライアントモジュール用API
+  hostAPIs4ClientModule : function(){
+    return {
+      deleteInput : function(type, name){
+        this.clients.deleteClientInput(this.clients.name2InputClientId(type, name));
+      }.bind(this),
+      deleteOutput : function(type, name){
+        this.clients.deleteClientOutput(this.clients.name2OutputClientId(type, name));
+      }.bind(this),
+      addInput : function(input){
+        return this.clients.addNewClientInput(input);
+      }.bind(this),
+      addOutput : function(output){
+        return this.clients.addNewClientOutput(output);
+      }.bind(this),
+      updateList : function(output){
+        this.update_list();
+      }.bind(this),
+      deliverMessage : function(id, obj){
+        this.clients.deliver(id, obj);
+      }.bind(this),
+      sendMessageTo : function(id, msg, obj){
+        this.g_io.to(id).emit(msg, obj);                
+      }.bind(this),
+      sendWebAppMessage : function(msg, obj){
+        this.g_io.sockets.emit(msg, obj);                
+      }.bind(this),
+    };
   },
   
   // 初期化
@@ -43,10 +73,10 @@ function ServerHost(){ return{
     
     var settings = this.clients.loadSettings();
     for(var i in settings.oscInputs){
-       this.open_input({type: "osc", name: settings.oscInputs[i].name});
+       this.open_input({}, {type: "osc", name: settings.oscInputs[i].name});
     }
     for(var i in settings.oscOutputs){
-       this.open_output({type: "osc", name: settings.oscOutputs[i].name});
+       this.open_output({}, {type: "osc", name: settings.oscOutputs[i].name});
     }
 
     this.clients.connections = settings.connections;
@@ -109,25 +139,31 @@ function ServerHost(){ return{
   // 
 
   //  - このサーバーの受信ポートを作成する
-  open_input : function(obj) {
+  open_input : function(socket, obj) {
     // obj.type obj.name
     var input = this.modules[obj.type].createInput(obj.name);
+    if(socket && socket.id){
+      input.socketId = socket.id;
+    }
     var inputId = this.clients.addNewClientInput(input);
     this.clients.saveSettings()
     this.update_list(); // クライアントのネットワーク表示更新
   },
 
   //  - このサーバーの送信ポートを作成する
-  open_output : function(obj) {
+  open_output : function(socket, obj) {
     // obj.type obj.name
     var output = this.modules[obj.type].createOutput(obj.name);
+    if(socket && socket.id){
+      output.socketId = socket.id;
+    }
     var outputId = this.clients.addNewClientOutput(output);
     this.clients.saveSettings()
     this.update_list(); // クライアントのネットワーク表示更新
   },
 
   //  - このサーバーの受信ポートを削除する
-  close_input : function(obj) {
+  close_input : function(socket, obj) {
     // inputId または type, name で削除
     var inputId = (obj.inputId !== undefined) ? obj.inputId : this.clients.name2InputClientId(obj.type, obj.name);
     if(this.clients.deleteClientInput(inputId)){
@@ -138,7 +174,7 @@ function ServerHost(){ return{
   },
 
   //  - このサーバーの送信ポートを削除する
-  close_output : function(obj) {
+  close_output : function(socket, obj) {
     // outputId または type, name で削除
     var outputId = (obj.outputId !== undefined) ? obj.outputId : this.clients.name2OutputClientId(obj.type, obj.name);
     if(this.clients.deleteClientOutput (outputId)){
@@ -215,10 +251,10 @@ function ServerHost(){ return{
     // oscクライアントとの実通信にWebSocketは絡まない。あくまでコネクション管理のみ
 
     // (2),(3)の汎用化
-    socket.on("open_input",  this.open_input.bind(this) );       // 受信ポートを開く
-    socket.on("open_output", this.open_output.bind(this) );      // 送信ポートを開く
-    socket.on("close_input",  this.close_input.bind(this) );     // 受信ポートを閉じる
-    socket.on("close_output", this.close_output.bind(this) );    // 送信ポートを閉じる
+    socket.on("open_input",  this.open_input.bind(this, socket) );       // 受信ポートを開く
+    socket.on("open_output", this.open_output.bind(this, socket) );      // 送信ポートを開く
+    socket.on("close_input",  this.close_input.bind(this, socket) );     // 受信ポートを閉じる
+    socket.on("close_output", this.close_output.bind(this, socket) );    // 送信ポートを閉じる
 
     // ソケット自体の接続終了
     socket.on("disconnect",   this.disconnect.bind(this, socket) );

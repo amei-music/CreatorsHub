@@ -1,318 +1,94 @@
 //==============================================================================
 // MIDIクライアント
 //==============================================================================
+var client_io = require('./client_io');
+var mididevs  = require('./mididevices');
+var midiconv  = require('./midiconverter');
 
-var mididevs    = require('./mididevices'); // require('midi');
+var host;
+var g_midiDevs;
 
-var type = "midi";
 module.exports = {
-  type: type,
-  createInput: ClientMidi,
-  createOutput: ClientMidi,
-
-  serverHost : undefined,
-  g_midiDevs : undefined,
-  init: function(serverHost){
-    this.serverHost = serverHost;
-    this.g_midiDevs  = mididevs.MidiDevices(
-      this.onAddNewMidiInput.bind(this),
-      this.onDeleteMidiInput.bind(this),
-      this.onAddNewMidiOutput.bind(this),
-      this.onDeleteMidiOutput.bind(this)
-    );
+  type: "midi",
+  createInput: function(name){
+    var input = client_io(this.type, name);
+    input.decodeMessage = function(msg){
+      var buf = midiconv.midi2obj(msg);
+      return buf;
+    };
+    return input;
   },
-  
-  // 新規MIDI入力デバイスの登録
-  onAddNewMidiInput : function(midiIn, name){
-    // ネットワークに登録
-    console.log("MIDI Input [" + name + "] connected.");
-    var input = this.createInput(name);
-    var inputId  = this.serverHost.clients.addNewClientInput(input);
-    this.serverHost.update_list(); // クライアントのネットワーク表示更新
-
-    // コールバックを作る(影でinputIdをキャプチャする)
-    return (function(deltaTime, message) {
-      // The message is an array of numbers corresponding to the MIDI bytes:
-      //   [status, data1, data2]
-      // https://www.cs.cf.ac.uk/Dave/Multimedia/node158.html has some helpful
-      // information interpreting the messages.
-      var msg = {'msg': message, 'delta': deltaTime};
-
-      // if (message.length != 1 || message[0] != 0xF8) console.log(msg); // log
-
-      this.serverHost.clients.deliver(inputId, message); // 配信
-    }).bind(this);
-  },
-
-  // MIDI入力デバイスの切断通知
-  onDeleteMidiInput : function(midiIn, name){
-    console.log("MIDI Input [" + name + "] disconnected.");
-    this.serverHost.clients.deleteClientInput(this.serverHost.clients.name2InputClientId("midi", name));
-    this.serverHost.update_list(); // クライアントのネットワーク表示更新
-  },
-
-  // 新規MIDI出力デバイスの登録
-  onAddNewMidiOutput : function(midiOut, name){
-    // ネットワークに登録
-    console.log("MIDI Output [" + name + "] connected.");
-    var output = this.createOutput(name, function(msg){
-      //verboseLog("[sent to midi client]", "[" + msg.join(", ") + "]")
-      this.g_midiDevs.outputs[name].sendMessage(msg);
-    }.bind(this));
-    this.serverHost.clients.addNewClientOutput(output);
-    this.serverHost.update_list(); // クライアントのネットワーク表示更新
-  },
-
-  // MIDI出力デバイスの切断通知
-  onDeleteMidiOutput : function(midiOut, name){
-    console.log("MIDI Output [" + name + "] disconnected.");
-    this.serverHost.clients.deleteClientOutput(this.serverHost.clients.name2OutputClientId("midi", name));
-    this.serverHost.update_list(); // クライアントのネットワーク表示更新
-  }
-}
-
-var prefix = function(path){ return "/fm" + path; }
-
-// yamaha専用MIDIを試験的にパースしてみる
-var yamahaStyle = {
-  "/yamaha/style/sectioncontrol": [0xF0, 0x43, 0x7E, 0x00, 0xFF, 0xFF, 0xF7],
-  "/yamaha/style/chordcontrol":   [0xF0, 0x43, 0x7E, 0x02, 0xFF, 0xFF, 0xFF, 0xFF, 0xF7],
-}
-function convertible(msg, dict){
-  for (var key in dict){
-    var midiTemplate = dict[key]
-    if (midiTemplate.length != msg.length) continue;
-
-    var args = [], i = 0; matches = true;
-    while(matches && i < msg.length){
-      if (midiTemplate[i] == 0xFF) args.push(msg[i]);
-      else if (msg[i] != midiTemplate[i]) matches = false;
-      i += 1;
-    }
-    if (matches) return {address: key, args: args};
-  }
-
-  return undefined
-}
-
-function midi2obj(msg){
-  // ただのバイト列であるmidiをそれっぽいOSCに変換して返す
-
-  if ( msg.length == 3 && ((msg[0] >> 4) == 9) && (msg[2] >  0) ){
-    // note on
-    var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
-    return {
-      address: prefix("/noteon"),
-      args:    [ch, noteNum, velo]
-    };
-
-  } else if ( msg.length == 3 && ((msg[0] >> 4) == 9) && (msg[2] == 0) ){
-    // note off with status 9
-    var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = 0x40;
-    return {
-      address: prefix("/noteoff"),
-      args:    [ch, noteNum, velo]
-    };
-
-  } else if ( msg.length == 3 && ((msg[0] >> 4) == 8) ){
-    // note off with status 8
-    var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
-    return {
-      address: prefix("/noteoff"),
-      args:    [ch, noteNum, velo]
-    };
-
-  } else if ( msg.length == 3 && ((msg[0] >> 4) == 0xA) ){
-    // polyphonic pressure
-    var ch = (msg[0] & 0x0F), noteNum = msg[1], press = msg[2];
-    return {
-      address: prefix("/notepressure"),
-      args:    [ch, noteNum, press]
-    };
-
-  } else if ( msg.length == 3 && ((msg[0] >> 4) == 0xB) ){
-    // control change
-    var ch = (msg[0] & 0x0F), type = msg[1], value = msg[2];
-    return {
-      address: prefix("/controlchange"),
-      args:    [ch, type, value]
-    };
-
-  } else if ( msg.length == 2 && ((msg[0] >> 4) == 0xC) ){
-    // program change
-    var ch = (msg[0] & 0x0F), number = msg[1];
-    return {
-      address: prefix("/programchange"),
-      args:    [ch, number]
-    };
-
-  } else if ( msg.length == 2 && ((msg[0] >> 4) == 0xD) ){
-    // channel pressure
-    var ch = (msg[0] & 0x0F), value = msg[1];
-    return {
-      address: prefix("/channelpressure"),
-      args:    [ch, value]
-    };
-
-  } else if ( msg.length == 3 && ((msg[0] >> 4) == 0xE) ){
-    // pitch bend
-    var ch = (msg[0] & 0x0F), msb = msg[1], lsb = msg[2];
-    return {
-      address: prefix("/pitchbend"),
-      args:    [ch, msb, lsb]
-    };
-
-  } else if ( msg.length == 1 && msg[0] == 0xF8 ){
-    // timing clock
-    // console.log("timing");
-    return {
-      address: prefix("/timing"),
-      args:    []
-    };
-
-  } else if ( msg.length == 1 && msg[0] == 0xFA ){
-    // start
-    // console.log("start");
-    return {
-      address: prefix("/start"),
-      args:    []
-    };
-
-  } else if ( msg.length == 1 && msg[0] == 0xFB ){
-    // continue
-    return {
-      address: prefix("/continue"),
-      args:    []
-    };
-
-  } else if ( msg.length == 1 && msg[0] == 0xFC ){
-    // stop
-    // console.log("stop");
-    return {
-      address: prefix("/stop"),
-      args:    []
-    };
-
-  } else {
-    // 追加挿入のtemplateにマッチするかチェック
-    var obj = convertible(msg, yamahaStyle);
-    if (obj != undefined){
-      // console.log(obj);
-      return obj;
-    } else {
-      // マッチしなければそのまま送信
-      return {
-        address: prefix("/midi_bytes"),
-        args:    msg
-      };
-    }
-  }
-
-}
-
-function obj2midi(msg){
-  if(msg.address == prefix("/noteon")){
-    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
-    if (ch < 16) return [0x90 + (ch & 0x0F), noteNum, velo];
-    else         return [0x90 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if(msg.address == prefix("/noteoff")){
-    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
-    if (ch < 16) return [0x80 + (ch & 0x0F), noteNum, velo];
-    else         return [0x80 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if(msg.address == prefix("/notepressure")){
-    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
-    if (ch < 16) return [0xA0 + (ch & 0x0F), noteNum, velo];
-    else         return [0xA0 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if(msg.address == prefix("/controlchange")){
-    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
-    if (ch < 16) return [0xB0 + (ch & 0x0F), noteNum, velo];
-    else         return [0xB0 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if(msg.address == prefix("/programchange")){
-    var ch = msg.args[0], noteNum = msg.args[1];
-    if (ch < 16) return [0xC0 + (ch & 0x0F), noteNum];
-    else         return [0xC0 + (ch & 0x0F), noteNum]; // 要対応
-  } else if(msg.address == prefix("/channelpressure")){
-    var ch = msg.args[0], noteNum = msg.args[1];
-    if (ch < 16) return [0xD0 + (ch & 0x0F), noteNum];
-    else         return [0xD0 + (ch & 0x0F), noteNum]; // 要対応
-  } else if(msg.address == prefix("/pitchbend")){
-    var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
-    if (ch < 16) return [0xE0 + (ch & 0x0F), noteNum, velo];
-    else         return [0xE0 + (ch & 0x0F), noteNum, velo]; // 要対応
-
-  } else if(msg.address == prefix("/timing")){
-    return [0xF8];
-
-  } else if(msg.address == prefix("/start")){
-    return [0xFA];
-
-  } else if(msg.address == prefix("/continue")){
-    return [0xFB];
-
-  } else if(msg.address == prefix("/stop")){
-    return [0xFC];
-
-  } else if(msg.address == prefix("/sysex")){
-    // sysexならargsにある配列をそのまま送信
-    return msg.args;
-
-  // } else if (msg.args){
-  //   // msg.argsがあれば、それを送信
-  //   return msg.args
-  } else {
-    // 特に形状が無ければ、stringifyしてそのままSysExにしてみる
-    // 本当は8bit -> 7bit変換が必要だが、暫定対応でそのまま流してみる
-    // このあたりを追求すればUSB-MIDIを「IPに依存しない汎用シリアル通信路」としてもうちょっと訴求できる気がする
-    // 言い換えればUSB-MIDIにJSON流して現代的なプログラマも気軽に電子工作できる？
-    var varlen = function(val){
-      var size = 1;
-      var tmp = val >> 7;
-      while (tmp != 0){
-        size += 1;
-        tmp = tmp >> 7;
-      }
-      var ret = new Array(size);
-      ret[size - 1] = val & 0x7F;
-      for (var i=size-2; i>=0; --i){
-        val = val >> 7;
-        ret[i] = (val & 0x7F) | 0x80;
-      }
-      return ret;
-    }
-
-    var buf = JSON.stringify(msg);
-    var ret = [0xF0, 0x7C] // 0x7D: 非営利, 0x7E: ノンリアルタイム, 0x7F: リアルタイムなので、0x7Cにしてみる
-    var bytes = Array.prototype.map.call(buf, function(c){ return c.charCodeAt(0); });
-    Array.prototype.push.apply(ret, varlen(buf.length));
-    Array.prototype.push.apply(ret, bytes);
-    Array.prototype.push.apply(ret, [0xF7]);
-    return ret;
-  }
-}
-
-function ClientMidi(name, emitter){
-  return {
-    type:      type,
-    name:      name,
-    key:       type + ":" + name,
-    id:        undefined,
-
-    sendMessage: function(msg){
+  createOutput: function(name, emitter){
+    var output = client_io(this.type, name);
+    output.sendMessage = function(msg){
       if(emitter){
           emitter(msg);
       }
-    },
-
-    decodeMessage: function(msg){
-      var buf = midi2obj(msg);
-      return buf;
-    },
-    
-    encodeMessage: function(buf){
-      var msg = obj2midi(buf);
+    };
+    output.encodeMessage = function(buf){
+      var msg = midiconv.obj2midi(buf);
       return msg;
-    },
+    };
+    return(output);
+  },
+  //createInput: ClientMidi,
+  //createOutput: ClientMidi,
 
-    simplify: function(){ return {type: type, name: this.name} }
-  };
+  init: function(hostAPI){
+    host = hostAPI;
+    g_midiDevs  = mididevs.MidiDevices(
+      onAddNewMidiInput.bind(this),
+      onDeleteMidiInput.bind(this),
+      onAddNewMidiOutput.bind(this),
+      onDeleteMidiOutput.bind(this)
+    );
+  },
+}
+
+// 新規MIDI入力デバイスの登録
+function onAddNewMidiInput(midiIn, name){
+  // ネットワークに登録
+  console.log("MIDI Input [" + name + "] connected.");
+  var input = this.createInput(name);
+  var inputId  = host.addInput(input);
+  host.updateList(); // クライアントのネットワーク表示更新
+
+  // コールバックを作る(影でinputIdをキャプチャする)
+  return (function(deltaTime, message) {
+    // The message is an array of numbers corresponding to the MIDI bytes:
+    //   [status, data1, data2]
+    // https://www.cs.cf.ac.uk/Dave/Multimedia/node158.html has some helpful
+    // information interpreting the messages.
+    var msg = {'msg': message, 'delta': deltaTime};
+
+    // if (message.length != 1 || message[0] != 0xF8) console.log(msg); // log
+
+    host.deliverMessage(inputId, message); // 配信
+  }).bind(this);
+}
+
+// MIDI入力デバイスの切断通知
+function onDeleteMidiInput(midiIn, name){
+  console.log("MIDI Input [" + name + "] disconnected.");
+  host.deleteInput(this.type, name);
+  host.updateList(); // クライアントのネットワーク表示更新
+}
+
+// 新規MIDI出力デバイスの登録
+function onAddNewMidiOutput(midiOut, name){
+  // ネットワークに登録
+  console.log("MIDI Output [" + name + "] connected.");
+  var output = this.createOutput(name, function(msg){
+    //verboseLog("[sent to midi client]", "[" + msg.join(", ") + "]")
+    g_midiDevs.outputs[name].sendMessage(msg);
+  }.bind(this));
+  host.addOutput(output);
+  host.updateList(); // クライアントのネットワーク表示更新
+}
+
+// MIDI出力デバイスの切断通知
+function onDeleteMidiOutput(midiOut, name){
+  console.log("MIDI Output [" + name + "] disconnected.");
+  host.deleteOutput(this.type, name);
+  host.updateList(); // クライアントのネットワーク表示更新
 }

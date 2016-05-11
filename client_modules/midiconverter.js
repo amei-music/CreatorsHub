@@ -250,7 +250,7 @@ function obj2midi(msg){
     return ret;
   }
 }
-
+/*
 function ClientMidi(name, emitter){
   return {
     type:      type,
@@ -277,3 +277,4 @@ function ClientMidi(name, emitter){
     simplify: function(){ return {type: type, name: this.name} }
   };
 }
+*/

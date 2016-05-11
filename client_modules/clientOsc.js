@@ -3,17 +3,25 @@
 //==============================================================================
 
 var type = "osc";
+var host;
+
 module.exports = {
   type: type,
-  createInput: ClientOsc,
+  createInput: function(name){
+    var input = ClientOsc(name);
+    input.listenMessage();
+    return input;
+  },
   createOutput: ClientOsc,
-  init: function(serverHost){
+  init: function(hostAPI){
+    host = hostAPI;
   }
 }
 
 var osc         = require('osc-min');
 var dgram       = require("dgram");
 var g_oscSender = dgram.createSocket("udp4");
+var oscsocks    = {}; // {input_oscport: {clientId: , sock: }} osc送受信オブジェクトを詰めておくところ
 
 function fromBuffer(msgbuf){
   // osc.fromBufferは丁寧すぎるレイアウトで返すので使いづらい
@@ -31,20 +39,26 @@ function fromBuffer(msgbuf){
 }
 
 function ClientOsc(name, emitter){
-  var addr = name.split(':');
-  var host = addr[0];
-  var port = parseInt(addr[1]);
+  var token = name.split(':');
+  var addr = token[0];
+  var port = parseInt(token[1]);
   return {
     type:      type,
     name:      name,
     key:       type + ":" + name,
     id:        undefined,
    
+    listenMessage: function(){
+      var listener = dgram.createSocket("udp4");
+      listener.on("message", function(msg, rinfo) {
+        host.deliverMessage(this.id, msg); // 配信
+      }.bind(this));
+      listener.bind(port);
+      oscsocks[port] = listener;      
+    },
+    
     sendMessage: function(msg){
-      /*if(emitter){
-          emitter(msg);
-      }*/
-      g_oscSender.send(msg, 0, msg.length, port, host);
+      g_oscSender.send(msg, 0, msg.length, port, addr);
     },
 
     decodeMessage: function(msg){

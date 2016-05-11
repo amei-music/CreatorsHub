@@ -12,6 +12,30 @@ var type = "midi";
 module.exports = {
   type: type,
   createInput: function(name){
+    var input = createMidiInput(name);
+    var vin = g_midiDevs.createVirtualInput(name);
+    if(vin){
+        console.log("VirtualMidi Input [" + name + "]");
+        // コールバック
+        vin.on('message', function(deltaTime, message) {
+            var obj = Array.prototype.slice.call(message, 0);
+            host.deliverMessage(this.id, message); // 配信
+        }.bind(input));
+        input.vmidi = vin;
+    }
+    return input;
+  },
+  createOutput: function(name, emitter){
+    var output = createMidiOutput(name, function(msg){
+      g_midiDevs.voutputs[name].sendMessage(msg);
+    }.bind(output));
+    var vout = g_midiDevs.createVirtualOutput(name);
+    if(vout){
+        console.log("VirtualMidi Output [" + name + "]");
+        output.vmidi = vout;
+    }
+    return output;
+  },
   /*
   createInput: function(name){
     var input = client_io(this.type, name);

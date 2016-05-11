@@ -53,6 +53,22 @@
   </table>
 
   <hr><!------------------------------------------------------------------->
+
+  <h3>仮想MIDIをネットワークに登録する</h3>
+  <table>
+    <tr>
+      <td>仮想MIDI INポートを追加</td>
+      <td>名前<input type="text" id="vmidi_input" style="width:240px;" />
+      <button onclick="ctrl.open_new_vmidi_input();">追加</button></td>
+    </tr>
+    <tr>
+      <td>仮想MIDI OUTポートを追加</td>
+      <td>名前<input type="text" id="vmidi_output" style="width:240px;" />
+      <button onclick="ctrl.open_new_vmidi_output();">追加</button></td>
+    </tr>
+  </table>
+
+  <hr><!------------------------------------------------------------------->
   <h3>メッセージ分析</h3>
   <table id="analyzer">
   </table>

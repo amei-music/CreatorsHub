@@ -577,6 +577,20 @@ var ctrl = {
     this.socket.emit("close_output", param);
   },
 
+  open_new_vmidi_input: function() {
+    var name = document.getElementById('vmidi_input');
+    if(name.value){
+      this.socket.emit("open_input", { type: "midi", name: name.value} );
+    }
+  },
+  
+  open_new_vmidi_output: function() {
+    var name = document.getElementById('vmidi_output');
+    if(name.value){
+      this.socket.emit("open_output", { type: "midi", name: name.value} );
+    }
+  },
+
   publishMessage: function(msg, callback) {
     var textInput = document.getElementById('msg_input');
     try{

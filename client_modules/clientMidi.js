@@ -11,32 +11,8 @@ var type = "midi";
 
 module.exports = {
   type: type,
-  createInput: function(name){
-  /*
-  createInput: function(name){
-    var input = client_io(this.type, name);
-    input.decodeMessage = function(msg){
-      var buf = midiconv.midi2obj(msg);
-      return buf;
-    };
-    return input;
-  },
-  createOutput: function(name, emitter){
-    var output = client_io(this.type, name);
-    output.sendMessage = function(msg){
-      if(emitter){
-          emitter(msg);
-      }
-    };
-    output.encodeMessage = function(buf){
-      var msg = midiconv.obj2midi(buf);
-      return msg;
-    };
-    return(output);
-  },
-  */
-  //createInput: ClientMidi,
-  //createOutput: ClientMidi,
+  createInput: function(name){},
+  createOutput: function(name){},
 
   init: function(hostAPI){
     host = hostAPI;

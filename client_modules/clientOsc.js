@@ -23,6 +23,35 @@ var dgram       = require("dgram");
 var g_oscSender = dgram.createSocket("udp4");
 var oscsocks    = {}; // {input_oscport: {clientId: , sock: }} osc送受信オブジェクトを詰めておくところ
 
+var keyvalue    = "/keyvalue";
+
+function toBuffer(msg){
+    var address = msg.address;
+    var args = msg.args;
+    if(address && args){
+        // argsがObjectの場合はプロパティ名をアルファベット順に並べてアドレス側に書く
+        // (例) /address/keyvalue_aa_bb_xx
+        if(!(args instanceof Array)){
+            if(args instanceof Object){
+                var props = Object.getOwnPropertyNames(args);
+                props.sort();
+                address += keyvalue;
+                var newargs = [];
+                for(var i = 0; i < props.length; i++){
+                    address += "_" + props[i];
+                    newargs[i] = args[props[i]];
+                }
+                args = newargs;
+            }
+        }
+    }else{
+        address = "";
+        args = [];
+        console.log("toBuffer: bad format")
+    }
+    return osc.toBuffer({address: address, args: args});
+}
+
 function fromBuffer(msgbuf){
   // osc.fromBufferは丁寧すぎるレイアウトで返すので使いづらい
   // とりあえず自前で作ってみる。例外処理全然できてない
@@ -35,7 +64,17 @@ function fromBuffer(msgbuf){
   for (var i in msg.args){
     args[i] = msg.args[i].value;
   }
-  return {address: msg.address, args: args}
+  var address = msg.address.split(keyvalue + "_");
+  if(address.length > 1){
+      // アドレスがkeyvalueを含む場合Objectに変換する
+      var props = address[1].split("_");
+      var newargs = {};
+      for(var i = 0; i < props.length; i++){
+          newargs[props[i]] = args[i];
+      }
+      args = newargs;
+  }
+  return {address: address[0], args: args}
 }
 
 function ClientOsc(name, emitter){
@@ -67,7 +106,7 @@ function ClientOsc(name, emitter){
     },
     
     encodeMessage: function(buf){
-      var msg = osc.toBuffer(buf);
+      var msg = toBuffer(buf);
       return msg;
     },
 

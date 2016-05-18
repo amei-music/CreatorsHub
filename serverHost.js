@@ -126,9 +126,12 @@ function ServerHost(){ return{
   
   // wsjsonクライアントとしてネットワークに参加する
   join_as_wsjson : function(socket, param) {
-    param.type = "json";
-    this.open_input(socket, param, "wsjson");
-    this.open_output(socket, param, "wsjson");
+    var obj = {
+      name: param ? param.name : socket.id,
+      type: "json",
+    };
+    this.open_input(socket, obj, "wsjson");
+    this.open_output(socket, obj, "wsjson");
   },
 
   // ネットワークから離脱する

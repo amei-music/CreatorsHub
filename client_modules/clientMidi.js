@@ -36,31 +36,6 @@ module.exports = {
     }
     return output;
   },
-  /*
-  createInput: function(name){
-    var input = client_io(this.type, name);
-    input.decodeMessage = function(msg){
-      var buf = midiconv.midi2obj(msg);
-      return buf;
-    };
-    return input;
-  },
-  createOutput: function(name, emitter){
-    var output = client_io(this.type, name);
-    output.sendMessage = function(msg){
-      if(emitter){
-          emitter(msg);
-      }
-    };
-    output.encodeMessage = function(buf){
-      var msg = midiconv.obj2midi(buf);
-      return msg;
-    };
-    return(output);
-  },
-  */
-  //createInput: ClientMidi,
-  //createOutput: ClientMidi,
 
   init: function(hostAPI){
     host = hostAPI;
@@ -100,7 +75,6 @@ function createMidiOutput(name, emitter){
 function onAddNewMidiInput(midiIn, name){
   // ネットワークに登録
   console.log("MIDI Input [" + name + "] connected.");
-  //var input = this.createInput(name);
   var input = createMidiInput(name);
   var inputId  = host.addInput(input);
   host.updateList(); // クライアントのネットワーク表示更新

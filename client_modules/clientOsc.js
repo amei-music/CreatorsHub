@@ -7,17 +7,14 @@ var host;
 
 module.exports = {
   type: type,
-  createInput: function(name){
-    var input = ClientOsc(name);
-    input.listenMessage();
-    return input;
-  },
+  createInput: ClientOsc,
   createOutput: ClientOsc,
   init: function(hostAPI){
     host = hostAPI;
   }
 }
 
+var client_io   = require('./client_io');
 var osc         = require('osc-min');
 var dgram       = require("dgram");
 var g_oscSender = dgram.createSocket("udp4");
@@ -78,38 +75,33 @@ function fromBuffer(msgbuf){
 }
 
 function ClientOsc(name, emitter){
+  var io = client_io(module.exports.type, name);
   var token = name.split(':');
   var addr = token[0];
   var port = parseInt(token[1]);
-  return {
-    type:      type,
-    name:      name,
-    key:       type + ":" + name,
-    id:        undefined,
-   
-    listenMessage: function(){
-      var listener = dgram.createSocket("udp4");
-      listener.on("message", function(msg, rinfo) {
-        host.deliverMessage(this.id, msg); // 配信
-      }.bind(this));
-      listener.bind(port);
-      oscsocks[port] = listener;      
-    },
-    
-    sendMessage: function(msg){
-      g_oscSender.send(msg, 0, msg.length, port, addr);
-    },
-
-    decodeMessage: function(msg){
-      var buf = fromBuffer(msg);
-      return buf;
-    },
-    
-    encodeMessage: function(buf){
-      var msg = toBuffer(buf);
-      return msg;
-    },
-
-    simplify: function(){ return {type: type, name: this.name } },
+  
+  io.listenMessage = function(){
+    var listener = dgram.createSocket("udp4");
+    listener.on("message", function(msg, rinfo) {
+      host.deliverMessage(this.id, msg); // 配信
+    }.bind(this));
+    listener.bind(port);
+    oscsocks[port] = listener;      
   };
+    
+  io.sendMessage = function(msg){
+    g_oscSender.send(msg, 0, msg.length, port, addr);
+  };
+
+  io.decodeMessage = function(msg){
+    var buf = fromBuffer(msg);
+    return buf;
+  };
+    
+  io.encodeMessage = function(buf){
+    var msg = toBuffer(buf);
+    return msg;
+  };
+  
+  return io;
 }

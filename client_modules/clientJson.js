@@ -17,6 +17,7 @@ module.exports = {
 function ClientJson(name, emitter){
     var io = client_io(module.exports.type, name);
     io.socketId = undefined;
+    io.owner = "user";
     io.sendMessage = function(msg){
       host.sendMessageTo(this.socketId, "message_json", msg);
     };

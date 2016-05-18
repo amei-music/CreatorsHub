@@ -23,6 +23,7 @@ module.exports = {
         }.bind(input));
         input.vmidi = vin;
     }
+    input.owner = "user";
     return input;
   },
   createOutput: function(name, emitter){
@@ -34,6 +35,7 @@ module.exports = {
         console.log("VirtualMidi Output [" + name + "]");
         output.vmidi = vout;
     }
+    output.owner = "user";
     return output;
   },
 

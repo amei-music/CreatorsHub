@@ -80,6 +80,8 @@ function ClientOsc(name, emitter){
   var addr = token[0];
   var port = parseInt(token[1]);
   
+  io.owner = "user";
+  
   io.listenMessage = function(){
     var listener = dgram.createSocket("udp4");
     listener.on("message", function(msg, rinfo) {

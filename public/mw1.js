@@ -236,7 +236,7 @@ var ctrl = {
       td.innerText = obj.name;
       td.id = "name";
 
-      function addGraph(id){
+      var addGraph = function(id){
         td = tr.insertCell(-1);
         td.id = id;
 
@@ -244,9 +244,9 @@ var ctrl = {
         canvas.width = 256;
         canvas.height = 32;
         td.appendChild(canvas);
-      }
+      };
 
-      function addSVG(id){
+      var addSVG = function(id){
         td = tr.insertCell(-1);
         td.id = id;
 
@@ -257,7 +257,7 @@ var ctrl = {
 
         var div = document.createElement("div");
         td.appendChild(div);
-      }
+      };
 
       addGraph("signal");
       addSVG("sig");
@@ -281,7 +281,7 @@ var ctrl = {
       }
 
       // グラフ更新
-      function updateGraph(id, val, min, max){
+      var updateGraph = function(id, val, min, max){
         // max, min
         /*
         var max = 1;
@@ -318,14 +318,14 @@ var ctrl = {
           ctx.lineTo(x, y);
         }
         ctx.stroke();
-      }
+      };
 
       //-------------------------
       var svgWidth = 256;
       var svgHeight = 32;
       var svgRadius = 3;
 
-      function getSVG(id){
+      var getSVG = function(id){
         td = cells.namedItem(id);
 
         var div = td.childNodes[0];
@@ -339,7 +339,7 @@ var ctrl = {
         });
 
         return(svg);
-      }
+      };
       //-------------------------
       // 縦軸が値、横軸が時間
       var svgScaleX = d3.scale.linear()
@@ -348,7 +348,7 @@ var ctrl = {
       var svgScaleY = d3.scale.linear()
                             .domain([obj.output.valMin, obj.output.valMax])
                             .range([svgHeight - svgRadius, svgRadius]);
-      function updateSVG(id, obj){
+      var updateSVG = function(id, obj){
         var svg = getSVG(id);
         svg.style("background-color", "#fff0f0");
         
@@ -371,7 +371,7 @@ var ctrl = {
          .attr("fill","red");
  
          circles.transition().delay(500).duration(1000).attr("r", 1);
-      }
+      };
       //-------------------------
       // 縦軸が時間、横軸が値
       var svg2ScaleX = d3.scale.linear()
@@ -383,7 +383,7 @@ var ctrl = {
       var svg2ScaleR = d3.scale.linear()
                             .domain([obj.output.lastAnalyzeTime - obj.output.sampleDuration, obj.output.lastAnalyzeTime])
                             .range([1, svgRadius]);
-      function updateSVG2(id, obj){
+      var updateSVG2 = function(id, obj){
         var svg = getSVG(id);
         svg.style("background-color", "#f8f8f8");
 
@@ -497,7 +497,7 @@ var ctrl = {
           .attr("y", svgHeight)
           .attr("text-anchor", "end")
           .text(obj.valMax);
-      }
+      };
       //-------------------------
 
       updateGraph("signal", obj.output.signal, obj.output.valMin, obj.output.valMax);

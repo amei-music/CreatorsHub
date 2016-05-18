@@ -62,6 +62,7 @@ function Clients(){ return {
   //==============================================================================
   addNewClientInput: function(client){
     client.id = this.id_input;
+    client.listenMessage();
     this.inputs[client.id] = client;
     this.id_input += 1;
     this.updateConnectionsById();
@@ -80,10 +81,10 @@ function Clients(){ return {
     var existed = (clientId in this.inputs);
     if(existed){
       var inputKey = this.inputs[clientId].key;
-      var type = this.inputs[clientId].type;
+      var owner = this.inputs[clientId].owner;
       delete this.inputs[clientId];
 
-      if(type == "osc"){
+      if(owner == "user"){
         for(var outputKey in this.connections[inputKey]){
           this.deleteConnection(inputKey, outputKey);
         }
@@ -98,10 +99,10 @@ function Clients(){ return {
   deleteClientOutput: function(clientId){
     var existed = (clientId in this.outputs);
     if(existed){
-      var type = this.outputs[clientId].type;
+      var owner = this.outputs[clientId].owner;
       delete this.outputs[clientId];
 
-      if(type == "osc"){
+      if(owner == "user"){
         for(var inputKey in this.connections){
           for(var outputKey in this.connections[inputKey]){
             var outputId = this.key2ClientId(outputKey, this.outputs);
@@ -164,8 +165,8 @@ function Clients(){ return {
 
   emptySettings: function(){
     return {
-      oscInputs: [],
-      oscOutputs: [],
+      userInputs: [],
+      userOutputs: [],
       connections: {}
     };
   },
@@ -174,17 +175,17 @@ function Clients(){ return {
     // 設定の保存
     var settings = this.emptySettings();
 
-    // OSC入力情報
+    // ユーザー作成の入力情報
     for(var inputId in this.inputs){
-      if(this.inputs[inputId].type == "osc"){
-        settings.oscInputs.push(this.inputs[inputId].simplify());
+      if(this.inputs[inputId].owner == "user"){
+        settings.userInputs.push(this.inputs[inputId].simplify());
       }
     }
 
-    // OSC出力情報
+    // ユーザー作成の出力情報
     for(var outputId in this.outputs){
-      if(this.outputs[outputId].type == "osc"){
-        settings.oscOutputs.push(this.outputs[outputId].simplify());
+      if(this.outputs[outputId].owner == "user"){
+        settings.userOutputs.push(this.outputs[outputId].simplify());
       }
     }
 
@@ -204,7 +205,12 @@ function Clients(){ return {
     if (fs.existsSync(SETTING_FILE)) {
       // 設定情報を読み込み
       var buf = fs.readFileSync(SETTING_FILE, "utf-8");
-      settings = JSON.parse(buf);
+      try{
+        settings = JSON.parse(buf);
+      }
+      catch (e) {
+        // no process
+      }
     }
     return settings;
   },

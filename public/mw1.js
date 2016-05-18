@@ -49,9 +49,9 @@ function makeNodeName(client){
   return name
 }
 
-// 削除可能なOSC入出力かどうか
-function isClientRemovableOsc(client){
-  return client.type == "osc"; // OSCはすべて削除可能
+// 削除可能な入出力かどうか
+function isClientRemovable(client){
+  return client.owner == "user"; // user作成入出力はすべて削除可能
 }
 
 // プレーンテキストで接続状態を表示する
@@ -82,19 +82,19 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
   // 入力側の表示情報作成
   var inputNames  = {};
   var inputIdList = [];
-  var isRemovableOscInputs  = {};
+  var isRemovableInputs  = {};
   for(var inputId  in obj.inputs ){
     inputNames[inputId] = makeNodeName(obj.inputs[inputId]);
-    isRemovableOscInputs[inputId] = isClientRemovableOsc(obj.inputs[inputId]);
+    isRemovableInputs[inputId] = isClientRemovable(obj.inputs[inputId]);
     inputIdList.push(inputId);
   }
   // 出力側の表示情報作成
   var outputNames = {};
   var outputIdList = [];
-  var isRemovableOscOutputs  = {};
+  var isRemovableOutputs  = {};
   for(var outputId in obj.outputs){
     outputNames[outputId] = makeNodeName(obj.outputs[outputId]);
-    isRemovableOscOutputs[outputId] = isClientRemovableOsc(obj.outputs[outputId]);
+    isRemovableOutputs[outputId] = isClientRemovable(obj.outputs[outputId]);
     outputIdList.push(outputId);
   }
   // 入出力IDを名前順にソート
@@ -135,7 +135,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
       tr.appendChild(cell);
       if(i == 0){
         cell.innerHTML = outputNames[outputId];
-        if(isRemovableOscOutputs[outputId]){
+        if(isRemovableOutputs[outputId]){
           var btnRemove = document.createElement("button");
           btnRemove.innerText = "削除";
           btnRemove.addEventListener('click', onRemoveOscOutput.bind(null, parseInt(outputId)));
@@ -158,7 +158,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
     var cell = document.createElement('th');
     tr.appendChild(cell);
     cell.innerHTML = "▶ " + inputNames[inputId];
-    if(isRemovableOscInputs[inputId]){
+    if(isRemovableInputs[inputId]){
       var btnRemove = document.createElement("button");
       btnRemove.innerText = "削除";
       btnRemove.addEventListener('click', onRemoveOscInput.bind(null, parseInt(inputId)));
@@ -526,16 +526,16 @@ var ctrl = {
   },
 
   join_as_wsjson: function() {
-    this.socket.emit("open_input", { type: "json", name: "mw1"} );
-    this.socket.emit("open_output", { type: "json", name: "mw1"} );
-    //this.socket.emit("join_as_wsjson", { "name": "mw1"} );
+    //this.socket.emit("open_input", { type: "json", name: "mw1"} );
+    //this.socket.emit("open_output", { type: "json", name: "mw1"} );
+    this.socket.emit("join_as_wsjson", { "name": "mw1"} );
     this.showJsonClient(true);
   },
 
   exit_wsjson: function() {
-    this.socket.emit("close_input", { type: "json", name: "mw1"} );
-    this.socket.emit("close_output", { type: "json", name: "mw1"} );
-    //this.socket.emit("exit_wsjson");
+    //this.socket.emit("close_input", { type: "json", name: "mw1"} );
+    //this.socket.emit("close_output", { type: "json", name: "mw1"} );
+    this.socket.emit("exit_wsjson");
     this.showJsonClient(false);
   },
 

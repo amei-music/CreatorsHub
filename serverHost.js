@@ -72,11 +72,11 @@ function ServerHost(){ return{
     this.openWebSocket();
     
     var settings = this.clients.loadSettings();
-    for(var i in settings.oscInputs){
-       this.open_input({}, {type: "osc", name: settings.oscInputs[i].name});
+    for(var i in settings.userInputs){
+       this.open_input({}, {type: settings.userInputs[i].type, name: settings.userInputs[i].name});
     }
-    for(var i in settings.oscOutputs){
-       this.open_output({}, {type: "osc", name: settings.oscOutputs[i].name});
+    for(var i in settings.userOutputs){
+       this.open_output({}, {type: settings.userOutputs[i].type, name: settings.userOutputs[i].name});
     }
 
     this.clients.connections = settings.connections;
@@ -124,6 +124,23 @@ function ServerHost(){ return{
     this.update_list();
   },
   
+  // wsjsonクライアントとしてネットワークに参加する
+  join_as_wsjson : function(socket, param) {
+    param.type = "json";
+    this.open_input(socket, param, "wsjson");
+    this.open_output(socket, param, "wsjson");
+  },
+
+  // ネットワークから離脱する
+  exit_wsjson : function(socket) {
+    var inputExisted = this.clients.deleteClientInput (this.clients.socketId2InputClientId (socket.id));
+    var outputExisted = this.clients.deleteClientOutput(this.clients.socketId2OutputClientId(socket.id));
+    if(inputExisted || outputExisted){
+      console.log("[Web Socket #'" + socket.id + "'] exited.");
+    }
+    this.update_list(); // ネットワーク更新
+  },
+
   // JSONメッセージを受信する
   message_json : function(socket, obj){
     var inputId  = this.clients.socketId2InputClientId(socket.id);
@@ -139,9 +156,12 @@ function ServerHost(){ return{
   // 
 
   //  - このサーバーの受信ポートを作成する
-  open_input : function(socket, obj) {
+  open_input : function(socket, obj, owner) {
     // obj.type obj.name
     var input = this.modules[obj.type].createInput(obj.name);
+    if(owner){
+      input.owner = owner;
+    }
     if(socket && socket.id){
       input.socketId = socket.id;
     }
@@ -151,9 +171,12 @@ function ServerHost(){ return{
   },
 
   //  - このサーバーの送信ポートを作成する
-  open_output : function(socket, obj) {
+  open_output : function(socket, obj, owner) {
     // obj.type obj.name
     var output = this.modules[obj.type].createOutput(obj.name);
+    if(owner){
+      output.owner = owner;
+    }
     if(socket && socket.id){
       output.socketId = socket.id;
     }
@@ -236,8 +259,8 @@ function ServerHost(){ return{
     socket.on("cleanup_connection_history", this.cleanup_connection_history.bind(this) );
 
     // (2)のためのAPI
-    //socket.on("join_as_wsjson",      this.join_as_wsjson.bind(this, socket) ); // wsjsonクライアントとしてネットワークに参加する
-    //socket.on("exit_wsjson",         this.exit_wsjson.bind(this, socket) );    // ネットワークから離脱する
+    socket.on("join_as_wsjson",      this.join_as_wsjson.bind(this, socket) ); // wsjsonクライアントとしてネットワークに参加する
+    socket.on("exit_wsjson",         this.exit_wsjson.bind(this, socket) );    // ネットワークから離脱する
     socket.on("message_json",        this.message_json.bind(this, socket) );   // JSONメッセージを受信する
 
     // (3)のためのAPI

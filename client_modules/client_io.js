@@ -22,6 +22,12 @@ module.exports = function(type, name){
     name:      name,
     key:       type + ":" + name,
     id:        undefined,
+    owner:     "system",
+    
+    // 入力
+    listenMessage: function(){
+      // 初期値は空のファンクション
+    },
     
     // 出力
     sendMessage: function(msg){
@@ -51,6 +57,6 @@ module.exports = function(type, name){
     },
 
     // typeと名前だけを取得
-    simplify: function(){ return {type: type, name: this.name } },
+    simplify: function(){ return {type: this.type, name: this.name, owner: this.owner } },
   }
 }

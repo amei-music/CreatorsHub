@@ -127,6 +127,8 @@ function MidiDevices(onAddNewInput, onDeleteInput, onAddNewOutput, onDeleteOutpu
         appendIngnoreList(name);
 
         var vin = new midi.input();
+        vin.ignoreTypes(false, false, true); // (Sysex, Timing, Active Sensing) のignoreを設定する
+
         vin.openVirtualPort(name);
         obj.vinputs[name] = vin;
         return vin;

@@ -12,6 +12,8 @@ module.exports = {
   }
 }
 
+var client_io   = require('./client_io');
+
 /* 
 var clientSample = require('./clientSample');
 
@@ -27,44 +29,6 @@ var emitter = function(msg){
 var output = clientSample.create(name, emitter);
 */
 function ClientModule(name, emitter){
-  return {
-    type:      type,
-    name:      name,
-    key:       type + ":" + name,
-    id:        undefined,
-    
-    // 出力
-    sendMessage: function(msg){
-      // encodeMessageの出力がmsgとして渡される
-      // そのままemitterに渡してよければこのままでよい
-      if(emitter){
-          emitter(msg);
-      }
-    },
-
-    // デコード
-    decodeMessage: function(msg){
-      var buf = msg;
-      /*
-      // msgを以下のフォーマットに変換する
-      buf = {
-         address: "/foo/bar/", // OSCのaddressに相当する文字列
-         args:    []           // OSCのargsに相当する配列
-      }
-      */
-      return buf;
-    },
-    
-     // エンコード
-     encodeMessage: function(buf){
-      var msg = buf;
-      /*
-      // bufをemitterで出力するフォーマットに変換する
-      */
-      return msg;
-    },
-
-    // typeと名前だけを取得
-    simplify: function(){ return {type: type, name: this.name } },
-  }
+  var io = client_io(type, name);
+  return io;
 }

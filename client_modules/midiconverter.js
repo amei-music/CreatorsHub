@@ -250,31 +250,3 @@ function obj2midi(msg){
     return ret;
   }
 }
-/*
-function ClientMidi(name, emitter){
-  return {
-    type:      type,
-    name:      name,
-    key:       type + ":" + name,
-    id:        undefined,
-
-    sendMessage: function(msg){
-      if(emitter){
-          emitter(msg);
-      }
-    },
-
-    decodeMessage: function(msg){
-      var buf = midi2obj(msg);
-      return buf;
-    },
-    
-    encodeMessage: function(buf){
-      var msg = obj2midi(buf);
-      return msg;
-    },
-
-    simplify: function(){ return {type: type, name: this.name} }
-  };
-}
-*/

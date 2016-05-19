@@ -1,5 +1,5 @@
 {
-  "name": "pi_mw1",
+  "name": "mw1",
   "version": "1.0.0",
   "description": "USB-MIDI to WebSocket / OpenSoundControl converter on Raspberry Pi",
   "main": "index.js",
@@ -19,13 +19,13 @@
   "homepage": "",
   "dependencies": {
     "connect": "^3.4.0",
+    "fft-js": "^0.0.9",
     "midi": "^0.9.4",
     "osc-min": "^0.2.0",
     "rtpmidi": "^0.1.8",
     "serve-static": "^1.10.0",
     "socket.io": "^1.3.7",
     "usage": "^0.7.1",
-    "yargs": "^3.32.0",
-    "fft-js":"^0.0.9"
+    "yargs": "^3.32.0"
   }
 }

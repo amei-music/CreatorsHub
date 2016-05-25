@@ -47,8 +47,8 @@ module.exports = function(type, name){
       return buf;
     },
     
-     // エンコード
-     encodeMessage: function(buf){
+    // エンコード
+    encodeMessage: function(buf){
       var msg = buf;
       /*
       // bufをsendMessageで出力するフォーマットに変換する

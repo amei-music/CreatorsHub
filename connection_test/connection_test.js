@@ -13,6 +13,8 @@ var ctrl = {
     sendPeriodic: false,
     numSent: 0,
     numReceived: 0,
+	numModuleTest:0,
+	moduleTestResult: [],
     test_json: [
 		{
 			address: "/fm/noteon",
@@ -40,6 +42,7 @@ var ctrl = {
 		this.socket = io.connect(this.param.url);
 		this.socket.on("update_list",  this.onUpdateList.bind(this));
 		this.socket.on("message_json", this.onMessageJson.bind(this));
+		this.socket.on("test_modules", this.onTestModules.bind(this));
 		this.socket.on("connect", this.onConnect.bind(this));
 		this.socket.on("disconnect",   this.onDisconnect.bind(this));
         this.showstatus();
@@ -90,6 +93,10 @@ var ctrl = {
                         + "<hr>"
                         + "Sent:" + this.numSent + "<br>"
                         + "Received:" + this.numReceived + "<br>";
+		for(var i = 0; i < this.numModuleTest; i++){
+			status.innerHTML +=	"ModuleTest["+ i + "]<br>"
+						+ "<pre>" + this.moduleTestResult[i] + "</pre>";
+		}
         setTimeout(this.showstatus.bind(this), 250);
     },
     
@@ -175,5 +182,17 @@ var ctrl = {
 
     sendJSONstop: function(){
         this.sendPeriodic = false;
-    }
+    },
+	
+    test_modules: function(){
+		this.numModuleTest = 0;
+      	for(var j in this.test_json){
+	        this.socket.emit("test_modules", this.test_json[j]);
+    	}
+	},
+	
+	onTestModules : function(msg){
+		this.moduleTestResult[this.numModuleTest] = msg;
+		this.numModuleTest++;
+	}
 }

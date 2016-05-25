@@ -123,6 +123,57 @@ function ServerHost(){ return{
     this.clients.saveSettings();
     this.update_list();
   },
+
+  // JSONメッセージを受信してモジュールのcreate,decoder,encoderをテスト
+  test_modules : function(obj){
+    var result = "";
+    result += "INPUT: " + JSON.stringify(obj) + "\n";
+    for(var type in this.modules){
+    	var ok = false;
+      try{
+        var input = this.modules[type].createInput("test_input");
+        var input_simplified = input.simplify();
+        result += type + " input: " + JSON.stringify(input_simplified) + "\n";
+        try{
+          var output = this.modules[type].createOutput("test_output");
+          var output_simplified = input.simplify();
+          result += type + " output: " + JSON.stringify(output_simplified) + "\n";
+          try{
+            var encodedObj = output.encodeMessage(obj);
+            result += type + " encoded: " + JSON.stringify(encodedObj) + "\n";
+            try{
+              var decodedObj = input.decodeMessage(encodedObj);
+              result += type + " decoded: " + JSON.stringify(decodedObj) + "\n";
+              if(obj.address != decodedObj.address){
+                result += type + " address: ERROR " + obj.address + " != " + decodedObj.address + "\n";
+              }else{
+                ok = true;
+                for(var i in obj.args){
+                  if(obj.args[i] != decodedObj.args[i]){
+                    ok = false;
+                    result += type + " args[" + i + "]: ERROR " + obj.args[i] + " != " + decodedObj.args[i] + "\n";
+                  }
+                }
+              }
+            }catch (e){
+              result += type + " input.decodeMessage: ERROR\n";
+            }
+          }catch (e){
+            result += type + " output.encodeMessage ERROR\n";
+          }
+        }catch (e){
+          result += type + " createOutput ERROR\n";
+        }
+      }catch (e){
+        result += type + " createInput ERROR\n";
+      }
+      if(ok){
+        result += type + ": OK\n";
+      }
+    }
+    console.log(result);
+    this.g_io.sockets.emit("test_modules", result);
+  },
   
   // wsjsonクライアントとしてネットワークに参加する
   join_as_wsjson : function(socket, param) {
@@ -260,6 +311,8 @@ function ServerHost(){ return{
     // (1)のためのAPI
     socket.on("add_connection",      this.add_connection.bind(this) );
     socket.on("cleanup_connection_history", this.cleanup_connection_history.bind(this) );
+    // テスト用API
+    socket.on("test_modules",         this.test_modules.bind(this) );   // JSONメッセージを受信してモジュールのdecoder,encoderをテスト
 
     // (2)のためのAPI
     socket.on("join_as_wsjson",      this.join_as_wsjson.bind(this, socket) ); // wsjsonクライアントとしてネットワークに参加する

@@ -1,0 +1,51 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>FM_MW1 Examples</title>
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
+	<script src="http://code.jquery.com/jquery-1.8.3.js"></script>
+	<script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
+	<script src="/socket.io/socket.io.js" charset="utf-8"></script>
+
+	<script type="text/javascript">
+		<!-- このサーバのルートドキュメント（つまりpublic_mw1）にコネクトする -->
+		var gSocket = io.connect('http://' + document.domain + ':16080');
+
+		<!-- 接続が確立した時のイベントハンドラ -->
+		gSocket.on( "connect", function() {
+				   console.log("connected");
+				   gSocket.emit('join_as_wsjson', {name: 'FM_MW1 Example'});
+		});
+
+		<!-- 切断された時のイベントハンドラ -->
+		gSocket.on( "disconnect", function() {
+				   console.log("disconnected");
+		});
+
+	</script>
+	<script src="./ButtonExample.js"></script>
+	<script src="./SliderExample.js"></script>
+	<script src="./ReceiveExample.js"></script>
+
+</head>
+<body>
+  <table cellspacing="0" cellpadding="5" >
+    <tr>
+      <td>Button Example</td>
+      <td><input  type="text" id="log_btn" style="width:120px;" />
+      <td><button onclick="examples.click();" style="margin:20px;">Click !!</button></td>
+    </tr>
+    <tr>
+      <td>Slider Example</td>
+      <td><input  type="text" id="log_sld" style="width:120px;" />
+      <td><div id="slider" style="width:300px;margin:20px;"></div></td>
+    </tr>
+	<tr>
+		<td>Receive Event Example</td>
+		<td></td>
+		<td><input  type="text" id="log_rcv" style="width:200px;" />
+	</tr>
+  </table>
+
+</body>
+</html>

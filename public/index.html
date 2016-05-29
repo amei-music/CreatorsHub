@@ -41,13 +41,46 @@
   <table>
     <tr>
       <td>サーバーの受信ポートを追加</td>
-      <td><button onclick="ctrl.open_new_osc_input();">追加</button></td>
+      <td>待ち受けポート番号<input type="text" id="osc_input_port" style="width:60px;" />
+      <button onclick="ctrl.open_new_osc_input();">追加</button></td>
     </tr>
     <tr>
       <td>送信先ホストを追加</td>
-      <td>ホストアドレス<input  type="text" id="osc_host" style="width:120px;" />
-          待ち受けポート番号<input type="text" id="osc_port" style="width:60px;" />
-      <button onclick="ctrl.open_new_osc_output();">登録</button></td>
+      <td>ホストアドレス<input  type="text" id="osc_output_host" style="width:120px;" />
+          待ち受けポート番号<input type="text" id="osc_output_port" style="width:60px;" />
+      <button onclick="ctrl.open_new_osc_output();">追加</button></td>
+    </tr>
+  </table>
+
+  <hr><!------------------------------------------------------------------->
+
+  <h3>仮想MIDIをネットワークに登録する</h3>
+  <table>
+    <tr>
+      <td>仮想MIDI INポートを追加</td>
+      <td>名前<input type="text" id="vmidi_input" style="width:240px;" />
+      <button onclick="ctrl.open_new_vmidi_input();">追加</button></td>
+    </tr>
+    <tr>
+      <td>仮想MIDI OUTポートを追加</td>
+      <td>名前<input type="text" id="vmidi_output" style="width:240px;" />
+      <button onclick="ctrl.open_new_vmidi_output();">追加</button></td>
+    </tr>
+  </table>
+
+  <hr><!------------------------------------------------------------------->
+
+  <h3>RTP-MIDIをネットワークに登録する</h3>
+  <table>
+    <tr>
+      <td>RTP-MIDI INポートを追加</td>
+      <td>名前<input type="text" id="rtpmidi_input" style="width:240px;" />
+      <button onclick="ctrl.open_new_rtpmidi_input();">追加</button></td>
+    </tr>
+    <tr>
+      <td>RTP-MIDI OUTポートを追加</td>
+      <td>名前<input type="text" id="rtpmidi_output" style="width:240px;" />
+      <button onclick="ctrl.open_new_rtpmidi_output();">追加</button></td>
     </tr>
   </table>
 

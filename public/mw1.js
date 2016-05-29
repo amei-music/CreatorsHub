@@ -41,22 +41,17 @@ var Timing = function(){
 // デバイス名を作る
 function makeNodeName(client){
   var name = client.type + "> ";
-  if (client.type == "json"){
-    if(client.name){
-      name += client.name;
-    }else{
-      name += client.name + " socket[" + client.socketId + "]";
-    }
-
+  if(client.name){
+    name += client.name;
+  //}else{
+  //  name += "socket[" + client.socketId + "]";
   }
-  if (client.type == "midi" || client.type == "vmidi" || client.type == "rtp" || client.type == "analyzer") name += client.name;
-  if (client.type == "osc" ) name += client.host + ":" + client.port;
   return name
 }
 
 // 削除可能な入出力かどうか
-function isClientRemovableIO(client){
-  return client.type == "osc" || client.type == "vmidi"; // OSCと仮想MIDIは削除可能
+function isClientRemovable(client){
+  return client.owner == "user"; // user作成入出力はすべて削除可能
 }
 
 // プレーンテキストで接続状態を表示する
@@ -90,7 +85,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
   var isRemovableInputs  = {};
   for(var inputId  in obj.inputs ){
     inputNames[inputId] = makeNodeName(obj.inputs[inputId]);
-    isRemovableInputs[inputId] = isClientRemovableIO(obj.inputs[inputId]);
+    isRemovableInputs[inputId] = isClientRemovable(obj.inputs[inputId]);
     inputIdList.push(inputId);
   }
   // 出力側の表示情報作成
@@ -99,7 +94,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
   var isRemovableOutputs  = {};
   for(var outputId in obj.outputs){
     outputNames[outputId] = makeNodeName(obj.outputs[outputId]);
-    isRemovableOutputs[outputId] = isClientRemovableIO(obj.outputs[outputId]);
+    isRemovableOutputs[outputId] = isClientRemovable(obj.outputs[outputId]);
     outputIdList.push(outputId);
   }
   // 入出力IDを名前順にソート
@@ -131,7 +126,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
       cell.innerHTML = "OUT";
       cell.style.textAlign = "right";
     }else{
-      cell.innerHTML = "IN";
+      cell.innerHTML = "IN"; 
       cell.style.textAlign = "left";
     }
     for(var o = 0; o < outputIdList.length; o++){
@@ -148,13 +143,6 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
         }
       }else{
         cell.innerHTML = "▲";
-      }
-      // エラー表示
-      if(obj.outputs[outputId].error){
-        if(i == 1){
-            cell.innerHTML = "×";
-        }
-        cell.className = "error";
       }
     }
   }
@@ -223,7 +211,7 @@ var ctrl = {
   onUpdateList: function(obj){
     // htmlのtableでコネクションマトリックスを作る
     // マトリックス内のボタンクリックでサーバーに接続変更を指示する
-    var table = makeConnectionTable(obj, this.add_connection.bind(this), this.close_input.bind(this), this.close_output.bind(this));
+    var table = makeConnectionTable(obj, this.add_connection.bind(this), this.close_osc_input.bind(this), this.close_osc_output.bind(this));
     var networkArea = document.getElementById("network");
     networkArea.textContent = null;
     networkArea.appendChild(table);
@@ -309,7 +297,7 @@ var ctrl = {
           min = 0;
           range = 1;
         }
-
+        
         // 描画
         td = cells.namedItem(id);
         var canvas = td.childNodes[0];
@@ -363,7 +351,7 @@ var ctrl = {
       var updateSVG = function(id, obj){
         var svg = getSVG(id);
         svg.style("background-color", "#fff0f0");
-
+        
         var circles = svg.selectAll("circle")
          .data(obj.events)
          .enter()
@@ -381,7 +369,7 @@ var ctrl = {
               return svgRadius;
          })
          .attr("fill","red");
-
+ 
          circles.transition().delay(500).duration(1000).attr("r", 1);
       };
       //-------------------------
@@ -538,47 +526,86 @@ var ctrl = {
   },
 
   join_as_wsjson: function() {
+    //this.socket.emit("open_input", { type: "json", name: "mw1"} );
+    //this.socket.emit("open_output", { type: "json", name: "mw1"} );
     this.socket.emit("join_as_wsjson", { "name": "mw1"} );
     this.showJsonClient(true);
   },
 
   exit_wsjson: function() {
+    //this.socket.emit("close_input", { type: "json", name: "mw1"} );
+    //this.socket.emit("close_output", { type: "json", name: "mw1"} );
     this.socket.emit("exit_wsjson");
     this.showJsonClient(false);
   },
 
+  // OSC送受信ポートアドレスの作成（仮）
+  make_osc_name : function(host, port) {
+    // 無効なホストやポートの場合は undefined
+    if(!host || !port) return undefined;
+    var p = parseInt(port);
+    if(p < 1 || p > 65535) return undefined;
+    return host + ":" + port;
+  },
+
   open_new_osc_input: function() {
-    this.socket.emit("open_new_osc_input");
+    var port = document.getElementById('osc_input_port');
+    var oscName = this.make_osc_name("localhost", port.value);
+    if(oscName){
+      this.socket.emit("open_input", { type: "osc", name: oscName} );
+    }
   },
 
   open_new_osc_output: function() {
-    var host = document.getElementById('osc_host');
-    var port = document.getElementById('osc_port');
-    this.socket.emit("open_new_osc_output", {host: host.value, port: port.value});
+    var host = document.getElementById('osc_output_host');
+    var port = document.getElementById('osc_output_port');
+    var oscName = this.make_osc_name(host.value, port.value);
+    if(oscName){
+      this.socket.emit("open_output", { type: "osc", name: oscName} );
+    }
   },
 
-  open_new_virtualmidi_input: function() {
-    var name = document.getElementById('vmidi_in');
-    this.socket.emit("open_new_virtualmidi_input", {name: name.value});
-  },
-
-  open_new_virtualmidi_output: function() {
-    var name = document.getElementById('vmidi_out');
-    this.socket.emit("open_new_virtualmidi_output", {name: name.value});
-  },
-
-  close_input: function(inputId) {
+  close_osc_input: function(inputId) {
     var param = {inputId: inputId};
-    console.log("close_input: " + JSON.stringify(param));
+    console.log("close_osc_input: " + JSON.stringify(param));
     this.socket.emit("close_input", param);
   },
 
-  close_output: function(outputId) {
+  close_osc_output: function(outputId) {
     var param = {outputId: outputId};
-    console.log("close_output: " + JSON.stringify(param));
+    console.log("close_osc_output: " + JSON.stringify(param));
     this.socket.emit("close_output", param);
   },
 
+  open_new_vmidi_input: function() {
+    var name = document.getElementById('vmidi_input');
+    if(name.value){
+      this.socket.emit("open_input", { type: "midi", name: name.value} );
+    }
+  },
+  
+  open_new_vmidi_output: function() {
+    var name = document.getElementById('vmidi_output');
+    if(name.value){
+      this.socket.emit("open_output", { type: "midi", name: name.value} );
+    }
+  },
+
+
+  open_new_rtpmidi_input: function() {
+    var name = document.getElementById('rtpmidi_input');
+    if(name.value){
+      this.socket.emit("open_input", { type: "rtp", name: name.value} );
+    }
+  },
+  
+  open_new_rtpmidi_output: function() {
+    var name = document.getElementById('rtpmidi_output');
+    if(name.value){
+      this.socket.emit("open_output", { type: "rtp", name: name.value} );
+    }
+  },
+    
   publishMessage: function(msg, callback) {
     var textInput = document.getElementById('msg_input');
     try{

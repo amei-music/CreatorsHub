@@ -1,12 +1,33 @@
+//==============================================================================
+// メッセージ分析クライアントモジュール
+//==============================================================================
+var client_io = require('./client_io');
+
 module.exports = {
-  OscAnalyzer: OscAnalyzer,
+  type: "analyzer",
+  createInput: function(name){},
+  createOutput: function(name){},
+  
+  init: function(hostAPI){
+    var name = "Analyzer";
+    var output = client_io(module.exports.type, name);
+    output.oscAnalyzer = new OscAnalyzer();
+    output.sendMessage = function(msg){
+        this.oscAnalyzer.analyze(msg, function(obj){
+            hostAPI.sendWebAppMessage("message_analyzer", {name: obj.name, output: obj});                
+        });
+    }.bind(output);
+    var outputId = hostAPI.addOutput(output);
+    console.log("Analyzer Output [" + name + "] (client id=" + outputId + ").");
+  }
 }
+
+//==============================================================================
+// 分析処理
+//==============================================================================
 
 var fft         = require('fft-js').fft;
 var fftUtil     = require('fft-js').util;
-
-function OscAnalyzer(){
-}
 
 function OscAnalyzer(){
     //var sampleRate = 32; // Hz
@@ -326,4 +347,4 @@ function OscAnalyzer(){
         }
     };
     return(analyzer);
-};
+}

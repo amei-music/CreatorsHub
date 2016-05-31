@@ -133,46 +133,47 @@ function ServerHost(){ return{
       try{
         var input = this.modules[type].createInput("test_input");
         var input_simplified = input.simplify();
-        result += type + " input: " + JSON.stringify(input_simplified) + "\n";
+        //result += type + " input: " + JSON.stringify(input_simplified) + "\n";
         try{
           var output = this.modules[type].createOutput("test_output");
           var output_simplified = input.simplify();
-          result += type + " output: " + JSON.stringify(output_simplified) + "\n";
+          //result += type + " output: " + JSON.stringify(output_simplified) + "\n";
           try{
             var encodedObj = output.encodeMessage(obj);
-            result += type + " encoded: " + JSON.stringify(encodedObj) + "\n";
+            //result += type + " encoded: " + JSON.stringify(encodedObj) + "\n";
             try{
               var decodedObj = input.decodeMessage(encodedObj);
-              result += type + " decoded: " + JSON.stringify(decodedObj) + "\n";
+              //result += type + " decoded: " + JSON.stringify(decodedObj) + "\n";
               if(obj.address != decodedObj.address){
-                result += type + " address: ERROR " + obj.address + " != " + decodedObj.address + "\n";
+                result += type + " address: WARNING " + obj.address + " != " + decodedObj.address + "\n";
               }else{
                 ok = true;
                 for(var i in obj.args){
                   if(obj.args[i] != decodedObj.args[i]){
                     ok = false;
-                    result += type + " args[" + i + "]: ERROR " + obj.args[i] + " != " + decodedObj.args[i] + "\n";
+                    result += type + " args[" + i + "]: WARNING " + obj.args[i] + " != " + decodedObj.args[i] + "\n";
                   }
                 }
               }
             }catch (e){
-              result += type + " input.decodeMessage: ERROR\n";
+              result += type + " input.decodeMessage: FATAL ERROR\n";
             }
           }catch (e){
-            result += type + " output.encodeMessage ERROR\n";
+            result += type + " output.encodeMessage: FATAL ERROR\n";
           }
         }catch (e){
-          result += type + " createOutput ERROR\n";
+          result += type + " createOutput: WARNING - can't create output\n";
         }
       }catch (e){
-        result += type + " createInput ERROR\n";
+        result += type + " createInput: WARNING - can't create input\n";
       }
       if(ok){
         result += type + ": OK\n";
       }
     }
-    console.log(result);
+    //console.log(result);
     this.g_io.sockets.emit("test_modules", result);
+    return result;
   },
   
   // wsjsonクライアントとしてネットワークに参加する

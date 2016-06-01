@@ -21,6 +21,7 @@
     vi node_modules/midi/package.json # nanというモジュールのバージョン表記を2.05 -> 2.2に変更
     vi node_modules/usage/package.json　# nanというモジュールのバージョン表記を2.09 -> 2.2に変更
     npm install
+    npm rebuild
     ```
 
 4.  この時点でソーススクリプトから直接mw1を起動することができる。

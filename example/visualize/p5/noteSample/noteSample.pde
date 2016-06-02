@@ -26,21 +26,21 @@ void draw() {
   blendMode(ADD);
 
   drawInfo();
-  
+
   CirclePrimitive cc = new CirclePrimitive();
   cc.update();
   for (CirclePrimitive c : circles) {
     c.update();
   }
-  
+
   for (CirclePrimitive c : circles) {
     c.draw();
   }
 }
 
 
-void oscEvent(OscMessage theOscMessage){  
-  if (theOscMessage.checkAddrPattern("/fm/noteon") == true) {
+void oscEvent(OscMessage theOscMessage){
+  if (theOscMessage.checkAddrPattern("/midi/noteon") == true) {
     int ch = (int)theOscMessage.get(0).floatValue();
     int noteNum = (int)theOscMessage.get(1).floatValue();
     int velocity = (int)theOscMessage.get(2).floatValue();
@@ -48,7 +48,7 @@ void oscEvent(OscMessage theOscMessage){
     lastNote[0] = ch;
     lastNote[1] = noteNum;
     lastNote[2] = velocity;
-  } else if (theOscMessage.checkAddrPattern("/fm/controlchange") == true) {
+  } else if (theOscMessage.checkAddrPattern("/midi/controlchange") == true) {
     int ch = (int)theOscMessage.get(0).floatValue();
     int controlNum = (int)theOscMessage.get(1).floatValue();
     int value = (int)theOscMessage.get(2).floatValue();

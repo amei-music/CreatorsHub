@@ -17,7 +17,7 @@ var ctrl = {
 	moduleTestResult: [],
     test_json: [
 		{
-			address: "/fm/noteon",
+			address: "/midi/noteon",
 			args: [0,60, 127]
 		},
 		{

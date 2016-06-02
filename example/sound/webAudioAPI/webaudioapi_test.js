@@ -17,10 +17,10 @@ ioSocket.on("message_json", function(msg){
   var arg = msg["args"];
   var pitch = noteNo2freq(arg[1]);
 
-  if (msgStr == ("/fm/noteon")){
+  if (msgStr == ("/midi/noteon")){
     setPitch(pitch)
     noteon();
-  }else if (msgStr == ("/fm/noteoff")){
+  }else if (msgStr == ("/midi/noteoff")){
     setPitch(pitch)
     noteoff();
   }

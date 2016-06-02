@@ -3,7 +3,7 @@ var assert = require("assert");
 
 var test_json = [
 		{
-			address: "/fm/noteon",
+			address: "/midi/noteon",
 			args: [0,60, 127]
 		},
 		{

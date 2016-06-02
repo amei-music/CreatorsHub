@@ -31,9 +31,9 @@ var Timing = function(){
     },
 
     get : function(obj){
-      if(obj.address == "/fm/start")  return this.onStart();
-      if(obj.address == "/fm/timing") return this.onTiming();
-      if(obj.address == "/fm/stop")   return this.onStop();
+      if(obj.address == "/midi/start")  return this.onStart();
+      if(obj.address == "/midi/timing") return this.onTiming();
+      if(obj.address == "/midi/stop")   return this.onStop();
     }
   };
 }

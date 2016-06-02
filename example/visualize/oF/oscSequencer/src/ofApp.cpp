@@ -133,7 +133,7 @@ void ofApp::dragEvent(ofDragInfo dragInfo){
 
 void ofApp::sendNoteOn(const int ch, const int note, const int velocity) {
     ofxOscMessage msg;
-    msg.setAddress("/fm/noteon");
+    msg.setAddress("/midi/noteon");
     msg.addIntArg(ch);
     msg.addIntArg(note);
     msg.addIntArg(velocity);

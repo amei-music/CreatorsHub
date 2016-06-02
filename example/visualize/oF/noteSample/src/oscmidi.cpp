@@ -9,6 +9,6 @@
 #include "oscmidi.h"
 
 namespace MW1ADDR {
-    const std::string noteon = "/fm/noteon";
-    const std::string controlchange = "/fm/controlchange";
+    const std::string noteon = "/midi/noteon";
+    const std::string controlchange = "/midi/controlchange";
 }

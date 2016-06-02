@@ -32,7 +32,7 @@ if(text){
 
 //-----------------------------------------------
 
-var prefix = function(path){ return dic._fm_prefix + path; }
+var prefix = function(path){ return dic._midi_prefix + path; }
 
 // yamaha専用MIDIを試験的にパースしてみる
 var yamahaStyle = {};
@@ -63,7 +63,7 @@ function midi2obj(msg){
     // note on
     var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
     return {
-      address: prefix(dic._fm_noteon),
+      address: prefix(dic._midi_noteon),
       args:    [ch, noteNum, velo]
     };
 
@@ -71,7 +71,7 @@ function midi2obj(msg){
     // note off with status 9
     var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = 0x40;
     return {
-      address: prefix(dic._fm_noteoff),
+      address: prefix(dic._midi_noteoff),
       args:    [ch, noteNum, velo]
     };
 
@@ -79,7 +79,7 @@ function midi2obj(msg){
     // note off with status 8
     var ch = (msg[0] & 0x0F), noteNum = msg[1], velo = msg[2];
     return {
-      address: prefix(dic._fm_noteoff),
+      address: prefix(dic._midi_noteoff),
       args:    [ch, noteNum, velo]
     };
 
@@ -87,7 +87,7 @@ function midi2obj(msg){
     // polyphonic pressure
     var ch = (msg[0] & 0x0F), noteNum = msg[1], press = msg[2];
     return {
-      address: prefix(dic._fm_notepressure),
+      address: prefix(dic._midi_notepressure),
       args:    [ch, noteNum, press]
     };
 
@@ -95,7 +95,7 @@ function midi2obj(msg){
     // control change
     var ch = (msg[0] & 0x0F), type = msg[1], value = msg[2];
     return {
-      address: prefix(dic._fm_controlchange),
+      address: prefix(dic._midi_controlchange),
       args:    [ch, type, value]
     };
 
@@ -103,7 +103,7 @@ function midi2obj(msg){
     // program change
     var ch = (msg[0] & 0x0F), number = msg[1];
     return {
-      address: prefix(dic._fm_programchange),
+      address: prefix(dic._midi_programchange),
       args:    [ch, number]
     };
 
@@ -111,7 +111,7 @@ function midi2obj(msg){
     // channel pressure
     var ch = (msg[0] & 0x0F), value = msg[1];
     return {
-      address: prefix(dic._fm_channelpressure),
+      address: prefix(dic._midi_channelpressure),
       args:    [ch, value]
     };
 
@@ -119,7 +119,7 @@ function midi2obj(msg){
     // pitch bend
     var ch = (msg[0] & 0x0F), msb = msg[1], lsb = msg[2];
     return {
-      address: prefix(dic._fm_pitchbend),
+      address: prefix(dic._midi_pitchbend),
       args:    [ch, msb, lsb]
     };
 
@@ -127,7 +127,7 @@ function midi2obj(msg){
     // timing clock
     // console.log("timing");
     return {
-      address: prefix(dic._fm_timing),
+      address: prefix(dic._midi_timing),
       args:    []
     };
 
@@ -135,14 +135,14 @@ function midi2obj(msg){
     // start
     // console.log("start");
     return {
-      address: prefix(dic._fm_start),
+      address: prefix(dic._midi_start),
       args:    []
     };
 
   } else if ( msg.length == 1 && msg[0] == 0xFB ){
     // continue
     return {
-      address: prefix(dic._fm_continue),
+      address: prefix(dic._midi_continue),
       args:    []
     };
 
@@ -150,7 +150,7 @@ function midi2obj(msg){
     // stop
     // console.log("stop");
     return {
-      address: prefix(dic._fm_stop),
+      address: prefix(dic._midi_stop),
       args:    []
     };
 
@@ -163,7 +163,7 @@ function midi2obj(msg){
     } else {
       // マッチしなければそのまま送信
       return {
-        address: prefix(dic._fm_midi_bytes),
+        address: prefix(dic._midi_midi_bytes),
         args:    msg
       };
     }
@@ -172,48 +172,48 @@ function midi2obj(msg){
 }
 
 function obj2midi(msg){
-  if(msg.address == prefix(dic._fm_noteon)){
+  if(msg.address == prefix(dic._midi_noteon)){
     var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
     if (ch < 16) return [0x90 + (ch & 0x0F), noteNum, velo];
     else         return [0x90 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if(msg.address == prefix(dic._fm_noteoff)){
+  } else if(msg.address == prefix(dic._midi_noteoff)){
     var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
     if (ch < 16) return [0x80 + (ch & 0x0F), noteNum, velo];
     else         return [0x80 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if(msg.address == prefix(dic._fm_notepressure)){
+  } else if(msg.address == prefix(dic._midi_notepressure)){
     var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
     if (ch < 16) return [0xA0 + (ch & 0x0F), noteNum, velo];
     else         return [0xA0 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if(msg.address == prefix(dic._fm_controlchange)){
+  } else if(msg.address == prefix(dic._midi_controlchange)){
     var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
     if (ch < 16) return [0xB0 + (ch & 0x0F), noteNum, velo];
     else         return [0xB0 + (ch & 0x0F), noteNum, velo]; // 要対応
-  } else if(msg.address == prefix(dic._fm_programchange)){
+  } else if(msg.address == prefix(dic._midi_programchange)){
     var ch = msg.args[0], noteNum = msg.args[1];
     if (ch < 16) return [0xC0 + (ch & 0x0F), noteNum];
     else         return [0xC0 + (ch & 0x0F), noteNum]; // 要対応
-  } else if(msg.address == prefix(dic._fm_channelpressure)){
+  } else if(msg.address == prefix(dic._midi_channelpressure)){
     var ch = msg.args[0], noteNum = msg.args[1];
     if (ch < 16) return [0xD0 + (ch & 0x0F), noteNum];
     else         return [0xD0 + (ch & 0x0F), noteNum]; // 要対応
-  } else if(msg.address == prefix(dic._fm_pitchbend)){
+  } else if(msg.address == prefix(dic._midi_pitchbend)){
     var ch = msg.args[0], noteNum = msg.args[1], velo = msg.args[2];
     if (ch < 16) return [0xE0 + (ch & 0x0F), noteNum, velo];
     else         return [0xE0 + (ch & 0x0F), noteNum, velo]; // 要対応
 
-  } else if(msg.address == prefix(dic._fm_timing)){
+  } else if(msg.address == prefix(dic._midi_timing)){
     return [0xF8];
 
-  } else if(msg.address == prefix(dic._fm_start)){
+  } else if(msg.address == prefix(dic._midi_start)){
     return [0xFA];
 
-  } else if(msg.address == prefix(dic._fm_continue)){
+  } else if(msg.address == prefix(dic._midi_continue)){
     return [0xFB];
 
-  } else if(msg.address == prefix(dic._fm_stop)){
+  } else if(msg.address == prefix(dic._midi_stop)){
     return [0xFC];
 
-  } else if(msg.address == prefix(dic._fm_sysex)){
+  } else if(msg.address == prefix(dic._midi_sysex)){
     // sysexならargsにある配列をそのまま送信
     return msg.args;
 

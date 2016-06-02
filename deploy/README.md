@@ -1,5 +1,5 @@
-- build electron package (see: doc/build.md)
-- archive the package, docs and examples:
+1. build electron package (see: prg/README.md)
+2. archive the package, docs and examples:
 
   ```
   cd path/to/this/directory

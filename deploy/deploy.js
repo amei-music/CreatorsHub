@@ -12,7 +12,7 @@ var output_file = __dirname + "/mw1.zip";
 var input_files = [
     {
         expand:true,
-        cwd: __dirname + "/../" + package_name,
+        cwd: __dirname + "/../prg/" + package_name,
         src:["**/*"],
         dest: "/",
         dot:true

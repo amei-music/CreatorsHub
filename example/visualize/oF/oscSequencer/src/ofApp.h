@@ -26,13 +26,18 @@ class ofApp : public ofBaseApp{
 		
 private:
     void sendNoteOn(const int ch, const int note, const int velocity);
+    void sendNoteOff(const int ch, const int note, const int velocity);
     void initPosition();
-    
+    void drawInfo();
+
     ofxOscSender sender;
 
-    std::array<Tile, 16> sequence1;
-    std::array<Tile, 16> sequence2;
-    std::array<Tile, 16> sequence3;
+    std::array<std::array<Tile, 16>, 3> sequences;
+    //std::array<Tile, 16> sequence2;
+    //std::array<Tile, 16> sequence3;
+    std::array<bool, 3> ison = {false, false, false};
+    std::array<int, 3> note_nums = {64, 62, 60};
+    std::array<int, 3> velocities = {127, 127, 127};
     Tile test;
     float startx;
     float endx;

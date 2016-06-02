@@ -1,6 +1,17 @@
 # 開発環境の作成
-このプログラムを修正/開発するにはnode.jsをインストールする必要がある。
-20160519現在、electron(後述)がv1.1.0で、このelectronに内包されるnode.jsのバージョンが6.1.0なので、node.jsもv6.1.0で揃えておく。
+このプログラムを修正/開発するにはnode.jsをインストールする必要がある。また、修正後にパッケージ化して配布できるようにするためにelectronを使用する。
+
+## バージョン選択
+20160602現在、次のバージョンで開発と動作確認をしている。
+
+- node.js: v6.1.0
+- electron-prebuilt: v1.2.1
+- electron-rebuild: v1.1.5
+- electron-packager: v7.0.3
+
+新しいバージョンセットに移行する際は、[electronのリリース情報](https://github.com/electron/electron/releases)から欲しいelectronのバージョンを決定し、そのリリースノートに書いてあるnode.jsのバージョンを選択すると安全である。
+
+# node.jsのインストールとmw1プログラムのソースからの実行
 
 1.  nodebrewをインストールする。nodebrewとはnode.jsのバージョンを簡単に上げ下げできる補助環境。
     [nodebrew公式のインストール方法](https://github.com/hokaccha/nodebrew)に従う。
@@ -37,7 +48,7 @@ electronを使ってnode.js+ブラウザを組み込んで単一の実行ファ�
 1.  electronをインストールする。
 
     ```
-    npm install -g electron-prebuilt electron-packager electron-rebuild
+    npm install -g electron-prebuilt@1.2.1 electron-rebuild@1.1.5 electron-packager@7.0.3
     ```
 
 2.  electronを用いてこのプログラムをパッケージ化する。
@@ -45,7 +56,7 @@ electronを使ってnode.js+ブラウザを組み込んで単一の実行ファ�
     ```
     cd path/to/mw1/
     electron-rebuild -m node_modules/ -e ~/.nodebrew/current/lib/node_modules/electron-prebuilt/
-    electron ./index_electron.js # 動作確認
+    electron ./ # 動作確認
     electron -v # ここで表示されるバージョン数値を下の--version引数に入れる
-    electron-packager ./index_electron.js mw1 --platform=darwin --arch=x64 --version=1.1.0 # Macの場合
+    electron-packager ./ mw1 --platform=darwin --arch=x64 --version=1.2.1 # Macの場合
     ```

@@ -1,5 +1,5 @@
 #include "ofApp.h"
-#include "oscmidi.h"
+#include "midimessage.h"
 
 static const int PORT = 24080;
 
@@ -122,13 +122,13 @@ void ofApp::receiveOSC() {
         ofxOscMessage m;
         receiver.getNextMessage(m);
         cout << m.getAddress() << endl;
-        if (m.getAddress() == MW1ADDR::noteon) {
+        if (m.getAddress() == _midi_noteon) {
             int ch = m.getArgAsInt(0);
             int note_num = m.getArgAsInt(1);
             int velo = m.getArgAsInt(2);
             noteOn(ch, note_num, velo);
             latest_note = {ch, note_num, velo};
-        } else if (m.getAddress() == MW1ADDR::controlchange) {
+        } else if (m.getAddress() == _midi_controlchange) {
             int ch = m.getArgAsInt(0);
             int cc_num = m.getArgAsInt(1);
             int value = m.getArgAsInt(2);
@@ -156,6 +156,10 @@ void ofApp::drawInfo() {
     std::stringstream ccinfoss;
     noteinfoss << "Latest CC#" << latest_cc.at(1) << "[" << latest_cc.at(2) << "] ch" << latest_cc.at(0)+1;
     
+    std::string separator = "MW1 settings";
+    std::string mw1setting = "Add OSC send - host:localhost port:24080";
+    std::string mw1connection = "Connect MIDI device or app to localhost:24080";
+    
     
     int ypos = 10;
     int gap = 15;
@@ -168,7 +172,14 @@ void ofApp::drawInfo() {
     ofDrawBitmapString(noteinfoss.str().c_str(), 10, ypos);
     
     ypos += gap;
-    ofDrawBitmapString(ccinfoss.str().c_str(), 10, ypos);    
+    ofDrawBitmapString(ccinfoss.str().c_str(), 10, ypos);
+    
+    ypos += gap;
+    ofDrawBitmapString(separator, 10, ypos);
+    ypos += gap;
+    ofDrawBitmapString(mw1setting, 10, ypos);
+    ypos += gap;
+    ofDrawBitmapString(mw1connection, 10, ypos);
     
     ofPopMatrix();
 }

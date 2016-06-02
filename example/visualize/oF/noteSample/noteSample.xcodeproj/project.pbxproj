@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		02CFAA4D1CBB8B300074E037 /* oscmidi.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02CFAA4C1CBB8B300074E037 /* oscmidi.cpp */; };
 		02CFAA511CBB8D6B0074E037 /* circleprimitive.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 02CFAA4F1CBB8D6B0074E037 /* circleprimitive.cpp */; };
 		0546D1A38E13BD319CC9755B /* OscReceivedElements.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9BF3AA0D4FAA89D0F8A0E545 /* OscReceivedElements.cpp */; };
 		4ADB88E2FB52E76A471065DE /* ofxOscParameterSync.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0AED834CE4DEC5260AF302A2 /* ofxOscParameterSync.cpp */; };
@@ -57,9 +56,8 @@
 
 /* Begin PBXFileReference section */
 		00D6D32B84B099226431108C /* ofxOsc.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = ofxOsc.h; path = ../../../addons/ofxOsc/src/ofxOsc.h; sourceTree = SOURCE_ROOT; };
+		0201D5C21D00575A008F5792 /* midimessage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = midimessage.h; sourceTree = "<group>"; };
 		029684CF678F70F6D3537A29 /* OscOutboundPacketStream.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 30; name = OscOutboundPacketStream.h; path = ../../../addons/ofxOsc/libs/oscpack/src/osc/OscOutboundPacketStream.h; sourceTree = SOURCE_ROOT; };
-		02CFAA4B1CBB8AEC0074E037 /* oscmidi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = oscmidi.h; sourceTree = "<group>"; };
-		02CFAA4C1CBB8B300074E037 /* oscmidi.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = oscmidi.cpp; sourceTree = "<group>"; };
 		02CFAA4F1CBB8D6B0074E037 /* circleprimitive.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = circleprimitive.cpp; sourceTree = "<group>"; };
 		02CFAA501CBB8D6B0074E037 /* circleprimitive.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = circleprimitive.h; sourceTree = "<group>"; };
 		0AED834CE4DEC5260AF302A2 /* ofxOscParameterSync.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 30; name = ofxOscParameterSync.cpp; path = ../../../addons/ofxOsc/src/ofxOscParameterSync.cpp; sourceTree = SOURCE_ROOT; };
@@ -225,11 +223,10 @@
 		E4B69E1C0A3A1BDC003C02F2 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				0201D5C21D00575A008F5792 /* midimessage.h */,
 				E4B69E1D0A3A1BDC003C02F2 /* main.cpp */,
 				E4B69E1E0A3A1BDC003C02F2 /* ofApp.cpp */,
 				E4B69E1F0A3A1BDC003C02F2 /* ofApp.h */,
-				02CFAA4B1CBB8AEC0074E037 /* oscmidi.h */,
-				02CFAA4C1CBB8B300074E037 /* oscmidi.cpp */,
 				02CFAA4F1CBB8D6B0074E037 /* circleprimitive.cpp */,
 				02CFAA501CBB8D6B0074E037 /* circleprimitive.h */,
 			);
@@ -357,7 +354,6 @@
 			files = (
 				E4B69E200A3A1BDC003C02F2 /* main.cpp in Sources */,
 				E4B69E210A3A1BDC003C02F2 /* ofApp.cpp in Sources */,
-				02CFAA4D1CBB8B300074E037 /* oscmidi.cpp in Sources */,
 				72A929D3561B8232A182ABFC /* ofxOscBundle.cpp in Sources */,
 				5864AD82E20F15536D054EA3 /* ofxOscMessage.cpp in Sources */,
 				4ADB88E2FB52E76A471065DE /* ofxOscParameterSync.cpp in Sources */,

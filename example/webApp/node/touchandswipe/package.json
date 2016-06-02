@@ -2,7 +2,7 @@
   "name": "tapandswipe",
   "version": "1.0.0",
   "description": "node tap and swipe example for SPEAKS",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

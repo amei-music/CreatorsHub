@@ -1,21 +1,14 @@
-//Prepare for playing sound
-var ctx=new AudioContext();
 var vco, lfo, vcf;
-
-vco=ctx.createOscillator();
-lfo=ctx.createOscillator();
-vcf=ctx.createBiquadFilter();
-
-vco.connect(vcf);
-lfo.connect(vco.frequency);
-lfo.connect(vcf.detune);
-vcf.connect(ctx.destination);
+var AudioContext = window.AudioContext || window.webkitAudioContext;
+var ctx=new AudioContext();
+var isPlaying = false;
 
 //connect to Hub
  var ioSocket = io.connect( "http://localhost:16080" );
  ioSocket.on( "connect", function() {
       console.log("connected");
       ioSocket.emit('join_as_wsjson', {name: 'webaudioapi_test'});
+      prepareSound();
     });
 
 //Receive Message
@@ -32,6 +25,21 @@ ioSocket.on("message_json", function(msg){
     noteoff();
   }
 });
+
+/**
+Prepare for playing sound
+*/
+function prepareSound(){
+
+  vco=ctx.createOscillator();
+  lfo=ctx.createOscillator();
+  vcf=ctx.createBiquadFilter();
+
+  vco.connect(vcf);
+  lfo.connect(vco.frequency);
+  lfo.connect(vcf.detune);
+  vcf.connect(ctx.destination);
+}
 
 /**
 Translate MIDI notenumber to frequency
@@ -51,15 +59,21 @@ function setPitch (pitch){
 Play one sound
  */
 function noteon(){
-  vco.start(0);
-  lfo.start(0);
+  if(isPlaying == false){
+    vco.start();
+    lfo.start();
+    isPlaying = true;
+  }
 }
 
 /**
 Stop one sound
  */
 function noteoff(){
-    vco.stop(0);
-    lfo.stop(0);
-    location.reload();
+  if(isPlaying == true){
+    vco.stop();
+    lfo.stop();
+    prepareSound();
+    isPlaying = false;
+  }
 }

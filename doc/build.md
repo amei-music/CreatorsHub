@@ -23,17 +23,18 @@
     nodebrew use v6.1
     ```
 
-3.  このプログラムが依存しているライブラリをインストールする。20160519現在、node.jsのバージョンを6.1とすると、一部依存モジュールのバージョン指定変更が必要。
+3.  このプログラムが依存しているライブラリをインストールする。20160602現在、node.jsのバージョンを6.1とすると、一部依存モジュールのバージョン指定変更が必要。
 
     ```
     cd path/to/mw1/
-    rm -r node_modules/
     npm install midi usage --force # midiとusageモジュールでビルドエラーが発生するが、強制的に最後まで進める
     vi node_modules/midi/package.json # nanというモジュールのバージョン表記を2.05 -> 2.2に変更
     vi node_modules/usage/package.json　# nanというモジュールのバージョン表記を2.09 -> 2.2に変更
     npm install
     npm rebuild
     ```
+
+    一度cloneしたものから再度試す場合、node_moduleフォルダを削除しておくと問題の切り分けがしやすい。
 
 4.  この時点でソーススクリプトから直接mw1を起動することができる。
 

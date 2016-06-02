@@ -1,22 +1,28 @@
 {
   "name": "mw1",
-  "version": "1.0.0",
-  "description": "USB-MIDI to WebSocket / OpenSoundControl converter on Raspberry Pi",
-  "main": "index.js",
+  "version": "0.0.1",
+  "description": "USB-MIDI to WebSocket / OpenSoundControl converter",
+
+  "//": "entry point for npm start",
   "scripts": {
     "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+
+  "//": "entry point for electron",
+  "main": "index.js",
+
   "repository": {
     "type": "git",
     "url": ""
   },
   "author": "",
+  "homepage": "",
   "license": "ISC",
   "bugs": {
     "url": ""
   },
-  "homepage": "",
+
   "dependencies": {
     "connect": "^3.4.0",
     "fft-js": "^0.0.9",

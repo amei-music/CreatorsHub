@@ -159,6 +159,7 @@ void ofApp::drawInfo() {
     std::string separator = "MW1 settings";
     std::string mw1setting = "Add OSC send - host:localhost port:24080";
     std::string mw1connection = "Connect MIDI device or app to localhost:24080";
+    std::string operation = "Send MIDI note or control change to change visual";
     
     
     int ypos = 10;
@@ -180,6 +181,8 @@ void ofApp::drawInfo() {
     ofDrawBitmapString(mw1setting, 10, ypos);
     ypos += gap;
     ofDrawBitmapString(mw1connection, 10, ypos);
+    ypos += gap;
+    ofDrawBitmapString(operation, 10, ypos);
     
     ofPopMatrix();
 }

@@ -1,3 +1,7 @@
+/*!
+ * entry point for running as electron package
+ */
+
 'use strict';
 
 const electron = require('electron');

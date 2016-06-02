@@ -1,5 +1,6 @@
 var gSocket;
 var canvas;
+var isMouseDown = false;
 
 function init() {
   console.log('Connecting to server');
@@ -9,7 +10,7 @@ function init() {
   // fill canvas with gray
   ctx.fillStyle = 'rgb(200,200,200)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  gSocket = io.connect(); // サーバーに接続
+  gSocket = io.connect();
 
   // socket connect and disconnect callback
   gSocket.on( "connect", function() {
@@ -19,15 +20,56 @@ function init() {
     console.log("client has disconnected");
   });
 
-  // canvas event listners
-  canvas.addEventListener('click', onClick, false);
+  // mouse event
+  canvas.addEventListener('mousedown', function(e) {
+    console.log("mouse down");
+    console.log(e);
+    isMouseDown = true;
+    onDown(e);
+ }, false);
+
+ canvas.addEventListener('mousemove', function(e) {
+   if (isMouseDown) {
+   console.log("mouse move");
+   console.log(e);
+   onMove(e);
+ }
+}, false);
+  canvas.addEventListener('mouseup', function(e) {
+    console.log("mouse up");
+    isMouseDown = false;
+    onUp(e);
+  }, false);
+ canvas.addEventListener('touchstart', function(e) {
+   console.log("touch start");
+   console.log(e);
+    onDown(e);
+  }, false);
+ canvas.addEventListener('touchmove', function(e) {
+   for (var i = 0; i < event.touches.length; i++) {
+     var touch = event.touches[i];
+     console.log(touch.pageX + "," + touch.pageY);
+     onMove(touch);
+   }
+  }, false);
+ canvas.addEventListener('touchend', onUp, false);
 }
 
-function onClick(e) {
-  console.log("click to send xy");
-  x = e.clientX;
-  y = e.clientY;
+function onDown(e) {
+  console.log("on down");
+  console.log(e.pageX);
+  x = e.pageX;
+  y = e.pageY;
   sendXY(x, y);
+}
+
+function onMove(e) {
+  console.log("on move");
+  console.log(e.pageX + "," + e.pageY);
+}
+
+function onUp(e) {
+  console.log("on up");
 }
 
 function sendXY(x, y) {

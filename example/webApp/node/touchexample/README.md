@@ -1,4 +1,4 @@
-# touchandswipe起動方法
+# Touch Example起動方法
 
 ```
 npm install

@@ -14,7 +14,7 @@
 		<!-- 接続が確立した時のイベントハンドラ -->
 		gSocket.on( "connect", function() {
 				   console.log("connected");
-				   gSocket.emit('join_as_wsjson', {name: 'FM_MW1 Example'});
+				   gSocket.emit('join_as_wsjson', {name: 'webAppExample'});
 		});
 
 		<!-- 切断された時のイベントハンドラ -->

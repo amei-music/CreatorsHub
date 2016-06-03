@@ -6,13 +6,19 @@ WebAppからSPEAKSサーバーに接続するためのスクリプト
 
 1. HTMLの"socket.io.js"読む箇所を次のように書き換える
 ```
-    <script id="speaks.io" src="./speaks.io.js"></script>
+    <script src="./speaks.io.js"></script>
 ```
-    - id="speaks.io" を忘れずに
     - src="./speaks.io.js" はスクリプトの場所に合わせて書き換える
-    - このタグの直後に "socket.io.js" が読み込まれる
+    - このスクリプト実行後に "socket.io.js" が読み込まれる
 
-2. ソケットへのコネクション 
+2. "socket.io.js"の読み込み待ち
+``` javascript
+    window.onload = function(){
+        // この中でソケットへのコネクションを行う
+    }
+```
+
+3. ソケットへのコネクション 
 ``` javascript
     var socket = speaks.connect();
 ```

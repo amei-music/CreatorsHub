@@ -2,9 +2,9 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <script id="speaks.io" src="./speaks.io.js"></script>
+    <script src="./speaks.io.js"></script>
     <script type="text/javascript">
-        window.onload = function(){
+    	window.onload = function(){
         	var socket = speaks.connect();
 
     		// on connect
@@ -18,7 +18,7 @@
 	       	    var msg = document.getElementById("msg");
 	       	    msg.innerText = "disconnect";
 	       	});
-        }
+        };
     </script>
 </head>
 <body>

@@ -23,18 +23,11 @@ var speaks = {
         }
 
         // insert <script> element to load 'socket.io.js' from server
-        var server_url = "http://" + this.param.server + "/socket.io/socket.io.js";
         var s = document.createElement("script");
-        s.src = server_url;
+        s.src = "http://" + this.param.server + "/socket.io/socket.io.js";
 
-        // if "speaks.io" tag exist, insert it after this.
-        var e = document.getElementById("speaks.io");
-        if(e){
-	        e.parentElement.insertBefore(s, e.nextSibling);
-        }else{
-        	// in not exist, insert it at end of <head>
-        	document.head.appendChild(s);
-        }
+        var first_s = document.getElementsByTagName("script")[0];
+		first_s.parentNode.insertBefore(s, first_s);
 	},
 
 	// connect

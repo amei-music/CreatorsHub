@@ -1,7 +1,7 @@
 /**
 * 各種マウスイベント、タッチイベントを取得していますが、
-* 現状ではtouchstart, toucnendにのみ反応します
-* つまりPCのブラウザからは動作しません
+* 現状ではtouchstart, toucnend, mousedown, mouseupに反応して動作します
+* サーバー側でタッチIDを使用してnote onとnote offの対応付けを行っています
 */
 
 var gSocket;

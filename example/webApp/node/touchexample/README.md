@@ -5,7 +5,7 @@ npm install
 node app.js
 ```
 
-以上でlocalhost:8090にサーバーが立ち上がる。ブラウザで接続し、グレーのcanvas領域をタップすることでnote onが発せられる。
+要node。以上でlocalhost:8090にサーバーが立ち上がる。ブラウザで接続し、グレーのcanvas領域をタップすることでnote onが発せられる。
 
 ![接続画面](./img/page.png)
 
@@ -16,7 +16,7 @@ node app.js
 join_as_wsjsonを送信する。パラメータとしてnameを送るとその名前でMW1上に出現する。MIDI音源に接続し、操作を行うと発音する。
 
 ```js
-socket.emit('join_as_wsjson', {name: 'Tap And Swipe'});
+socket.emit('join_as_wsjson', {name: 'Touch Example'});
 ```
 
 ![接続画面](./img/mw1.png)

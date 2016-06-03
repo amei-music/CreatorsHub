@@ -19,7 +19,7 @@ http.listen(APP_PORT);
 var midiSocket = require('socket.io-client').connect(HUB_ADDR);
 midiSocket.on('connect', function() {
   console.log('[MidiSocket] Establishing connection');
-  midiSocket.emit('join_as_wsjson', {name: 'Tap And Swipe'});
+  midiSocket.emit('join_as_wsjson', {name: 'Touch Example'});
 });
 
 // clinet connection

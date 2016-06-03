@@ -7,6 +7,7 @@
 var gSocket;
 var canvas;
 var isMouseDown = false;
+var isTouchDevice = ('ontouchstart' in window);
 
 function init() {
   // set canvas size to full screen
@@ -21,28 +22,35 @@ function init() {
   });
 
   // mouse event
-  canvas.addEventListener('mousedown', function(e) {
-    console.log("mouse down");
-    console.log(e);
-    isMouseDown = true;
-    var mouseID = 0; // マウスは一点しかクリック出来ないので0固定
-    //onDown(e, mouseID);
- }, false);
+  if (!isTouchDevice) {
+    canvas.addEventListener('mousedown', function(e) {
+      console.log("mouse down");
+      console.log(e);
+      isMouseDown = true;
+      var mouseID = 0; // マウスは一点しかクリック出来ないので0固定
+      onDown(e, mouseID);
+    }, false);
+  }
+  if (!isTouchDevice) {
+    canvas.addEventListener('mousemove', function(e) {
+      if (isMouseDown) {
+        console.log("mouse move");
+        console.log(e);
+        onMove(e);
+      }
+    }, false);
+  }
 
- canvas.addEventListener('mousemove', function(e) {
-   if (isMouseDown) {
-   console.log("mouse move");
-   console.log(e);
-   onMove(e);
- }
-}, false);
-  canvas.addEventListener('mouseup', function(e) {
-    console.log("mouse up");
-    isMouseDown = false;
-    var mouseID = 0; // マウスは一点しかクリック出来ないので0固定
-    //onUp(e, mouseID);
-  }, false);
- canvas.addEventListener('touchstart', function(e) {
+  if (!isTouchDevice) {
+    canvas.addEventListener('mouseup', function(e) {
+      console.log("mouse up");
+      isMouseDown = false;
+      var mouseID = 0; // マウスは一点しかクリック出来ないので0固定
+      onUp(e, mouseID);
+    }, false);
+  }
+
+  canvas.addEventListener('touchstart', function(e) {
    console.log("touch start");
    console.log(e);
    for (var i = 0; i < event.changedTouches.length; i++) {
@@ -83,9 +91,15 @@ function resize() {
   ctx.fillStyle='#ffffff';
   ctx.font='26px Arial';
   ctx.textAlign='left';
-  ctx.fillText("Note On by Tap", 10, 32);
-  ctx.fillText("left: low note --- high note : right", 10, 64);
-  ctx.fillText("up: low velocity --- high velocity : down", 10, 96);
+  var gap = 26;
+  var currentY = 32;
+  ctx.fillText("Send Note On by TouchDown", 10, currentY);
+  currentY += gap;
+  ctx.fillText("Send Note Off by TouchUp", 10, currentY);
+  currentY += gap;
+  ctx.fillText("left: low note --- high note : right", 10, currentY);
+  currentY += gap;
+  ctx.fillText("up: low velocity --- high velocity : down", 10, currentY);
 }
 
 function onDown(e, id) {
@@ -95,14 +109,17 @@ function onDown(e, id) {
   y = e.pageY;
   sendDown(x, y, id);
 
+  // debug print on canvas
   var canvas = document.getElementById('myCanvas');
   var ctx = canvas.getContext('2d');
   ctx.fillStyle = 'rgb(200,200,200)';
-  ctx.fillRect(10,102-12,100,12);
+  var ypos = 152;
+  var fontsize = 10;
+  ctx.fillRect(10,ypos-fontsize,100,fontsize);
   ctx.fillStyle='#ffffff';
   ctx.font='10px Arial';
   ctx.textAlign='left';
-  ctx.fillText("down id:"+id, 10, 102);
+  ctx.fillText("down id:"+id, 10, ypos);
 }
 
 function onMove(e) {
@@ -118,14 +135,17 @@ function onUp(e, id) {
   y = e.pageY;
   sendUp(x, y, id);
 
+  // debug print on canvas
   var canvas = document.getElementById('myCanvas');
   var ctx = canvas.getContext('2d');
   ctx.fillStyle = 'rgb(200,200,200)';
-  ctx.fillRect(10,122-12,100,12);
+  var ypos = 162;
+  var fontsize = 10;
+  ctx.fillRect(10,ypos-fontsize,100,fontsize);
   ctx.fillStyle='#ffffff';
   ctx.font='10px Arial';
   ctx.textAlign='left';
-  ctx.fillText("up id:"+id, 10, 122);
+  ctx.fillText("up id:"+id, 10, ypos);
 }
 
 function sendDown(x, y, id) {

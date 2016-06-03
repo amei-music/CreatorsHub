@@ -539,6 +539,10 @@ var ctrl = {
     this.showJsonClient(false);
   },
 
+  clear_json_msg: function() {
+    document.getElementById("msg").innerHTML = "";
+  },
+  
   // OSC送受信ポートアドレスの作成（仮）
   make_osc_name : function(host, port) {
     // 無効なホストやポートの場合は undefined

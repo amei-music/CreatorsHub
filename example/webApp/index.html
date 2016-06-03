@@ -9,7 +9,7 @@
 
 	<script type="text/javascript">
 		<!-- このサーバのルートドキュメント（つまりpublic_mw1）にコネクトする -->
-		var gSocket = io.connect('http://' + document.domain + ':16080');
+		var gSocket = io.connect('http://localhost:16080');
 
 		<!-- 接続が確立した時のイベントハンドラ -->
 		gSocket.on( "connect", function() {

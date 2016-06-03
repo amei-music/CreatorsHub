@@ -16,12 +16,9 @@ var ctrl = {
 // SPEAKSサーバーとの接続と初期化
 //-----------------------------------
 
-	init: function(server){
-        var url = "ws://" + server;
-        console.log(url);
-
+	init: function(){
         // サーバー接続
-		this.socket = io.connect(url);
+		this.socket = speaks.connect();
 
 		// connect - サーバーとの接続通知
 		this.socket.on("connect",      this.onConnect.bind(this));
@@ -96,7 +93,7 @@ var ctrl = {
 	// JSONポートのINにNoteOnメッセージを送信
    	sendNoteOnAsJSON: function(){
     	// note on を送ってみるテスト
-		const test_json = {
+		var test_json = {
 			address: "/midi/noteon",
 			args: [0,60, 127]
 		};
@@ -253,7 +250,7 @@ var ctrl = {
 //-----------------------------------
 	/*
     test_modules: function(){
-        const test_json = [
+        var test_json = [
 			{
 				address: "/fm/noteon",
 				args: [0,60, 127]

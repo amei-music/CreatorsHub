@@ -2,36 +2,15 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <script type="text/javascript">
-        var param = {
-            // SPEAKS server address (default)
-            server: "localhost:16080"
-        };
-
-        // get query parameters
-        if(window.location.search.length > 1){
-            let query = window.location.search.substring(1);
-            let args = query.split('&');
-            for(let arg of args){
-                let p = arg.split('=');
-                param[p[0]] = p[1];
-            }
-        }
-
-        // append <script> element to load 'socket.io.js' from server
-        var server_url = "http://" + param.server + "/socket.io/socket.io.js";
-        var s = document.createElement("script");
-        s.src = server_url;
-        document.head.appendChild(s);
-    </script>
-</head>
-<body>
+    <script id="speaks.io" src="../speaks.io/speaks.io.js"></script>
     <script src="./connection_test.js"></script>
     <script type="text/javascript">
         window.onload = function(){
-            ctrl.init(param.server);
+            ctrl.init();
         }
     </script>
+</head>
+<body>
     <!--------------------------------------------------------->
     <h1>SPEAKS connection test</h1>
     <p>Usage: index.html[?server=host:port]
@@ -43,8 +22,8 @@
     <script type="text/javascript">
         // display query parameters
         var div = document.getElementById("server_param");
-        for(var i in param){
-            div.innerHTML += i + "=" + param[i] + "<br>";
+        for(var i in speaks.param){
+            div.innerHTML += i + "=" + speaks.param[i] + "<br>";
         }
     </script>
     <hr>

@@ -3,6 +3,7 @@ module.exports = {
 }
 
 var os          = require('os');
+var fs          = require("fs");
 var http        = require('http');
 var connect     = require('connect');
 var serveStatic = require('serve-static');
@@ -30,13 +31,40 @@ function ServerHost(){ return{
   appendModule : function(name){
     var module = require(name);
     if(module){
-      this.modules[module.type] = module;
-      module.init(this.hostAPIs4ClientModule());
+      if(!module.type){
+        console.log("appendModule: " + name + " - 'type' not defined.");
+      }else if(!module.createInput){
+        console.log("appendModule: " + name + " - 'createInput' not defined.");
+      }else if(!module.createOutput){
+        console.log("appendModule: " + name + " - 'createOutput' not defined.");
+      }else if(!module.init){
+        console.log("appendModule: " + name + " - 'init' not defined.");
+      }else{
+        this.modules[module.type] = module;
+        module.init(this.hostAPIs4ClientModule());
+      }
     }else{
       console.log("appendModule: " + name + " not found.");
     }
   },
   
+  appendModulesInDir : function(dir){
+    // search files in dir.
+    fs.readdir(dir, function (err, files) {
+      if(err){
+        console.log(err);
+      }else{
+        for(var i in files){
+          filepath = dir + files[i];
+          // if the file is directory, append it as SPEAKS module.
+          if(fs.existsSync(filepath) && fs.statSync(filepath).isDirectory()){
+            this.appendModule(filepath);
+          }
+        }
+      }
+    }.bind(this));
+  },
+        
   // クライアントモジュール用API
   hostAPIs4ClientModule : function(){
     return {

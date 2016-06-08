@@ -254,6 +254,7 @@ init(hostAPI) の引数として下記のオブジェクトが渡される。
 # SPEAKSモジュールの使用方法
 SPEAKSサーバーの起動とSPEAKSモジュールの登録は以下のように行います。
 
+## server.js 内で登録する場合（ビルトイン状態のモジュール）
 1. SPEAKSサーバーの作成
 ``` javascript
     var serverHost = require('./serverHost');
@@ -277,3 +278,21 @@ SPEAKSサーバーの起動とSPEAKSモジュールの登録は以下のよう�
 - 使用例
     - → 参考：server.js
  
+## 外部から追加する場合
+環境変数 SPEAKS_MODULES に、SPEAKSモジュールのあるディレクトリを設定する
+ 
+### server.js 内の処理
+``` javascript
+    var speaks_module_dir = process.env['SPEAKS_MODULES'];
+    if(speaks_module_dir){
+        g_server.appendModulesInDir(speaks_module_dir);
+    }
+```
+
+### SPEAKSモジュールの作り方
+appendModule の場合は直接 js ファイルを開くが、
+appendModulesInDir の場合は、指定さえたディレクトリの下に、
+一般のnodeモジュールと同様にディレクトリを作成し package.json が必要。
+
+- サンプル
+    - → 参考： example の client_modules

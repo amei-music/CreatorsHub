@@ -5,8 +5,8 @@
 var fs = require('fs');
 var archiver = require('archiver');
 
-var package_name = "mw1-darwin-x64";
-var output_file = __dirname + "/mw1.zip";
+var package_name = "CreatorsHub-darwin-x64";
+var output_file = __dirname + "/CreatorsHub.zip";
 
 // input files
 var input_files = [

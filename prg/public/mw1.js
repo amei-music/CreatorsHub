@@ -137,7 +137,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
         cell.innerHTML = outputNames[outputId];
         if(isRemovableOutputs[outputId]){
           var btnRemove = document.createElement("button");
-          btnRemove.innerText = "削除";
+          btnRemove.innerText = "×";
           btnRemove.addEventListener('click', onRemoveOscOutput.bind(null, parseInt(outputId)));
           cell.appendChild(btnRemove);
         }
@@ -160,7 +160,7 @@ function makeConnectionTable(obj, onChange, onRemoveOscInput, onRemoveOscOutput)
     cell.innerHTML = "▶ " + inputNames[inputId];
     if(isRemovableInputs[inputId]){
       var btnRemove = document.createElement("button");
-      btnRemove.innerText = "削除";
+      btnRemove.innerText = "×";
       btnRemove.addEventListener('click', onRemoveOscInput.bind(null, parseInt(inputId)));
       cell.appendChild(btnRemove);
     }

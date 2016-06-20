@@ -242,30 +242,38 @@ function ServerHost(){ return{
   open_input : function(socket, obj, owner) {
     // obj.type obj.name
     var input = this.modules[obj.type].createInput(obj.name);
-    if(owner){
-      input.owner = owner;
+    if(input){
+      if(owner){
+        input.owner = owner;
+      }
+      if(socket && socket.id){
+        input.socketId = socket.id;
+      }
+      var inputId = this.clients.addNewClientInput(input);
+      this.clients.saveSettings()
+      this.update_list(); // クライアントのネットワーク表示更新
+    }else{
+      console.log("open_input: ERROR - can't create " + obj.type + ":" + obj.name);
     }
-    if(socket && socket.id){
-      input.socketId = socket.id;
-    }
-    var inputId = this.clients.addNewClientInput(input);
-    this.clients.saveSettings()
-    this.update_list(); // クライアントのネットワーク表示更新
   },
 
   //  - このサーバーの送信ポートを作成する
   open_output : function(socket, obj, owner) {
     // obj.type obj.name
     var output = this.modules[obj.type].createOutput(obj.name);
-    if(owner){
-      output.owner = owner;
+    if(output){
+      if(owner){
+        output.owner = owner;
+      }
+      if(socket && socket.id){
+        output.socketId = socket.id;
+      }
+      var outputId = this.clients.addNewClientOutput(output);
+      this.clients.saveSettings()
+      this.update_list(); // クライアントのネットワーク表示更新
+    }else{
+      console.log("open_output: ERROR - can't create " + obj.type + ":" + obj.name);
     }
-    if(socket && socket.id){
-      output.socketId = socket.id;
-    }
-    var outputId = this.clients.addNewClientOutput(output);
-    this.clients.saveSettings()
-    this.update_list(); // クライアントのネットワーク表示更新
   },
 
   //  - このサーバーの受信ポートを削除する

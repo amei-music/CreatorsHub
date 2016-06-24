@@ -5,10 +5,10 @@
 			"name": "Launch",
 			"type": "node",
 			"request": "launch",
-			"program": "${workspaceRoot}/server.js",
+			"program": "${workspaceRoot}/prg/server.js",
 			"stopOnEntry": false,
 			"args": [],
-			"cwd": "${workspaceRoot}/",
+			"cwd": "${workspaceRoot}/prg/",
 			"runtimeExecutable": null,
 			"runtimeArgs": [
 				"--nolazy"

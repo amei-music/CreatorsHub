@@ -1,7 +1,7 @@
 {
-  "name": "mw1",
+  "name": "CreatorsHub",
   "version": "0.0.1",
-  "description": "USB-MIDI to WebSocket / OpenSoundControl converter",
+  "description": "Toolkit for making multi-modal performance, interoperating multiple messaging protocol such as MIDI, OSC, WebSocket, etc.",
 
   "//": "entry point for npm start",
   "scripts": {
@@ -14,11 +14,11 @@
 
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/amei-music/CreatorsHub"
   },
-  "author": "",
-  "homepage": "",
-  "license": "ISC",
+  "author": "AMEI",
+  "homepage": "https://amei-music.github.io/CreatorsHub/",
+  "license": "MIT",
   "bugs": {
     "url": ""
   },

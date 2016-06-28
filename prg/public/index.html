@@ -39,8 +39,8 @@
       //showLanguage("en"); // 英語に設定
       $('#menu').slimmenu( // メニュー
       {
-          resizeWidth: '400',
-          collapserTitle: 'SPEAKS',
+          resizeWidth: '65536',
+          collapserTitle: "Creator's Hub",
           animSpeed: 'medium',
           easingEffect: null,
           indentChildren: false,
@@ -54,10 +54,19 @@
   ul.slimmenu {
     background-color: #cccccc;
   }
+  ul.slimmenu a {
+    text-decoration: none;
+  }
   </style>
 </head>
 <body hidden=true>
   <ul id="menu" class="slimmenu">
+    <li>
+      <a href="#"><span class="ja">接続情報</span><span class="en">Connection</span></a>
+      <ul>
+        <li><a href="#"><span class="ja">サーバーアドレス　</span><span class="en">Server Address　</span><span id="server_address">*.*.*.*:*</span></a></li>
+      </ul>
+    </li>
     <li>
       <a href="#"><span class="ja">ドキュメント</span><span class="en">Documents</span></a>
       <ul>

@@ -13,7 +13,6 @@
 
 # node.jsのインストールとCreators' Hubプログラムのソースからの実行
 
-## Mac - nodebrewを使ってnode.jsをインストール 
 1.  node.jsのバージョン管理ツールのインストール
 
     - Mac

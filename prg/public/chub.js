@@ -215,6 +215,11 @@ var ctrl = {
     var networkArea = document.getElementById("network");
     networkArea.textContent = null;
     networkArea.appendChild(table);
+
+    if(obj.server){
+      var serverAddress = document.getElementById("server_address");
+      serverAddress.innerText = obj.server + ":" + obj.port;
+    }
   },
 
   onMessageJson : function(obj){

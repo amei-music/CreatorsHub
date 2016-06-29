@@ -13,15 +13,32 @@
 
 # node.jsのインストールとCreators' Hubプログラムのソースからの実行
 
-1.  nodebrewをインストールする。nodebrewとはnode.jsのバージョンを簡単に上げ下げできる補助環境。
-    [nodebrew公式のインストール方法](https://github.com/hokaccha/nodebrew)に従う。
+## Mac - nodebrewを使ってnode.jsをインストール 
+1.  node.jsのバージョン管理ツールのインストール
 
-2.  nodebrewを使ってnode.jsをインストールする。
+    - Mac
+        nodebrewをインストールする。nodebrewとはnode.jsのバージョンを簡単に上げ下げできる補助環境。
+        [nodebrew公式のインストール方法](https://github.com/hokaccha/nodebrew)に従う。
 
-    ```
-    nodebrew install-binary v6.1
-    nodebrew use v6.1
-    ```
+    - Windows
+	    nodistをインストールする。nodistとはnode.jsのバージョンを簡単に上げ下げできる補助環境。
+        [nodist公式のインストール方法](https://github.com/marcelklehr/nodist/)に従う。
+        - installer使用推奨
+
+2.  node.jsをインストールする。
+
+    - Mac
+        nodebrewを使ってnode.jsをインストールする。
+        ```
+        nodebrew install-binary v6.1
+        nodebrew use v6.1
+        ```
+
+    - Windows
+        nodistを使ってnode.jsをインストールする。
+        ```
+        nodist 6.1
+        ```
 
 3.  Creators' Hubソースをクローンし、依存しているライブラリをインストールする。ソースを置くディレクトリをここでは```/path/to/workdir/```とする。
 
@@ -55,10 +72,28 @@ electronを使ってnode.js+ブラウザを組み込んで単一の実行ファ�
 
 2.  electronを用いてこのプログラムをパッケージ化する。
 
-    ```
-    cd /path/to/workdir/CreatorsHub/prg
-    electron-rebuild -m node_modules/ -e ~/.nodebrew/current/lib/node_modules/electron-prebuilt/
-    electron ./ # 動作確認
-    electron -v # ここで表示されるバージョン数値を下の--version引数に入れる
-    electron-packager ./ CreatorsHub --platform=darwin --arch=x64 --version=1.2.1 # Macの場合
-    ```
+    - Mac
+        ```
+        cd /path/to/workdir/CreatorsHub/prg
+        electron-rebuild -m node_modules/ -e ~/.nodebrew/current/lib/node_modules/electron-prebuilt/
+        electron ./ # 動作確認
+        electron -v # ここで表示されるバージョン数値を下の--version引数に入れる
+        electron-packager ./ CreatorsHub --platform=darwin --arch=x64 --version=1.2.1 # Macの場合
+        ```
+
+    - Windows
+        ```
+        cd /path/to/workdir/CreatorsHub/prg
+        electron -v # ここで表示されるバージョン数値を下の-v引数および--version引数に入れる
+        electron-rebuild -m node_modules/ -v 1.2.1
+        electron ./ # 動作確認
+        electron-packager ./ CreatorsHub --platform=win32 --arch=ia32 --version=1.2.1 # Windowsの場合
+        ```
+
+# Windowsでの注意事項
+
+nodistを使用してnodeをインストールした場合、何も指定しなければ32bit版が選択される。
+node_modules/midi にはWindowsネイティブコードが含まれており、32bit版のnodeでは32bitでビルドされるため、electron-packager では --arch=ia32 を指定しないと実行できない。
+64bit版にする場合は https://github.com/marcelklehr/nodist/ に従い、環境変数 NODIST_X64=1 としてnodeをインストールし、--arch=x64 でパッケージ作成すればいいと思われる。
+    - 但し、64bit版のexeは32bit版Windows上で実行できなくなるため未確認
+    - 32bit版のexeは64bit版Windows上でも実行可能

@@ -22,6 +22,7 @@ function ServerHost(){ return{
   oscsocks: {}, // {input_oscport: {clientId: , sock: }} osc送受信オブジェクトを詰めておくところ
                 // socket一覧はio.socketsにある
   modules: {},  // クライアントモジュール
+  serverAddress: undefined,
                 
   g_httpApp: undefined,
   g_server: undefined,
@@ -120,7 +121,14 @@ function ServerHost(){ return{
     var inputs  = {}; for (var i in this.clients.inputs ) inputs [i] = this.clients.inputs [i].simplify();
     var outputs = {}; for (var o in this.clients.outputs) outputs[o] = this.clients.outputs[o].simplify();
     // broadcast all clients (including the sender)
-    this.g_io.sockets.emit("update_list", {inputs: inputs, outputs: outputs, connections: this.clients.connectionsById});
+    var msg = {
+      server: this.serverAddress,
+      port: LISTEN_PORT,
+      inputs: inputs,
+      outputs: outputs,
+      connections: this.clients.connectionsById
+    };
+    this.g_io.sockets.emit("update_list", msg);
   },
 
   // ネットワークのノード間の接続/切断をする
@@ -331,8 +339,9 @@ function ServerHost(){ return{
       interfaces[dev].forEach(function(iface){
         if ((! iface.internal) && iface.family === "IPv4"){
           console.log("connection control at http://" + iface.address + ":" + LISTEN_PORT + "/");
+          this.serverAddress = iface.address;
         }
-      });
+      }.bind(this));
     }
     console.log("================================================");
   },

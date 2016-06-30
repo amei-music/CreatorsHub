@@ -18,11 +18,23 @@
   </style>
   <!-- スタイルシート　-->
   <link rel="stylesheet" href="/chub.css" type="text/css" media="all">
-
-  <script src="/d3/d3.mw1.js" charset="utf-8"></script>
+  <!-- jQuery　-->
+  <script src="./jquery/jquery-3.0.0.min.js"></script>
+  <!-- 上部メニュー　-->
+  <link rel="stylesheet" href="/slimmenu/dist/css/slimmenu.min.css" type="text/css">
+  <script src="/slimmenu/dist/js/jquery.slimmenu.min.js"></script>
+  <!-- markdown表示用　-->
+  <script src="/marked/marked.min.js"></script>
+  <script src="/textviewer.js"></script>
+  <!-- Analyzerグラフ描画用　-->
+  <script src="/d3/d3.min.js" charset="utf-8"></script>
+  <!-- socket -->
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/languages.js"></script> <!-- 言語切替 -->
-  <script src="/chub.js"></script> <!-- クライアント側の機能が詰まったctrlオブジェクトの読み込み -->
+  <!-- 言語切替 -->
+  <script src="/languages.js"></script>
+  <!-- クライアント側の機能が詰まったctrlオブジェクトの読み込み -->
+  <script src="/chub.js"></script> 
+  <!-- メイン -->
   <script type="text/javascript">
     "use strict";
 
@@ -30,13 +42,46 @@
       selectLanguage(); // 自動設定
       //showLanguage("ja"); // 日本語に設定
       //showLanguage("en"); // 英語に設定
-      document.body.hidden = false;
+      $('#menu').slimmenu( // メニュー
+      {
+          resizeWidth: '65536',
+          collapserTitle: "Creators' Hub",
+          animSpeed: 'medium',
+          easingEffect: null,
+          indentChildren: false,
+          childrenIndenter: '&nbsp;'
+      });
       ctrl.init();
+      document.body.hidden = false; // BODY表示
     }
   </script>
-
+  <style type="text/css">
+  ul.slimmenu {
+    background-color: #cccccc;
+  }
+  ul.slimmenu a {
+    text-decoration: none;
+  }
+  </style>
 </head>
 <body hidden=true>
+  <ul id="menu" class="slimmenu">
+    <li>
+      <a href="#"><span class="ja">接続情報</span><span class="en">Connection</span></a>
+      <ul>
+        <li><a href="#"><span class="ja">サーバーアドレス　</span><span class="en">Server Address　</span><span id="server_address">*.*.*.*:*</span></a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#"><span class="ja">ドキュメント</span><span class="en">Documents</span></a>
+      <ul>
+        <li><a href="javascript:showMarkdown('/doc_dev/webapp.md')"><span class="ja">WebアプリAPI</span><span class="en">WebApp API</span></a></li>
+        <li><a href="javascript:showMarkdown('/doc_dev/modules.md')"><span class="ja">モジュール作成方法</span><span class="en">How to add Modules</span></a></li>
+        <li><a href="javascript:showSourceCode('/client_modules/midimessage.h')"><span class="ja">MIDIメッセージ定義</span><span class="en">MIDI message definition</span></a></li>
+      </ul>
+    </li>
+  </ul>
+
   <h1 class="ja">接続中のデバイス</h1>	
   <h1 class="en">Connecting Devices</h1>	
   <div id="network"></div>

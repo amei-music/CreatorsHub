@@ -1,5 +1,5 @@
-# WebアプリからSPEAKSサーバーへの接続方法
-WebアプリからSPEAKSサーバーへの接続方法とAPIの説明です。
+# WebアプリからCreators' Hubサーバーへの接続方法
+WebアプリからCreators' Hubサーバーへの接続方法とAPIの説明です。
 
 ==================================================================
 ## WebSocket接続
@@ -8,26 +8,26 @@ WebアプリからSPEAKSサーバーへの接続方法とAPIの説明です。
 ### 直接 socket.io.js を読み込む場合
 1. index.htmlで socket.io.js を読み込む
 ```
-	<script src="http://SPEAKSサーバーのホスト名:ポート/socket.io/socket.io.js"></script>
+	<script src="http://CreatorsHubサーバーのホスト名:ポート/socket.io/socket.io.js"></script>
 ```
 
 2. ソケット接続
 ```
-    var url = 'ws://SPEAKSサーバーのホスト名:ポート';
+    var url = 'ws://CreatorsHubサーバーのホスト名:ポート';
     var socket = io.connect(url);
 ```
 
 ------------------------------------
-### speaks.io を使用する場合
-example/speaks.io に、WebAppのクエリ文字列としてSPEAKSサーバーを指定して、socket.io.jsの読み込みと接続を行うためのスクリプトを用意してあります。
+### CreatorsHub.io を使用する場合
+example/CreatorsHub.io に、WebAppのクエリ文字列としてCreators' Hubサーバーを指定して、socket.io.jsの読み込みと接続を行うためのスクリプトを用意してあります。
 
 - 使い方
-    - example/speaks.io/README.md を参照
+    - example/CreatorsHub.io/README.md を参照
 - サンプル
     - example/connection_test を参照
 
 ==================================================================
-## SPEAKSサーバー→WebAppへの通知
+## Creators' Hubサーバー→WebAppへの通知
 
 ------------------------------------
 ### サーバー接続状態通知
@@ -104,7 +104,7 @@ example/speaks.io に、WebAppのクエリ文字列としてSPEAKSサーバー�
 ```
 
 ==================================================================
-## WebApp→SPEAKSサーバーへのメッセージ
+## WebApp→Creators' Hubサーバーへのメッセージ
 
 ------------------------------------
 ### 入出力ポート接続状態操作
@@ -131,11 +131,11 @@ example/speaks.io に、WebAppのクエリ文字列としてSPEAKSサーバー�
 ```
         socket.emit("cleanup_connection_history");
 ```
-        - SPEAKSサーバー側で保存されている過去に使われたポートの接続情報をクリアする
+        - Creators' Hubサーバー側で保存されている過去に使われたポートの接続情報をクリアする
         - 現在の接続状態を変更するものではない
 
 ------------------------------------
-### SPEAKSサーバーとのJSONメッセージの送受信
+### Creators' HubサーバーとのJSONメッセージの送受信
 
 #### join_as_wsjson
     - JSON入出力ポート作成
@@ -184,7 +184,7 @@ example/speaks.io に、WebAppのクエリ文字列としてSPEAKSサーバー�
     - 引数として以下の形式のオブジェクトを渡す
 ```
         {
-            type: "osc",            // SPEAKSモジュールのタイプ識別子
+            type: "osc",            // Creators' Hubモジュールのタイプ識別子
             name: "localhost:12345" // 名前
         }
 ```

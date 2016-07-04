@@ -57,7 +57,7 @@ function ServerHost(){ return{
       }else{
         for(var i in files){
           filepath = dir + files[i];
-          // if the file is directory, append it as SPEAKS module.
+          // if the file is directory, append it as Creators'Hub module.
           if(fs.existsSync(filepath) && fs.statSync(filepath).isDirectory()){
             this.appendModule(filepath);
           }

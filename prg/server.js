@@ -46,7 +46,7 @@ g_server.appendModule('./client_modules/clientMidi');
 g_server.appendModule('./client_modules/clientRtpMidi');
 g_server.appendModule('./client_modules/clientAnalyzer');
 
-// append SPEAKS modules in directory defined as 'CREATORS_HUB_MODULES'
+// append Creators'Hub modules in directory defined as 'CREATORS_HUB_MODULES'
 var chub_module_dir = process.env['CREATORS_HUB_MODULES'];
 if(chub_module_dir){
   g_server.appendModulesInDir(chub_module_dir);

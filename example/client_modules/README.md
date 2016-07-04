@@ -1,7 +1,7 @@
-# SPEAKSモジュールサンプル
+# Creators'Hubモジュールサンプル
 
 ## 概要
-空のSPEAKSモジュールです
+空のCreators'Hubモジュールです
 
 ## テスト方法
 1. 環境変数 CREATORS_HUB_MODULES に、ここのディレクトリを設定する
@@ -11,7 +11,7 @@
 ```
     - これにより client_modules 以下にあるモジュールがロード対象になる
     
-2. SPEAKSサーバーを起動
+2. Creators'Hubサーバーを起動
 ```
     $ node server
 ```

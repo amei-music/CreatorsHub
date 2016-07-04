@@ -1,8 +1,8 @@
 # connection_test
-SPEAKSサーバーへの接続を行うサンプルプログラム
+Creators'Hubサーバーへの接続を行うサンプルプログラム
 
 ## 使い方
-1. SPEAKSサーバープログラムを立ち上げておく
+1. Creators'Hubサーバープログラムを立ち上げておく
 
 2. ブラウザで以下のファイルを開く
     - １台のPC上で実行する場合
@@ -41,11 +41,11 @@ SPEAKSサーバーへの接続を行うサンプルプログラム
     - 参照→ disconnectUserClients()
 
 - Remove User Clients
-    - SPEAKSサーバーの入出力ポートをまとめて削除
+    - Creators'Hubサーバーの入出力ポートをまとめて削除
     - 参照→ removeUserClients()
     
 - Add User Clients
-    - SPEAKSサーバーに入出力ポートを作成（例）
+    - Creators'Hubサーバーに入出力ポートを作成（例）
     - 参照→ addUserClients()
     
 - Connect User Clients
@@ -54,7 +54,7 @@ SPEAKSサーバーへの接続を行うサンプルプログラム
 
 ## connection_test.js 
 
-- SPEAKSサーバーとの接続と初期化については init() を参照
+- Creators'Hubサーバーとの接続と初期化については init() を参照
 ``` javascript
 	init: function(server){
         var url = "ws://" + server;
@@ -78,10 +78,10 @@ SPEAKSサーバーへの接続を行うサンプルプログラム
 
 ## index.html
 
-- クエリパラメータでSPEAKSサーバーを指定して socket.io.js を読み込む処理
+- クエリパラメータでCreators'Hubサーバーを指定して socket.io.js を読み込む処理
 ``` javascript
         var param = {
-            // SPEAKS server address (default)
+            // Creators'Hub server address (default)
             server: "localhost:16080"
         };
 

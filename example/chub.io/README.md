@@ -1,14 +1,14 @@
-# speaks.io.js
+# chub.io.js
 
-WebAppからSPEAKSサーバーに接続するためのスクリプト
+WebAppからCreators'Hubサーバーに接続するためのスクリプト
 
 ## WebAppからの使い方
 
 1. HTMLの"socket.io.js"読む箇所を次のように書き換える
 ```
-    <script src="./speaks.io.js"></script>
+    <script src="./chub.io.js"></script>
 ```
-    - src="./speaks.io.js" はスクリプトの場所に合わせて書き換える
+    - src="./chub.io.js" はスクリプトの場所に合わせて書き換える
     - このスクリプト実行後に "socket.io.js" が読み込まれる
 
 2. "socket.io.js"の読み込み待ち
@@ -20,7 +20,7 @@ WebAppからSPEAKSサーバーに接続するためのスクリプト
 
 3. ソケットへのコネクション 
 ``` javascript
-    var socket = speaks.connect();
+    var socket = chub.connect();
 ```
     - 内部は io.connect を行う
     - サーバーのアドレスを指定しなければ localhost:16080 に接続される
@@ -42,16 +42,16 @@ WebAppからSPEAKSサーバーに接続するためのスクリプト
 ## サンプルプログラム
 index.html
 
-1. SPEAKSサーバーを起動
+1. Creators'Hubサーバーを起動
 
 2. file:/// ... /index.html を開く
 
 3. 接続されると connect と表示される
 
-4. SPEAKSサーバーを止めると disconnect と表示される
+4. Creators'Hubサーバーを止めると disconnect と表示される
 
 ## 補足
-クエリ文字列はパースされて speaks.param に格納される
+クエリ文字列はパースされて chub.param に格納される
 
 (例)
 ```
@@ -59,7 +59,7 @@ index.html
 ```
 の場合、
 ```
-    speaks.param = {
+    chub.param = {
         server: "server=192.168.1.24:16080",
         foo:    "bar"
     }

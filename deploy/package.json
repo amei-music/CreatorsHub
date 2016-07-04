@@ -1,8 +1,8 @@
 {
-  "name": "zip_speaks",
+  "name": "deploy",
   "version": "0.0.0",
-  "description": "Archive SPEAKS executable with docs and examples.",
-  "main": "zip_speaks.js",
+  "description": "Archive Creators'Hub executable with docs and examples.",
+  "main": "deploy.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

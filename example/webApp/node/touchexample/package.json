@@ -1,7 +1,7 @@
 {
   "name": "tapandswipe",
   "version": "1.0.0",
-  "description": "node tap and swipe example for SPEAKS",
+  "description": "node tap and swipe example for Creators'Hub",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

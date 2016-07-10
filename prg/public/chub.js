@@ -220,6 +220,25 @@ var ctrl = {
       var serverAddress = document.getElementById("server_address");
       serverAddress.innerText = obj.server + ":" + obj.port;
     }
+    
+    if(obj.documents){
+      var docs = document.getElementById("documents_list");
+      docs.innerHTML = "";
+      for(var i in obj.documents){
+        var func;
+        switch(obj.documents[i].type){
+          case "md":
+            func = "showMarkdown";
+            break;
+          case "code":
+            func = "showSourceCode";
+            break;
+        }
+        if(func){
+          docs.innerHTML += "<li><a href='javascript:" + func + "(" + '"' + obj.documents[i].url + '"' + ")'>" + obj.documents[i].title + "</a></li>";
+        }
+      }
+    }
   },
 
   onMessageJson : function(obj){

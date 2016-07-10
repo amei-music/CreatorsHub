@@ -5,7 +5,8 @@ function showMarkdown(url) {
 	httpObj.open("get", url, true);
 	httpObj.onload = function(){
 		var html = marked(this.responseText); 
-		openWindow(url, html);
+		var title = url.substring(url.lastIndexOf('/') + 1);  
+		openWindow(title, html);
 	}
 	httpObj.send(null);
 }
@@ -15,7 +16,8 @@ function showSourceCode(url) {
 	httpObj.open("get", url, true);
 	httpObj.onload = function(){
  		var html = marked("```\n" + this.responseText + "```\n"); 
-    	openWindow(url, html);
+		var title = url.substring(url.lastIndexOf('/') + 1);  
+    	openWindow(title, html);
 	}
 	httpObj.send(null);
 }

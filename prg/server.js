@@ -47,7 +47,7 @@ g_server.appendModule('./client_modules/clientRtpMidi');
 g_server.appendModule('./client_modules/clientAnalyzer');
 
 // load documents list
-g_server.loadDocument('.');
+g_server.loadDocument(__dirname);
 
 // append Creators'Hub modules in directory defined as 'CREATORS_HUB_MODULES'
 var chub_module_dir = process.env['CREATORS_HUB_MODULES'];

@@ -84,7 +84,7 @@ function ServerHost(){ return{
         // no process
       }
       for(var i in docs){
-        docs[i].url = DOCUMENT_URL + name + '/' + docs[i].url;
+        docs[i].url = name + '/' + docs[i].url;
         this.documents.push(docs[i]);
       }
     }
@@ -93,19 +93,18 @@ function ServerHost(){ return{
   // on request documents
   onRequestDocument : function(req, res) {
     if(req.url.indexOf(DOCUMENT_URL) == 0){
-      var path = req.url.substring(DOCUMENT_URL.length);
-      if (fs.existsSync(path) && !fs.statSync(path).isDirectory()) {
-        var buf = fs.readFileSync(path, "utf-8");
-        res.setHeader('Content-Type', 'text/plain');
-        res.writeHead(200);
-        res.end(buf);
-      }else{
-        res.setHeader('Content-Type', 'text/plain');
-        res.writeHead(404, {"Content-Type": "text/plain"});
-        res.end("404 - " + path + " Not Found\n");
+      var index = Number(req.url.substring(DOCUMENT_URL.length));
+      if(index >= 0 && index < this.documents.length){
+        var path = this.documents[index].url;
+        if (fs.existsSync(path) && !fs.statSync(path).isDirectory()) {
+          var buf = fs.readFileSync(path, "utf-8");
+          res.setHeader('Content-Type', 'text/plain');
+          res.writeHead(200);
+          res.end(buf);
+        }
       }
     }
-    console.log(req.url);
+    //console.log(req.url);
   },
 
   // クライアントモジュール用API
@@ -372,7 +371,7 @@ function ServerHost(){ return{
     this.g_server.listen(LISTEN_PORT);
 
     // documents
-    this.g_server.on('request', this.onRequestDocument);
+    this.g_server.on('request', this.onRequestDocument.bind(this));
 
     // websocketとしてlistenして、応答内容を記述
     this.g_io = socketio.listen(this.g_server);

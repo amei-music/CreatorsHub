@@ -225,18 +225,7 @@ var ctrl = {
       var docs = document.getElementById("documents_list");
       docs.innerHTML = "";
       for(var i in obj.documents){
-        var func;
-        switch(obj.documents[i].type){
-          case "md":
-            func = "showMarkdown";
-            break;
-          case "code":
-            func = "showSourceCode";
-            break;
-        }
-        if(func){
-          docs.innerHTML += "<li><a href='javascript:" + func + "(" + '"' + obj.documents[i].url + '"' + ")'>" + obj.documents[i].title + "</a></li>";
-        }
+        docs.innerHTML += "<li><a href='javascript:showDocument(" + '"doc/' + i + '","' + obj.documents[i].type + '","' + obj.documents[i].title + '"' + ")'>" + obj.documents[i].title + "</a></li>";
       }
     }
   },

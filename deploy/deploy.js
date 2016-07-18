@@ -1,5 +1,5 @@
 /**
- * Archive SPEAKS executable with docs and examples.
+ * Archive Creators'Hub executable with docs and examples.
  */
 
 var fs = require('fs');

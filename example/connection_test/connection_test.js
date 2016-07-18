@@ -13,12 +13,12 @@ var ctrl = {
 	moduleTestResult: [],
 
 //-----------------------------------
-// SPEAKSサーバーとの接続と初期化
+// Creators'Hubサーバーとの接続と初期化
 //-----------------------------------
 
 	init: function(){
         // サーバー接続
-		this.socket = speaks.connect();
+		this.socket = chub.connect();
 
 		// connect - サーバーとの接続通知
 		this.socket.on("connect",      this.onConnect.bind(this));
@@ -32,14 +32,14 @@ var ctrl = {
 		// message_json - JSONメッセージを受信
 		this.socket.on("message_json", this.onMessageJson.bind(this));
 
-		/* test_modules - SPEAKSモジュールの入出力テスト（使わない）
+		/* test_modules - Creators'Hubモジュールの入出力テスト（使わない）
 		this.socket.on("test_modules", this.onTestModules.bind(this));
 		*/
         this.showstatus();
 	},
 
 //-----------------------------------
-// SPEAKSサーバーからの接続状態通知
+// Creators'Hubサーバーからの接続状態通知
 //-----------------------------------
 
 	// サーバーとの接続通知
@@ -58,7 +58,7 @@ var ctrl = {
     },
 
 //-----------------------------------
-// SPEAKSサーバーとのJSONメッセージの送受信
+// Creators'HubサーバーとのJSONメッセージの送受信
 //-----------------------------------
 
 	// JSONポート作成
@@ -119,7 +119,7 @@ var ctrl = {
     },
 
 //-----------------------------------
-// SPEAKSサーバーの入出力ポート管理
+// Creators'Hubサーバーの入出力ポート管理
 //-----------------------------------
 
 	// ポートの追加削除や接続の更新通知
@@ -142,7 +142,7 @@ var ctrl = {
     	this.clients = obj;
     },
 
-	// SPEAKSサーバーの入出力ポートをまとめて削除
+	// Creators'Hubサーバーの入出力ポートをまとめて削除
     removeUserClients: function(){
     	for(var i in this.clients.inputs){
     		var input = this.clients.inputs[i];
@@ -158,7 +158,7 @@ var ctrl = {
     	}
     },
 
-	// SPEAKSサーバーに入出力ポートを作成（例）
+	// Creators'Hubサーバーに入出力ポートを作成（例）
     addUserClients: function(){
     	// osc入力の作成
 		this.socket.emit("open_input", { type: "osc", name: "localhost:12345" });
@@ -246,7 +246,7 @@ var ctrl = {
     },
     
 //-----------------------------------
-// SPEAKSモジュールの入出力テスト（使わない）
+// Creators'Hubモジュールの入出力テスト（使わない）
 //-----------------------------------
 	/*
     test_modules: function(){

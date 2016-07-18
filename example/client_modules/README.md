@@ -1,17 +1,17 @@
-# SPEAKSモジュールサンプル
+# Creators'Hubモジュールサンプル
 
 ## 概要
-空のSPEAKSモジュールです
+空のCreators'Hubモジュールです
 
 ## テスト方法
-1. 環境変数 SPEAKS_MODULES に、ここのディレクトリを設定する
+1. 環境変数 CREATORS_HUB_MODULES に、ここのディレクトリを設定する
 (例)
 ```
-    $ export SPEAKS_MODULES=~foo/bar/example/client_modules/
+    $ export CREATORS_HUB_MODULES=~foo/bar/example/client_modules/
 ```
     - これにより client_modules 以下にあるモジュールがロード対象になる
     
-2. SPEAKSサーバーを起動
+2. Creators'Hubサーバーを起動
 ```
     $ node server
 ```

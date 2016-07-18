@@ -1,12 +1,12 @@
 /**
- * speaks.io.js - 'socket.io.js' loader for SPEAKS
+ * chub.io.js - 'socket.io.js' loader for Creators'Hub
  */
 
 "use strict";
 
-var speaks = {
+var chub = {
 	param: {
-		// SPEAKS server address (default)
+		// Creators'Hub server address (default)
 		server: "localhost:16080"
 	},
 
@@ -36,4 +36,4 @@ var speaks = {
 		return io.connect(url);
 	}
 };
-speaks.init();
+chub.init();

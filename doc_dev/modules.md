@@ -1,16 +1,16 @@
-このドキュメントにはSPEAKSの各通信プロトコルの実装方法と使用方法をまとめます。
+このドキュメントにはCreators' Hubの各通信プロトコルの実装方法と使用方法をまとめます。
 
-# SPEAKSモジュールとは
-SPEAKSの各通信プロトコルの実装をプラグイン化したもの。
+# Creators' Hubモジュールとは
+Creators' Hubの各通信プロトコルの実装をプラグイン化したもの。
 
-# SPEAKSモジュールの作成方法
+# Creators' Hubモジュールの作成方法
 
-## SPEAKSモジュールの作成例
-何もしないSPEAKSモジュールの例。
+## Creators' Hubモジュールの作成例
+何もしないCreators' Hubモジュールの例。
 
 ``` javascript
     var type = "sample";  // モジュールタイプ識別子（モジュールごとに一意な文字列）
-    
+
     module.exports = {
         type: type, // 識別子
         createInput: ClientIOPort,  // 入力ポートの作成
@@ -18,7 +18,7 @@ SPEAKSの各通信プロトコルの実装をプラグイン化したもの。
         init: function(hostAPI){}   // 初期化関数
     }
 
-    // 
+    //
     var client_io   = require('./client_io');
     function ClientIOPort(name, emitter){
         var io = client_io(type, name);
@@ -26,13 +26,13 @@ SPEAKSの各通信プロトコルの実装をプラグイン化したもの。
     }
 ```
 
-## SPEAKSモジュールのメソッドとプロパティ
+## Creators' Hubモジュールのメソッドとプロパティ
 
 ### プロパティ
 - type
-    - SPEAKSモジュール識別子
-    - 他のSPEAKSモジュールと区別するための一意な文字列
-        - 'midi' 'json' 'rtp' ... 'hoge' 'foo' 'bar' 
+    - Creators' Hubモジュール識別子
+    - 他のCreators' Hubモジュールと区別するための一意な文字列
+        - 'midi' 'json' 'rtp' ... 'hoge' 'foo' 'bar'
 
 ### メソッド
 - createInput(name)
@@ -66,7 +66,7 @@ createInput, ClientIOPort 時に作成するオブジェクト
         var type = "hoge";
         var client_io   = require('./client_io');
         module.exports = {
-            type: "hoge", 
+            type: "hoge",
             createInput: function(name){
                 var io = client_io(type, name);
                 io.listenMessage = function(){
@@ -80,12 +80,12 @@ createInput, ClientIOPort 時に作成するオブジェクト
         }
 ```
     - client_io には以下のプロパティとメソッドがある
-    
+
 ### client_io のプロパティ
 基本的に owner 以外は操作不要。他のプロパティは必要に応じて参照。
 
 - type
-    - SPEAKSモジュール識別子が設定される
+    - Creators' Hubモジュール識別子が設定される
 
 - name
     - 入出力ポートごとの名前が設定される
@@ -111,9 +111,9 @@ createInput, ClientIOPort 時に作成するオブジェクト
             - 削除可能
             - OSC, JSONなど
             - createInput, createOutput 時には owner を "user" にする必要がある
-            
+
 ### client_io のメソッド
-各SPEAKSモジュールごとのプロトコル変換処理などをここで実装する。
+各Creators' Hubモジュールごとのプロトコル変換処理などをここで実装する。
 
 - listenMessage
     - 入力ポートで使用
@@ -150,9 +150,9 @@ createInput, ClientIOPort 時に作成するオブジェクト
 -　simplify
     - typeと名前だけのオブジェクトを取得
     - 設定画面側で情報表示に使用
-    
+
 ## hostAPI
-SPEAKSモジュールとserverHostとのやりとりをするAPI。
+Creators' HubモジュールとserverHostとのやりとりをするAPI。
 init(hostAPI) の引数として下記のオブジェクトが渡される。
 ``` javascript
   hostAPIs4ClientModule : function(){
@@ -192,7 +192,7 @@ init(hostAPI) の引数として下記のオブジェクトが渡される。
     - input
         - client_io オブジェクト
     - → 参考：clientMidi.js
-    
+
 - hostAPI.addOutput : function(output)
     - 出力ポートの追加
         - ユーザーが作成するポートではなくデバイスのポートをserverHostに登録するために使用
@@ -223,7 +223,7 @@ init(hostAPI) の引数として下記のオブジェクトが渡される。
         - デバイス等から受信したメッセージ
         - このメッセージは serverHost 側で client_io.decodeMessage によってデコードされ、出力先ポートの encodeMessage によりプロトコル変換が行わわれ送信される。
     - → 参考：clientMidi.js など
-    
+
 -　sendMessageTo(id, msg, obj)
     - WebSocket接続されたポートへのメッセージ出力
         - WebSocket接続の出力ポートの場合のみ、出力先は serverHost 側が持っているため、このAPI経由で出力を行う
@@ -251,17 +251,17 @@ init(hostAPI) の引数として下記のオブジェクトが渡される。
         - → 参考：clientAnalyzer.js
         - → 参考：mw1.js
 
-# SPEAKSモジュールの使用方法
-SPEAKSサーバーの起動とSPEAKSモジュールの登録は以下のように行います。
+# Creators' Hubモジュールの使用方法
+Creators' Hubサーバーの起動とCreators' Hubモジュールの登録は以下のように行います。
 
 ## server.js 内で登録する場合（ビルトイン状態のモジュール）
-1. SPEAKSサーバーの作成
+1. Creators' Hubサーバーの作成
 ``` javascript
     var serverHost = require('./serverHost');
     var g_server   = serverHost.create();
 ```
 
-2. SPEAKSモジュールの登録
+2. Creators' Hubモジュールの登録
 ``` javascript
     g_server.appendModule('./client_modules/clientJson');
     g_server.appendModule('./client_modules/clientOsc');
@@ -270,26 +270,26 @@ SPEAKSサーバーの起動とSPEAKSモジュールの登録は以下のよう�
     g_server.appendModule('./client_modules/clientAnalyzer');
 ```
 
-3. SPEAKSサーバーの起動
+3. Creators' Hubサーバーの起動
 ``` javascript
     g_server.init();
 ```
 
 - 使用例
     - → 参考：server.js
- 
+
 ## 外部から追加する場合
-環境変数 SPEAKS_MODULES に、SPEAKSモジュールのあるディレクトリを設定する
- 
+環境変数 CREATORS_HUB_MODULES に、Creators' Hubモジュールのあるディレクトリを設定する
+
 ### server.js 内の処理
 ``` javascript
-    var speaks_module_dir = process.env['SPEAKS_MODULES'];
-    if(speaks_module_dir){
-        g_server.appendModulesInDir(speaks_module_dir);
+    var chub_module_dir = process.env['CREATORS_HUB_MODULES'];
+    if(chub_module_dir){
+        g_server.appendModulesInDir(chub_module_dir);
     }
 ```
 
-### SPEAKSモジュールの作り方
+### Creators' Hubモジュールの作り方
 appendModule の場合は直接 js ファイルを開くが、
 appendModulesInDir の場合は、指定さえたディレクトリの下に、
 一般のnodeモジュールと同様にディレクトリを作成し package.json が必要。

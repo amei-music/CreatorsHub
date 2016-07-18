@@ -1,7 +1,7 @@
 {
   "name": "clientSample",
   "version": "0.0.1",
-  "description": "a sample of SPEAKS module",
+  "description": "a sample of Creators'Hub module",
   "license": "MIT",
   "main": "clientSample.js"
 }

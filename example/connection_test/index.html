@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <script id="speaks.io" src="../speaks.io/speaks.io.js"></script>
+    <script id="chub.io" src="../chub.io/chub.io.js"></script>
     <script src="./connection_test.js"></script>
     <script type="text/javascript">
         window.onload = function(){
@@ -12,7 +12,7 @@
 </head>
 <body>
     <!--------------------------------------------------------->
-    <h1>SPEAKS connection test</h1>
+    <h1>Creators'Hub connection test</h1>
     <p>Usage: index.html[?server=host:port]
     <p>If server is not specified, 'localhost:16080' is used as default server.
     <hr>
@@ -22,8 +22,8 @@
     <script type="text/javascript">
         // display query parameters
         var div = document.getElementById("server_param");
-        for(var i in speaks.param){
-            div.innerHTML += i + "=" + speaks.param[i] + "<br>";
+        for(var i in chub.param){
+            div.innerHTML += i + "=" + chub.param[i] + "<br>";
         }
     </script>
     <hr>

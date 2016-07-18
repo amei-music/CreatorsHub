@@ -14,6 +14,8 @@ var clientManager =  require('./clientManager');
 var LISTEN_PORT      = 16080;
 var PUBLIC_DIR       = __dirname + "/public";
 
+var DOCUMENT_URL     = "/doc/";
+
 //==============================================================================
 // アプリ本体 (WebSocketの通信定義を作ったりMIDI/OSCの送受信を張ったり)
 //==============================================================================
@@ -22,6 +24,7 @@ function ServerHost(){ return{
   oscsocks: {}, // {input_oscport: {clientId: , sock: }} osc送受信オブジェクトを詰めておくところ
                 // socket一覧はio.socketsにある
   modules: {},  // クライアントモジュール
+  documents: [],
   serverAddress: undefined,
                 
   g_httpApp: undefined,
@@ -43,6 +46,7 @@ function ServerHost(){ return{
       }else{
         this.modules[module.type] = module;
         module.init(this.hostAPIs4ClientModule());
+        console.log("appendModule: " + name + " OK.");
       }
     }else{
       console.log("appendModule: " + name + " not found.");
@@ -60,12 +64,49 @@ function ServerHost(){ return{
           // if the file is directory, append it as Creators'Hub module.
           if(fs.existsSync(filepath) && fs.statSync(filepath).isDirectory()){
             this.appendModule(filepath);
+            this.loadDocument(filepath);
           }
         }
       }
     }.bind(this));
   },
-        
+
+  // load documents list
+  loadDocument : function(name){
+    var path = name + "/documents.json";
+    var docs = {};
+    if (fs.existsSync(path)) {
+      var buf = fs.readFileSync(path, "utf-8");
+      try{
+        docs = JSON.parse(buf);
+      }
+      catch (e) {
+        // no process
+      }
+      for(var i in docs){
+        docs[i].url = name + '/' + docs[i].url;
+        this.documents.push(docs[i]);
+      }
+    }
+  },
+
+  // on request documents
+  onRequestDocument : function(req, res) {
+    if(req.url.indexOf(DOCUMENT_URL) == 0){
+      var index = Number(req.url.substring(DOCUMENT_URL.length));
+      if(index >= 0 && index < this.documents.length){
+        var path = this.documents[index].url;
+        if (fs.existsSync(path) && !fs.statSync(path).isDirectory()) {
+          var buf = fs.readFileSync(path, "utf-8");
+          res.setHeader('Content-Type', 'text/plain');
+          res.writeHead(200);
+          res.end(buf);
+        }
+      }
+    }
+    //console.log(req.url);
+  },
+
   // クライアントモジュール用API
   hostAPIs4ClientModule : function(){
     return {
@@ -126,7 +167,8 @@ function ServerHost(){ return{
       port: LISTEN_PORT,
       inputs: inputs,
       outputs: outputs,
-      connections: this.clients.connectionsById
+      connections: this.clients.connectionsById,
+      documents: this.documents
     };
     this.g_io.sockets.emit("update_list", msg);
   },
@@ -327,6 +369,9 @@ function ServerHost(){ return{
 
     this.g_server = http.createServer(this.g_httpApp);
     this.g_server.listen(LISTEN_PORT);
+
+    // documents
+    this.g_server.on('request', this.onRequestDocument.bind(this));
 
     // websocketとしてlistenして、応答内容を記述
     this.g_io = socketio.listen(this.g_server);

@@ -220,6 +220,14 @@ var ctrl = {
       var serverAddress = document.getElementById("server_address");
       serverAddress.innerText = obj.server + ":" + obj.port;
     }
+    
+    if(obj.documents){
+      var docs = document.getElementById("documents_list");
+      docs.innerHTML = "";
+      for(var i in obj.documents){
+        docs.innerHTML += "<li><a href='javascript:showDocument(" + '"doc/' + i + '","' + obj.documents[i].type + '","' + obj.documents[i].title + '"' + ")'>" + obj.documents[i].title + "</a></li>";
+      }
+    }
   },
 
   onMessageJson : function(obj){

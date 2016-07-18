@@ -1,11 +1,33 @@
 "use strict";
 
+function showDocument(url, type, title) {
+	var httpObj = new XMLHttpRequest();
+	httpObj.open("get", url, true);
+	httpObj.onload = function(){
+		var html = "";
+		switch(type){
+		case "md":
+			html = marked(this.responseText); 
+			break;
+		case "code":
+			html = marked("```\n" + this.responseText + "```\n"); 
+			break;
+		case "html":
+			html = this.responseText;
+			break;
+		}
+		openWindow(title, html);
+	}
+	httpObj.send(null);
+}
+
 function showMarkdown(url) {
 	var httpObj = new XMLHttpRequest();
 	httpObj.open("get", url, true);
 	httpObj.onload = function(){
 		var html = marked(this.responseText); 
-		openWindow(url, html);
+		var title = url.substring(url.lastIndexOf('/') + 1);  
+		openWindow(title, html);
 	}
 	httpObj.send(null);
 }
@@ -15,7 +37,8 @@ function showSourceCode(url) {
 	httpObj.open("get", url, true);
 	httpObj.onload = function(){
  		var html = marked("```\n" + this.responseText + "```\n"); 
-    	openWindow(url, html);
+		var title = url.substring(url.lastIndexOf('/') + 1);  
+    	openWindow(title, html);
 	}
 	httpObj.send(null);
 }

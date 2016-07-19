@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+  <head>
+    <meta charset="utf-8">
+    <title>Document - 各種デバイスの接続方法 | Creators' Hub - Presented by AMEI</title>
+    <meta name="keywords" content="@keywords">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="/css/style.css" rel="stylesheet"> </head>
+
+  <body class="document">
+    <header id="header" class="header">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="header__logo">
+            <h1><a href="/"><img src="/img/logo.svg" alt="Creators' Hub - Presented by AMEI"></a></h1> </div>
+          <div class="header__nav">
+            <nav class="global-nav">
+              <ul>
+                <li class="about"><a href="/about.html">About</a></li>
+                <li class="download"><a href="/download.html">Download</a></li>
+                <li class="news"><a href="/news.html">News</a></li>
+                <li class="document"><a href="/document/">Document</a></li>
+                <li class="gallery"><a href="/gallery.html">Gallery</a></li>
+                <li class="github"><a href="https://github.com/amei-music/CreatorsHub" target="_blank"><i class="fa fa-github-square"></i>Github</a></li>
+              </ul>
+            </nav>
+            <!--nav class="lang-nav">
+              <ul>
+                <li class="ja"><a href="/">JP</a></li>
+                <li class="en"><a href="/en/">EN</a></li>
+              </ul>
+            </nav-->
+          </div> <button class="c-hamburger">
+        <span>toggle menu</span>
+      </button> </div>
+      </div>
+    </header>
+    <div id="main" class="main">
+      <div class="content">
+        <div class="content__header">
+          <div class="container">
+            <h2>Document</h2>
+            <h3>各種デバイスの接続方法</h3> </div>
+        </div>
+        <div class="content__body container">
+          <div class="row">
+            <div class="content__body--right">
+              <nav>
+                <ul>
+                  <li class="current"><a href="index.html">各種デバイスの接続方法</a>
+                    <ul>
+                      <li><a href="#section1">MIDIデバイスの接続</a></li>
+                      <li><a href="#section2">OSCアプリケーションの接続</a></li>
+                      <li><a href="#section3">JSONクライアントの接続</a></li>
+                    </ul>
+                  </li>
+                  <li><a href="page1.html">MIDI-OSC変換ルール</a></li>
+                  <li><a href="page2.html">MIDI-JSON変換ルール</a></li>
+                  <li><a href="page3.html">OSC-JSON変換ルール</a></li>
+                </ul>
+              </nav>
+            </div>
+            <div class="content__body--left">
+              <section class="section">
+                <p>Creators' HubはMIDI・OSC・WebSocket上を流れるJSONを相互にデータ変換します。このドキュメントでは各プロトコルを実装したデバイスやアプリケーションを接続する方法を紹介します。</p>
+                <p><a href="/download.html">Downloadページ</a>よりCreators' Hubをダウンロードし、zipを解凍します。以下のファイルが含まれます。</p>
+                <p>
+                  <ul>
+                    <li>CreatorsHub(app/exe) --- アプリケーション本体</li>
+                    <li>doc --- ドキュメント</li>
+                    <li>example --- サンプルプログラム</li>
+                    <li>LICENSE --- ライセンス情報</li>
+                    <li>README.md --- リードミー(MarkDown形式)</li>
+                  </ul>
+                </p>
+                <p>"CreatorsHub"を実行するとアプリケーションが起動します。</p>
+                <img src="/img/document/index_launch.png">
+                <p>（注：Creators' Hubは16080ポートで動作するサーバアプリケーションです。16080ポートが使用されている場合起動できません。現在のところ16080ポート以外で動作させるには<a href="https://github.com/amei-music/CreatorsHub" target="_blank">GithubのCreators' Hubリポジトリ</a>からソースコードを取得し、node.jsで動作させる方法があります。詳しくは<a href="https://github.com/amei-music/CreatorsHub" target="_blank">Creators' Hubリポジトリ</a>をご参照下さい。）</p>
+              </section>
+              <section id="section1" class="section">
+                <h3>MIDIデバイスの接続</h3>
+                <p>MIDIデバイス（MIDIを実装した電子楽器やMIDIコントローラー等）を接続すると、自動的にリストアップされます。マトリクスの縦方向が入力ポート、横方向が出力ポートです。下の画像はコンピュータにシンセサイザーreface DXを接続した時の表示です。</p>
+                <img src="/img/document/index_add_midi.png" alt="Add MIDI">
+                <p>Creators' Hubには入力されたデータをモニタする機能があります。「このページをJSONクライアントとして追加する」の「参加」ボタンを押すとマトリクスに「json> monitor」が追加されます。</p>
+                <img src="/img/document/index_join_json.png" alt="Join Monitor">
+                <p>最初に接続したMIDIデバイス（reface DX）の入力とjson> monitorの出力を接続します。マトリクス上の交点をクリックするとConnectedと表示されます。</p>
+                <img src="/img/document/index_connect_monitor.png" alt="Connection">
+                <p>この状態でMIDIデバイスを操作すると<a href="page2.html">MIDI-JSON変換ルール</a>に基づいてJSON化されたMIDIデータがモニタ欄に表示されます。</p>
+                <img src="/img/document/index_monitor_log.png" alt="Monitor">
+
+                <p>以上の例では物理デバイスを接続しましたが、Creators' Hubはこの他に仮想MIDIポート、RTP-MIDIを追加できます。仮想MIDIポートを通じてDAWソフトウェアとデータを送受信したり、RTP-MIDIでWi-Fi経由でMIDIの送受信が可能です。</p>
+              </section>
+              <section id="section2" class="section">
+                <h3>OSCアプリケーションの接続</h3>
+                <p>Cereators' Hubに同梱のサンプルアプリケーションを用いてOSCの接続方法を紹介します。</p>
+                <p>はじめにexample/visualize/p5/oscSequencer/binにあるzipファイル（win32, win64, macからご使用の環境に合わせて）を解凍し、フォルダ内のoscSequencerを実行して下さい。oscSequencerは3音のnoteOn, noteOffを<a href="page1.html">MIDI-OSC変換ルール</a>にもとづいたOSC形式で送出するシーケンサです。（このプログラムは<a href="https://processing.org/">Processing</a>で作成されており、ソースコードはexample/visualize/p5/oscSequencer/oscSequencer.pdeにあります。）</p>
+                <img src="/img/document/index_osc00.png" alt="oscSequencer">
+
+                <p>oscSequencerは24081番ポートにOSCを送信するので、Creators' Hub上でoscSequencerからのOSCを受信するため受信ポートを追加します。</p>
+                <img src="/img/document/index_osc01.png" alt="Add OSC Receive">
+
+                <p>MIDIデバイスの接続で追加したモニタに接続してみるとメッセージが届いていることを確認できます。MIDI楽器を接続している場合はその楽器と接続すると発音されます。</p>
+                <img src="/img/document/index_osc02.png" alt="Connection">
+                <p>つぎにexample/visualize/p5/noteSample/binにあるzipファイル（win32, win64, macいずれか）を解凍し、フォルダ内のnoteSampleを実行して下さい。noteSampleはOSC形式のNoteOnを受信すると画面上に円を描画します。</p>
+                <img src="/img/document/index_osc03.png" alt="noteSample">
+                <p>noteSampleは24080番ポートでOSCを受信するので、Crators' Hub上に送信先ポートを追加します。</p>
+                <img src="/img/document/index_osc04.png" alt="Add OSC Send">
+
+                <p>oscSequencerやMIDIを送出する楽器からnoteSampleに接続して発音すると、noteSample上に円が表示されます。</p>
+                <img src="/img/document/index_osc05.png" alt="Connection">
+              </section>
+              <section id="section3" class="section">
+                <h3>JSONクライアントの接続</h3>
+                <p>Cereators' HubはWebSocket上を流れるJSONをMIDI,OSCに変換できます。同梱のサンプルアプリケーションを用いてJSONクライアントの接続方法を紹介します。サンプルではsocket.ioを利用しています。</p>
+                <p>example/webApp内のindex.htmlをブラウザで実行して下さい。Creators' Hubのリストにjson>webAppExampleが追加されます。これはsocket.ioを利用してCreators' Hubに接続後、join_as_wsjsonというメッセージを送信することでリストに追加する仕様になっているためです。
+                  <div class="codeBox">
+                    <pre><code>var gSocket = io.connect('http://localhost:16080');
+gSocket.on("connect", function() {
+  gSocket.emit('join_as_wsjson', {name: 'webAppExample'});
+});</code></pre>
+                  </div>
+                </p>
+                <p>
+                  <a href="#section1">MIDIデバイスの接続</a>で追加したjson> monitorと接続します。</p>
+                <img src="/img/document/index_json_connect.png" alt="Connection">
+                <p>index.htmlのClick!!ボタンをクリックします。</p>
+                <img src="/img/document/index_webapp.png" alt="WebApp">
+                <p>Crators' Hubのモニタ画面にJSON形式のNote Onメッセージが表示されます。
+              </p>
+              <img src="/img/document/index_json_monitor.png" alt="Monitoring">
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pagetop"> <a href="#pagetop"><i class="fa fa-angle-up"></i></a> </div>
+    <footer id="footer" class="footer">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="footer__left"> <img src="/img/logo.png" width="50" height="50" alt="AMEI">
+            <p>Association of Musical Electronics Industry<br> &copy; AMEI All Rights Reserved.</p>
+          </div>
+          <!--div class="footer__right">
+            <ul>
+              <li><a href="/terms.html"><i class="fa fa-angle-double-right"></i> 利用規約</a></li>
+              <li> <a href="https://www.youtube.com" target="_blank" class="youtube"><i class="fa fa-youtube-play"></i> Youtube</a> </li>
+              <li><a href="https://github.com/amei-music/CreatorsHub" target="_blank" class="github"><i class="fa fa-github"></i> Github</a></li>
+            </ul>
+          </div-->
+        </div>
+      </div>
+    </footer>
+    <!--[if lt IE 9]><script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script><script>window.jQuery || document.write('<script src="/libs/jquery/jquery-1.11.2.min.js"><\/script>')</script><![endif]-->
+    <!--[if gte IE 9]><!-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script>
+      window.jQuery || document.write('<script src="/libs/jquery/jquery-2.1.4.min.js"><\/script>')
+    </script>
+    <!--<![endif]-->
+    <script src="/js/script.js"></script>
+  </body>
+
+</html>

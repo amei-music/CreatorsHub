@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+  <head>
+    <meta charset="utf-8">
+    <title>Document - MIDI-JSON変換ルール | Creators' Hub - Presented by AMEI</title>
+    <meta name="keywords" content="@keywords">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link href="/css/style.css" rel="stylesheet"> </head>
+
+  <body class="document">
+    <header id="header" class="header">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="header__logo">
+            <h1><a href="/"><img src="/img/logo.svg" alt="Creators' Hub - Presented by AMEI"></a></h1> </div>
+          <div class="header__nav">
+            <nav class="global-nav">
+              <ul>
+                <li class="about"><a href="/about.html">About</a></li>
+                <li class="download"><a href="/download.html">Download</a></li>
+                <li class="news"><a href="/news.html">News</a></li>
+                <li class="document"><a href="/document/">Document</a></li>
+                <li class="gallery"><a href="/gallery.html">Gallery</a></li>
+                <li class="github"><a href="https://github.com/amei-music/CreatorsHub" target="_blank"><i class="fa fa-github-square"></i>Github</a></li>
+              </ul>
+            </nav>
+            <!--nav class="lang-nav">
+              <ul>
+                <li class="ja"><a href="/">JP</a></li>
+                <li class="en"><a href="/en/">EN</a></li>
+              </ul>
+            </nav-->
+          </div> <button class="c-hamburger">
+        <span>toggle menu</span>
+      </button> </div>
+      </div>
+    </header>
+    <div id="main" class="main">
+      <div class="content">
+        <div class="content__header">
+          <div class="container">
+            <h2>Document</h2>
+            <h3>MIDI-JSON変換ルール</h3> </div>
+        </div>
+        <div class="content__body container">
+          <div class="row">
+            <div class="content__body--right">
+              <nav>
+                <ul>
+                  <li><a href="index.html">各種デバイスの接続方法</a></li>
+                  <li><a href="page1.html">MIDI-OSC変換ルール</a></li>
+                  <li class="current"><a href="page2.html">MIDI-JSON変換ルール</a>
+                  <li><a href="page3.html">OSC-JSON変換ルール</a></li>
+                </ul>
+              </nav>
+            </div>
+            <div class="content__body--left">
+              <section class="section">
+                <p>Creators' HubでのMIDIとJSONの間の変換ルールです。MIDIメッセージがどのようなJSONメッセージに変換されるか、どのようなJSONメッセージを書けばMIDIに変換されるかを示しています。（現在利用できるメッセージの一覧です。このルールは<a href="https://github.com/amei-music/CreatorsHub">amei-musicのgithub</a>でオープンに議論・検討して仕様を決めて拡張していきます）</p>
+                <h6>Note On</h6>
+              <div class="codeBox"> <pre><code>MIDI: [0x9n note_num velocity]
+JSON:
+{
+  "address":"/midi/noteon",
+  "args":[ch,note_num,velocity]
+}</code></pre> </div>
+              <h6>Note Off</h6>
+              <div class="codeBox"> <pre><code>MIDI: [0x8n note_num velocity]
+JSON:
+{
+  "address":"midi/noteoff",
+  "args":[ch,note_num,velocity]
+}</code></pre> </div>
+              <h6>Note Pressure</h6>
+              <div class="codeBox"> <pre><code>MIDI: [0xAn note_num value]
+JSON:
+{
+  "address":"/midi/notepressure",
+  "args":[ch,note_num,value]
+}</code></pre> </div>
+              <h6>Control Change</h6>
+              <div class="codeBox"> <pre><code>MIDI: [0xBn type value]
+JSON:
+{
+  "address":"/midi/controlchange",
+  "args":[ch,type,value]
+}</code></pre> </div>
+              <h6>Program Change</h6>
+              <div class="codeBox"> <pre><code>MIDI: [0xCn value]
+JSON:
+{
+  "address":"/midi/programchange",
+  "args":[ch,value]
+}</code></pre> </div>
+              <h6>Channel Pressure</h6>
+              <div class="codeBox"> <pre><code>MIDI: [0xDn value]
+JSON:
+{
+  "address":"/midi/channelpressure",
+  "args":[ch,value]
+}</code></pre> </div>
+              <h6>Pitch Bend</h6>
+              <div class="codeBox"> <pre><code>MIDI: [0xEn msb lsb]
+JSON:
+{
+  "address":"/midi/pitchbend",
+  "args":[ch,msb,lsb]
+}</code></pre> </div>
+              <h6>System Exclusive</h6>
+              <div class="codeBox"> <pre><code>MIDI: [0xF0 value1 value2 value3 ... 0xF7]
+JSON:
+{
+  "address":"/midi/sysex",
+  "args":[0xF0, value1, value2, value3, ... , 0xF7]
+}</code></pre> </div>
+
+              <h6>具体例</h6>
+              <p>以上の記述では、MIDIメッセージ中のnはOSCメッセージのch（チャンネル番号）にあたります。</p>
+              <p>チャンネルは0から15（16進数で0からF）までの値を取り、その他の値は0から127までを設定できます。以下に具体例を示します。</p>
+              <ul>
+                <li>Note Onメッセージ</li>
+                <li>チャンネル: 15（16進数で表すとF）</li>
+                <li>ノートナンバー: 60</li>
+                <li>ベロシティ: 100</li>
+              </ul>
+              <div class="codeBox"> <pre><code>MIDI: [0x9F 60 100]
+JSON :
+{
+  "address":"/midi/noteon",
+  "args":[15,60,100]
+}</code></pre></div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pagetop"> <a href="#pagetop"><i class="fa fa-angle-up"></i></a> </div>
+    <footer id="footer" class="footer">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="footer__left"> <img src="/img/logo.png" width="50" height="50" alt="AMEI">
+            <p>Association of Musical Electronics Industry<br> &copy; AMEI All Rights Reserved.</p>
+          </div>
+          <!--div class="footer__right">
+            <ul>
+              <li><a href="/terms.html"><i class="fa fa-angle-double-right"></i> 利用規約</a></li>
+              <li> <a href="https://www.youtube.com" target="_blank" class="youtube"><i class="fa fa-youtube-play"></i> Youtube</a> </li>
+              <li><a href=https://github.com/amei-music/CreatorsHub target="_blank" class="github"><i class="fa fa-github"></i> Github</a></li>
+            </ul>
+          </div-->
+        </div>
+      </div>
+    </footer>
+    <!--[if lt IE 9]><script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script><script>window.jQuery || document.write('<script src="/libs/jquery/jquery-1.11.2.min.js"><\/script>')</script><![endif]-->
+    <!--[if gte IE 9]><!-->
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script>
+      window.jQuery || document.write('<script src="/libs/jquery/jquery-2.1.4.min.js"><\/script>')
+    </script>
+    <!--<![endif]-->
+    <script src="/js/script.js"></script>
+  </body>
+
+</html>

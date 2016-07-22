@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset='utf-8'>
+  <meta http-equiv="X-UA-Compatible" content="chrome=1">
+  <meta name="description" content="Creatorshub : Toolkit for making multi-modal performance, interoperating multiple messaging protocol such as MIDI, OSC, WebSocket, etc.">
+
+  <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+  <title>DOCUMENT</title>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <div id="header_wrap" class="outer">
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h3>デバイスの接続</h3>
+        <img src="./images/pic_index.jpg">
+        <p>
+          Creators' Hubのインターフェースでは入力と出力を結線します。
+          それにより、MIDI, OSC, WebSocket上のJSONが相互に自動変換され、それぞれに適したフォーマットで出力されます。
+        </p>
+        <p>
+          マトリクス上のタテ列が入力, ヨコ列が出力です。その交点をクリックするとConnectと表示されINからOUTに信号が流れます。
+
+        </p>
+        <h4>MIDIデバイスの接続</h4>
+        <p>
+          MIDIデバイスを接続するとIN（タテ列）, OUT（ヨコ列）に自動でリストアップされます。
+        </p>
+        <p>
+          Creators' Hub本体にデータをJSONとして受け取りモニタする機能があるので、接続すると値を確認できます。
+        </p>
+        <h4>OSCアプリの接続</h4>
+        <p>
+          OSCの送信・受信ポートは手動で追加します。
+        </p>
+        <p>
+          サンプルに入っている〜を起動し、Creators' HubのJSONモニタで確認すると以下のように信号の流れを確認できます。
+        </p>
+        <h4>WebSocket上のJSONアプリの接続</h4>
+        <p>
+          WebSocketで以下のルールに従って接続するとデバイス一覧に表示されます。
+        </p>
+        <p>
+          サンプルに入っている〜を起動すると、INとOUTに〜と表示されます。
+          Creators' HubのJSONモニタで確認すると以下のように信号の流れを確認できます。
+        </p>
+        <h3>接続ルール</h3>
+        <p>
+          WebSocketを用いたアプリケーションをCreators' Hubに接続するためのルールが定められています。
+        </p>
+
+        <h3>変換ルール(MIDI-OSC)</h3>
+        <p>い</p>
+        <h3>変換ルール(MIDI-JSON)</h3>
+        <p>い</p>
+        <h3>変換ルール(OSC-JSON)</h3>
+        <p>い</p>
+      </div>
+
+
+    </section>
+  </div>
+
+</body>
+</html>

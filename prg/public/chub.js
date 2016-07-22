@@ -541,7 +541,7 @@ var ctrl = {
   join_as_wsjson: function() {
     //this.socket.emit("open_input", { type: "json", name: "mw1"} );
     //this.socket.emit("open_output", { type: "json", name: "mw1"} );
-    this.socket.emit("join_as_wsjson", { "name": "mw1"} );
+    this.socket.emit("join_as_wsjson", { "name": "monitor"} );
     this.showJsonClient(true);
   },
 

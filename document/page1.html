@@ -3,13 +3,13 @@
 
   <head>
     <meta charset="utf-8">
-    <title>About | Creators' Hub - Presented by AMEI</title>
+    <title>Document - Quick Start | Creators' Hub - Presented by AMEI</title>
     <meta name="keywords" content="@keywords">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <link href="/css/style.css" rel="stylesheet"> </head>
 
-  <body class="about">
+  <body class="document">
     <header id="header" class="header">
       <div class="container-fluid">
         <div class="row">
@@ -41,44 +41,54 @@
       <div class="content">
         <div class="content__header">
           <div class="container">
-            <h2>About</h2>
-            <h3>What’s Creators’ Hub</h3> </div>
+            <h2>Document</h2>
+            <h3>Quick Start</h3> </div>
         </div>
-        <div class="content__body">
-          <div class="content__body--description container">
-            <p>
-        Creators' Hubは異なるプロトコルやアプリケーションのメッセージを相互に変換するプログラムです。<br>MIDI, OSC, Web Socketを流れるJSON等の<a href="dictionary.html">相互変換ルール</a>を定め一意に変換することで、音楽や映像アプリケーション間の接続性や汎用性を高め、様々なメディア・デバイスが連動したクリエーションをより容易にします。</p>
-
-        <p>OSCやJSONのような自由度の高いメッセージを比較的ルールの厳密なMIDIのようなプロトコルに変換する場合、様々な定義方法が考えられます。そのため、現状では、似て非なるルールが制作者ごとに存在しています。<br>Crators' Hubはその変換ルールを<a href="">github</a>上でオープンに議論・定義することで「車輪の再発明」を防ぎ、クリエーターが本来果たすべき役割に集中できるようにしていきます。</p>
-          </div>
-          <div class="container-fluid picture">
-            <div class="row">
-              <div class="column"> <img src="/img/about/pic_about-1.jpg"> </div>
-              <div class="column movie">
-                <a href="https://www.youtube.com" target="_blank"><img src="/img/about/pic_about-2.jpg"></a>
-              </div>
-              <div class="column"> <img src="/img/about/pic_about-3.jpg"> </div>
+        <div class="content__body container">
+          <div class="row">
+            <div class="content__body--right">
+              <nav>
+                <ul>
+                  <li><a href="index.html">Creators' Hubについて</a></li>
+                  <li class="current"><a href="page1.html">Quick Start</a>
+                    <ul>
+                      <li><a href="#section1">Exampleのつなぎかた</a></li>
+                      <li><a href="#section2">詳細説明1</a></li>
+                      <li><a href="#section3">詳細説明2</a></li>
+                    </ul>
+                  </li>
+                  <li><a href="page2.html">変換ルール</a></li>
+                  <li><a href="page3.html">拡張方法</a></li>
+                </ul>
+              </nav>
             </div>
-          </div>
-          <div class="container connect">
-            <h3>つながっているもの</h3>
-            <ul>
-              <li>
-                <a href="#"> <img src="http://dummyimage.com/80x80/000000/fff&text=icon"> <span>名前がはいります</span> </a>
-              </li>
-              <li>
-                <a href="#"> <img src="http://dummyimage.com/80x80/000000/fff&text=icon"> <span>名前がはいります</span> </a>
-              </li>
-              <li>
-                <a href="#"> <img src="http://dummyimage.com/80x80/000000/fff&text=icon"> <span>名前がはいります</span> </a>
-              </li>
-              <li>
-                <a href="#"> <img src="http://dummyimage.com/80x80/000000/fff&text=icon"> <span>名前がはいります</span> </a>
-              </li>
-              <li>
-                <a href="#"> <img src="http://dummyimage.com/80x80/000000/fff&text=icon"> <span>名前がはいります</span> </a>
-              </li>
-            </ul>
+            <div class="content__body--left">
+              <section id="section1" class="section">
+                <h3>Exampleのつなぎかた</h3>
+                <p>Simple examples html page that connects to mw1 and sends simple messages.</p>
+                <ol>
+                  <li>Make sure mw1 program running.</li>
+                  <li>Open "index.html" in this folder on your web browser.</li>
+                  <li>In the mw1 window, connect the input named "webAppExample" to some outputs.</li>
+                  <li>In the "index.html" browser window, press the example button and move the example slider.</li>
+                </ol>
+              </section>
+              <section id="section2" class="section">
+                <h3>詳細説明1</h3>
+                <ul>
+                  <li>Button Example: Send a midi formatted noteon message ('/midi/noteon') to the mw1 when push the button.</li>
+                  <li>Slider Example: Send a midi formatted controlchange message ('/midi/controlchange') to the mw1 when move the slider.</li>
+                  <li>Receive Example: Receive any message from the mw1.</li>
+                </ul> <img src="/img/document/pic_index.jpg" alt=""> </section>
+              <section id="section3" class="section">
+                <h3>詳細説明2</h3>
+                <ul>
+                  <li>Button Example: Send a midi formatted noteon message ('/midi/noteon') to the mw1 when push the button.</li>
+                  <li>Slider Example: Send a midi formatted controlchange message ('/midi/controlchange') to the mw1 when move the slider.</li>
+                  <li>Receive Example: Receive any message from the mw1.</li>
+                </ul>
+              </section>
+            </div>
           </div>
         </div>
       </div>

@@ -3,13 +3,14 @@
 
   <head>
     <meta charset="utf-8">
-    <title>About | Creators' Hub - Presented by AMEI</title>
+    <title>Gallery | Creators' Hub - Presented by AMEI</title>
     <meta name="keywords" content="@keywords">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <link href="/css/style.css" rel="stylesheet"> </head>
+    <link href="/css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="/libs/jquery.magnific-popup/magnific-popup.css"> </head>
 
-  <body class="about">
+  <body class="gallery">
     <header id="header" class="header">
       <div class="container-fluid">
         <div class="row">
@@ -41,44 +42,46 @@
       <div class="content">
         <div class="content__header">
           <div class="container">
-            <h2>About</h2>
-            <h3>What’s Creators’ Hub</h3> </div>
+            <h2>Gallery</h2> </div>
         </div>
         <div class="content__body">
-          <div class="content__body--description container">
-            <p>
-        Creators' Hubは異なるプロトコルやアプリケーションのメッセージを相互に変換するプログラムです。<br>MIDI, OSC, Web Socketを流れるJSON等の<a href="dictionary.html">相互変換ルール</a>を定め一意に変換することで、音楽や映像アプリケーション間の接続性や汎用性を高め、様々なメディア・デバイスが連動したクリエーションをより容易にします。</p>
-
-        <p>OSCやJSONのような自由度の高いメッセージを比較的ルールの厳密なMIDIのようなプロトコルに変換する場合、様々な定義方法が考えられます。そのため、現状では、似て非なるルールが制作者ごとに存在しています。<br>Crators' Hubはその変換ルールを<a href="">github</a>上でオープンに議論・定義することで「車輪の再発明」を防ぎ、クリエーターが本来果たすべき役割に集中できるようにしていきます。</p>
-          </div>
-          <div class="container-fluid picture">
-            <div class="row">
-              <div class="column"> <img src="/img/about/pic_about-1.jpg"> </div>
-              <div class="column movie">
-                <a href="https://www.youtube.com" target="_blank"><img src="/img/about/pic_about-2.jpg"></a>
-              </div>
-              <div class="column"> <img src="/img/about/pic_about-3.jpg"> </div>
+          <div class="container-fluid">
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-01.jpg"><img src="/img/gallery/thumb_gallery-01.jpg" alt=""></a>
             </div>
-          </div>
-          <div class="container connect">
-            <h3>つながっているもの</h3>
-            <ul>
-              <li>
-                <a href="#"> <img src="http://dummyimage.com/80x80/000000/fff&text=icon"> <span>名前がはいります</span> </a>
-              </li>
-              <li>
-                <a href="#"> <img src="http://dummyimage.com/80x80/000000/fff&text=icon"> <span>名前がはいります</span> </a>
-              </li>
-              <li>
-                <a href="#"> <img src="http://dummyimage.com/80x80/000000/fff&text=icon"> <span>名前がはいります</span> </a>
-              </li>
-              <li>
-                <a href="#"> <img src="http://dummyimage.com/80x80/000000/fff&text=icon"> <span>名前がはいります</span> </a>
-              </li>
-              <li>
-                <a href="#"> <img src="http://dummyimage.com/80x80/000000/fff&text=icon"> <span>名前がはいります</span> </a>
-              </li>
-            </ul>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-02.jpg"><img src="/img/gallery/thumb_gallery-02.jpg" alt=""></a>
+            </div>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-03.jpg"><img src="/img/gallery/thumb_gallery-03.jpg" alt=""></a>
+            </div>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-04.jpg"><img src="/img/gallery/thumb_gallery-04.jpg" alt=""></a>
+            </div>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-05.jpg"><img src="/img/gallery/thumb_gallery-05.jpg" alt=""></a>
+            </div>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-06.jpg"><img src="/img/gallery/thumb_gallery-06.jpg" alt=""></a>
+            </div>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-07.jpg"><img src="/img/gallery/thumb_gallery-07.jpg" alt=""></a>
+            </div>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-08.jpg"><img src="/img/gallery/thumb_gallery-08.jpg" alt=""></a>
+            </div>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-09.jpg"><img src="/img/gallery/thumb_gallery-09.jpg" alt=""></a>
+            </div>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-10.jpg"><img src="/img/gallery/thumb_gallery-10.jpg" alt=""></a>
+            </div>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-11.jpg"><img src="/img/gallery/thumb_gallery-11.jpg" alt=""></a>
+            </div>
+            <div class="picture">
+              <a href="/img/gallery/pic_gallery-12.jpg"><img src="/img/gallery/thumb_gallery-12.jpg" alt=""></a>
+            </div>
           </div>
         </div>
       </div>
@@ -108,6 +111,21 @@
     </script>
     <!--<![endif]-->
     <script src="/js/script.js"></script>
+    <script src="/libs/jquery.magnific-popup/jquery.magnific-popup.min.js"></script>
+    <script>
+      $(document).ready(function()
+      {
+        $('.picture').magnificPopup(
+        {
+          delegate: 'a',
+          type: 'image',
+          gallery:
+          {
+            enabled: true,
+          }
+        });
+      });
+    </script>
   </body>
 
 </html>

@@ -42,41 +42,74 @@
         <div class="content__header">
           <div class="container">
             <h2>Document</h2>
-            <h3>Creators' Hubについて</h3> </div>
+            <h3>各種デバイスの接続方法</h3> </div>
         </div>
         <div class="content__body container">
           <div class="row">
             <div class="content__body--right">
               <nav>
                 <ul>
-                  <li class="current"><a href="index.html">Creators' Hubについて</a>
+                  <li class="current"><a href="index.html">各種デバイスの接続方法</a>
                     <ul>
-                      <li><a href="#section1">通信プロトコル、データフォーマットの相互変換</a></li>
-                      <li><a href="#section2">Webページによる接続設定</a></li>
-                      <li><a href="#section3">データの加工</a></li>
+                      <li><a href="#section1">MIDIデバイスの接続</a></li>
+                      <li><a href="#section2">OSCアプリケーションの接続</a></li>
+                      <li><a href="#section3">JSONクライアントの接続</a></li>
                     </ul>
                   </li>
-                  <li><a href="page1.html">Quick Start</a></li>
-                  <li><a href="page2.html">変換ルール</a> </li>
-                  <li><a href="page3.html">拡張方法</a></li>
+                  <li><a href="page1.html">MIDI-OSC変換ルール</a></li>
+                  <li><a href="page2.html">MIDI-JSON変換ルール</a></li>
+                  <li><a href="page3.html">OSC-JSON変換ルール</a></li>
                 </ul>
               </nav>
             </div>
             <div class="content__body--left">
-              <section class="section"> <img src="/img/document/pic_index.jpg" alt="">
-                <p>Creators' Hubはマルチモーダルな創作活動を加速するためのソフトウェアフレームワークです。 <br> Creators' Hubは、以下の仕組みを提供するための仕様の集まりと、それを実装したサーバープログラムです。</p>
+              <section class="section">
+                <!--<img src="/img/document/pic_index.jpg" alt="">-->
+                <p>Creators' HubはMIDI・OSC・WebSocket上を流れるJSONを相互にデータ変換します。このドキュメントでは各プロトコルを実装したデバイスやアプリケーションを接続する方法を紹介します。</p>
+                <p>（注：Creators' Hubは16080ポートで動作するサーバアプリケーションです。16080ポートが使用されている場合起動できません。）</p>
               </section>
               <section id="section1" class="section">
-                <h3>通信プロトコル、データフォーマットの相互変換</h3>
-                <p>20160621現在、MIDI, rtp-MIDI, Open Sound Control, Web Socketを流れる特定形式のJSON, 等のメッセージを受け取り、ユーザー指定の出力先に対して適切なプロトコル/データフォーマットで送信する。</p>
+                <h3>MIDIデバイスの接続</h3>
+                <p>MIDIデバイス（MIDIを実装した電子楽器やMIDIコントローラー等）を接続すると、自動的にリストアップされます。マトリクスの縦方向が入力ポート、横方向が出力ポートです。下の画像はコンピュータにシンセサイザーreface DXを接続した時の表示です。</p>
+                <img src="/img/document/add_midi_dev.png" alt="connection">
+                <p>Creators' Hubには入力されたデータをモニタする機能があります。「このページをJSONクライアントとして追加する」の「参加」ボタンを押すとマトリクスに「json> monitor」が追加されます。</p>
+                <img src="/img/document/join_json.png" alt="join monitor">
+                <p>最初に接続したMIDIデバイス（reface DX）の入力とjson> monitorの出力を接続します。マトリクス状で交点をクリックするとConnectedと表示されます。</p>
+                <img src="/img/document/connect_to_monitor.png" alt="join monitor">
+                <p>この状態でMIDIデバイスを操作するとJSON化されたMIDIデータがモニタ欄に表示されます。</p>
+                <img src="/img/document/monitoring.png" alt="monitoring">
+
+                <p>以上の例では物理デバイスを接続しましたが、Creators' Hubはこの他に仮想MIDIポート、RTP-MIDIを追加できます。</p>
               </section>
               <section id="section2" class="section">
-                <h3>Webページによる接続設定</h3>
-                <p>Creators' Hubに接続しているどの入力からどの出力へメッセージを引き渡すかをWebブラウザから設定することができる。</p>
+                <h3>OSCアプリケーションの接続</h3>
+                <p>Cereators' Hubに同梱のサンプルアプリケーションを用いてOSCの接続方法を紹介します。</p>
+                <p>はじめにexample/bin内のoscSequencerを実行して下さい。oscSequencerは3音のnoteOn, noteOffをOSC形式で送出するシーケンサです。</p>
+                <p>oscSequencerはn番ポートにOSCを送信するので、Creators' Hub上でoscSequencerからのOSCを受信するため受信ポートを追加します。</p>
+                <p>MIDIデバイスの接続で追加したモニタに接続してみるとメッセージが届いていることを確認できます。MIDI楽器を接続している場合はその楽器と接続すると発音されるはずです。</p>
+                <p>つぎにexample/bin内のnoteSampleを実行して下さい。noteSampleはOSC形式でnoteOnを受信すると画面上に円を描画します。</p>
+                <p>noteSampleはm番ポートでOSCを受信するので、Crators' Hub上で送信ポートを追加します。</p>
+                <p>oscSequencerからnoteSampleに接続すると、シーケンサの発音タイミングでnoteSample上に円が表示されます。</p>
               </section>
               <section id="section3" class="section">
-                <h3>データの加工</h3>
-                <p>簡単なJavaScriptを書くことで、ある入力からある出力に送るメッセージを加工することができる。</p>
+                <h3>JSONクライアントの接続</h3>
+                <p>Cereators' HubはWebSocket上を流れるJSONをMIDI,OSCに変換できます。同梱のサンプルアプリケーションを用いてJSONクライアントの接続方法を紹介します。サンプルではsocket.ioを利用しています。</p>
+                <p>example/webApp内のindex.htmlをブラウザで実行して下さい。Creators' Hubのリストにjson>webAppExampleが追加されます。これはsocket.ioを利用してCreators' Hubに接続後、join_as_wsjsonというメッセージを送信することでリストに追加する仕様になっているためです。
+                  <div class="codeBox">
+                    <pre><code>var gSocket = io.connect('http://localhost:16080');
+gSocket.on("connect", function() {
+  gSocket.emit('join_as_wsjson', {name: 'webAppExample'});
+});</code></pre>
+                  </div>
+                </p>
+                <p>
+                  <a href="#section1">MIDIデバイスの接続</a>で追加したjson> monitorと接続します。</p>
+                <img src="/img/document/json_connect.png" alt="monitoring">
+                <p>index.htmlのClick!!ボタンをクリックします。</p>
+                <img src="/img/document/webappui.png" alt="monitoring">
+                <p>Crators' Hubのモニタ画面にJSON形式のNote Onメッセージが表示されます。
+              </p>
+              <img src="/img/document/json_monitor.png" alt="monitoring">
               </section>
             </div>
           </div>

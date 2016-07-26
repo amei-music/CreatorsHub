@@ -32,7 +32,6 @@ class Tile {
   }
   
   void update() {
-    float speed = 1.1;
     color target;
     if (isOn) {
         target = onColor;

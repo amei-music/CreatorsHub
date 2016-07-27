@@ -1,6 +1,9 @@
 /**
-* Example for mw1
+* Example for Creators' Hub
 * Need oscP5
+* Note On -> Circle
+* Control Change -> Background color
+* OSC Receive Port 24080
 */
 import oscP5.*;
 
@@ -85,29 +88,6 @@ void incrementIndex() {
   if (index >= circles.length) {
     index = 0;
   }
-}
-
-/**
-* @brief keyPressed emulate note on
-*/
-void keyPressed() {
-  println("key pressed");
-  int ch = 0;
-  int controlNum = (int)random(128);
-  int velocity = (int)random(128);
-  
-  noteOn(ch, controlNum, velocity);
-}
-
-/**
-* @brief mouse drag emulates control change
-*/
-void mouseDragged() {
-  float v = (float)mouseX / width;
-  int ch = 0;
-  int num = 0;
-  int val = (int)(v * 128.0);
-  controlChange(ch, num, val);
 }
 
 void drawInfo() {

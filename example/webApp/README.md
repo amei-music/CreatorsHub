@@ -1,16 +1,15 @@
-# About Examples
+# Exampleについて
 
-Simple examples html page that connects to mw1 and sends simple messages.
+Creators' Hubに繋いで簡単なメッセージを送るHTMLページです。
 
-1. Make sure mw1 program running.
-2. Open "index.html" in this folder on your web browser.
-3. In the mw1 window, connect the input named "webAppExample" to some outputs.
-4. In the "index.html" browser window, press the example button and move the example slider.
+1. Creators' Hubを起動してください。
+2. このフォルダ内のindex.htmlをブラウザで開いてください。
+3. ハブ接続画面内で"webAppExample"という名前のインプットを何かしらのアウトプットに繋いでください。
+4. index.html上で、ボタンを押したり、スライダーを動かしたりしてください。
 
-## contents
 
-- Button Example: Send a midi formatted noteon message ('/midi/noteon') to the mw1 when push the button.
+## 各Exampleについて
 
-- Slider Example: Send a midi formatted controlchange message ('/midi/controlchange') to the mw1 when move the slider.
-
-- Receive Example: Receive any message from the mw1.
+- Button Example：ボタンを押すと、ノートオンメッセージ('/midi/noteon')がCreators' Hubに送られます。
+- Slider Example：スライダーを動かすと、コントロールチェンジ('/midi/controlchange')がCreators' Hubに送られます。
+- Receive Example：Creators' Hubからメッセージを受けます。

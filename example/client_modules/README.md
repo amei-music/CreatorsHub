@@ -1,16 +1,18 @@
-# Creators'Hubモジュールサンプル
+# Creators' Hubモジュールサンプル
 
-## 概要
-空のCreators'Hubモジュールです
+Creators' HubはMIDI、OSC、JSON等プロトコルの実装を「モジュール」という単位で作成しています。
+モジュールの仕様に沿って実装することで対応するプロトコルを増やすことが出来ます。詳細仕様はprg/doc_devのmodules.mdを参照して下さい。
 
-## テスト方法
+clientSampleは空のモジュールを作成するサンプルになっています。
+
+## 作成したモジュールを追加する方法
 1. 環境変数 CREATORS_HUB_MODULES に、ここのディレクトリを設定する
 (例)
 ```
-    $ export CREATORS_HUB_MODULES=~foo/bar/example/client_modules/
+    $ export CREATORS_HUB_MODULES=PATH_TO/example/client_modules/
 ```
     - これにより client_modules 以下にあるモジュールがロード対象になる
-    
+
 2. Creators'Hubサーバーを起動
 ```
     $ node server

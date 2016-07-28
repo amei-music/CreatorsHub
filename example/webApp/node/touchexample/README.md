@@ -23,7 +23,10 @@ socket.emit('join_as_wsjson', {name: 'Touch Example'});
 
 ## MIDIメッセージの送信
 
-join_as_wsjsonで接続したソケットを使用してmessage_jsonを送信する。パラメータとして以下の要領でMIDIライクなデータを送信する。
+join_as_wsjsonで接続したソケットを使用してmessage_jsonを送信する。変換ルールは[MIDI-JSON 変換ルール](../../../../doc/midi-json.md)を参照。
+
+
+### 送信例
 
 ```js
 var ch = 1;
@@ -34,11 +37,3 @@ var msg = {address:'/midi/noteon', args: noteArg};
 
 socket.emit('message_json', msg);
 ```
-
-| MIDI | address | args |
-|:-----------|:------------|:------------|
-| Note On      | /midi/noteon | [channel, note number, velocity]     |
-| Note Off    | /midi/noteoff | [channel, note number, velocity] |
-| Control Change  | /midi/controlchange | [control number, value] |
-
-※その他のメッセージについては後日追記します

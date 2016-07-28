@@ -35,7 +35,7 @@ IN（縦列）とOUT（横列）の交点をクリックして、入力と出力
 
 ## リポジトリのフォルダ構成
 
-- deploy --- 配布用zip生成コマンド
+- deploy --- githubpagesで配布するzip生成コマンド
 - doc --- ドキュメント
 - example --- Creators' Hubと接続するサンプルアプリケーション
 - prg --- ソースコード

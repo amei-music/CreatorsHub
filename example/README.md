@@ -1,5 +1,7 @@
 # exampleのフォルダ構成
 
+## 接続用サンプル
+
 以下はCretors' Hubを介して音・映像・ウェブアプリを接続するサンプルです。
 
 - [sound](./sound) --- 音源サンプルプログラム
@@ -15,6 +17,8 @@
   - [node](./webApp/node) --- node.jsで書かれたサンプル群
     - [touchexample](./webApp/node/touchexample) --- タップすると発音情報が送信されるクライアント・サーバーアプリ
   - [index.html](./webApp) --- Socket.ioでCreators' Hubに接続するプログラム
+
+## 拡張及びテストコード
 
 以下はCreators' Hub用の便利スクリプト、拡張方法、接続テストコードです。
 

@@ -7,10 +7,10 @@
 - [sound](./sound) --- 音源サンプルプログラム
   - [webAudioAPI](./sound/webAudioAPI) --- WebAudioAPIを用いたシンセプログラム
 - [visualize](./visualize) --- ビジュアライズサンプルプログラム
-  - [oF](./oF) --- openFrameworksで書かれたサンプル
+  - [oF](./visualize/oF) --- openFrameworksで書かれたサンプル
     - [noteSample](./oF/noteSample) --- 音に合わせて円が表示されるサンプル
     - [oscSequencer](./oF/oscSequencer) --- ステップシーケンサーサンプル
-  - [p5](./p5) --- Processingで書かれたサンプル
+  - [p5](./visualize/p5) --- Processingで書かれたサンプル
     - [noteSample](./p5/noteSample) --- 音に合わせて円が表示されるサンプル
     - [oscSequencer](./p5/oscSequencer) --- ステップシーケンサーサンプル
 - [webApp](./webApp) --- ウェブページ、ウェブアプリ

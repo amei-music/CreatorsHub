@@ -42,7 +42,7 @@ IN（縦列）とOUT（横列）の交点をクリックして、入力と出力
 
 ## ソースコード/変換ルールの検討方法
 
-### ソースコード
+### ソースコードへの機能追加
 
 Creators' Hubは[Git-flow](http://nvie.com/posts/a-successful-git-branching-model/)にしたがってブランチを管理しています。以下の手順で機能ごとにソースコードを書いてPull Requestをつくってください。
 
@@ -52,7 +52,7 @@ Creators' Hubは[Git-flow](http://nvie.com/posts/a-successful-git-branching-mode
 4. フィーチャーブランチをプッシュする
 5. Pull Requestを出す
 
-### プロトコル間の変換ルール
+### プロトコル間の変換ルールの検討
 
 既存のIssueを確認し、議題が無い場合は新たなIssueを追加します。
 

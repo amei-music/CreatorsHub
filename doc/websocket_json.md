@@ -6,18 +6,13 @@ Socket.ioを用いて接続します。
 - ネットワークから離脱する: "exit_wsjson"
 - JSONメッセージを受信する: "message_json"
 
-join_as_wsjsonを送信する。パラメータとしてnameを送るとその名前でCreators' Hub上に出現する。
-
-# 送れるメッセージの定義
-以下の形式を満たすJSONをmessge_jsonで送信すると、ハブは受け取ることができる。
-
-```
-{address:'/midi/noteon', args: noteArg}
-```
-
-- argsにオブジェクト型を使う場合
-- argsに入れらる型: int, float, array int, string, array of float, object
+join_as_wsjsonを送信します。パラメータとしてnameを送るとその名前でCreators' Hub上に出現します。
 
 ```
 socket.emit('join_as_wsjson', {name: 'Touch Example'});
 ```
+
+# 送れるメッセージ
+
+- [midi-json.md](./midi-json.md) --- MIDI-JSON変換ルール
+- [osc-json.md](./osc-json.md) --- OSC-JSON変換ルール

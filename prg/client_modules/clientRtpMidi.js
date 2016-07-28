@@ -37,7 +37,7 @@ module.exports = {
 // RtpMidi
 var g_rtpSession = rtpmidi.manager.createSession({
   localName: 'Session 1',
-  bonjourName: 'FM_MW1',
+  bonjourName: 'CreatorsHub',
   port: 5008
 });
 

@@ -10,7 +10,7 @@ var fs          = require('fs');
 
 //ホームディレクトリに設定ファイルを保存
 var dirHome = process.env[process.platform == "win32" ? "USERPROFILE" : "HOME"];
-var SETTING_FILE = dirHome + "/fm_mw1_setting.json";
+var SETTING_FILE = dirHome + "/creatorshub_setting.json";
 
 //==============================================================================
 // プロトコルに依存しないクライアント一覧, コネクション設定に関する部分

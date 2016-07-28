@@ -1,4 +1,4 @@
-# Exampleについて
+# WebAppのサンプルコード使用方法
 
 Creators' Hubに繋いで簡単なメッセージを送るHTMLページです。
 

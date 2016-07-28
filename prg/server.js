@@ -1,5 +1,4 @@
 /****************************************************************************
-Copyright (c) 2015-2016 Yamaha Corporation
 
   license: MIT (see LICENSE file included in the distribution)
 

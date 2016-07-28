@@ -31,7 +31,7 @@ IN（縦列）とOUT（横列）の交点をクリックして、入力と出力
 - Open Sound Control
 - JSON(Web Socketを流れる特定形式のJSON)
 
-変換ルールは[]()をご確認下さい。
+変換ルールは[Document](doc/README.md)よりご確認下さい。
 
 ## リポジトリのフォルダ構成
 

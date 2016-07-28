@@ -19,9 +19,9 @@ node server.js
 
 ![screenshot](doc/screenshot.png)
 
-IN（縦列）とOUT（横列）の交点をクリックして、入力と出力をつなぎます。入力から出力へのフォーマット変換は自動で実行されます。現在の変換ルールは[]()で確認できます。
+IN（縦列）とOUT（横列）の交点をクリックして、入力と出力をつなぎます。入力から出力へのフォーマット変換は自動で実行されます。変換ルールは[doc/README](doc/README.md)で確認できます。
 
-デバイスやアプリケーションの接続方法は[]()をご覧ください。
+デバイスやアプリケーションの接続方法は[doc/connect](doc/connect.md)をご覧ください。
 
 ### 対応プロトコル
 
@@ -31,7 +31,7 @@ IN（縦列）とOUT（横列）の交点をクリックして、入力と出力
 - Open Sound Control
 - JSON(Web Socketを流れる特定形式のJSON)
 
-変換ルールは[Document](doc/README.md)よりご確認下さい。
+変換ルールは[doc/README](doc/README.md)よりご確認下さい。
 
 ## リポジトリのフォルダ構成
 

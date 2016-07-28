@@ -1,5 +1,12 @@
 # processingのサンプルコード使用方法
 
+Creators' Hubを介して、ビジュアルアプリケーションを動かすサンプルです。
+
+Creators' Hubの起動方法は以下をご確認下さい
+
+- [アプリケーション形式の起動](https://amei-music.github.io/CreatorsHub/document/)（https://amei-music.github.io/CreatorsHub/ からDownloadした場合）
+- [ターミナルから起動](../../../README.md)（githubからソースコードをcloneした場合）
+
 ## noteSampleの起動
 1. あらかじめ[Processing3](https://processing.org/)をインストールしておく
 2. noteSample/noteSample.pdeをProcessing3で開く

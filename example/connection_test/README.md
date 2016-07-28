@@ -6,10 +6,10 @@ Creators'Hubサーバーへの接続を行うサンプルプログラム
 
 2. ブラウザで以下のファイルを開く
     - １台のPC上で実行する場合
-        - file:///foo/bar/public_mw1/connection_test/index.html
-        - localhost:16080 に接続します 
+        - file:///PATH_TO/CreatorsHub/example/connection_test/index.html
+        - localhost:16080 に接続します
     - サーバがlocalhost以外の場合
-        - file:///foo/bar/public_mw1/connection_test/index.html?server=xxx.xxx.xxx.xxx:16080
+        - file:///PATH_TO/CreatorsHub/example/connection_test/index.html?server=xxx.xxx.xxx.xxx:16080
         - ?server=ホスト:ポート で指定
 
 ## ボタンの説明
@@ -28,14 +28,14 @@ Creators'Hubサーバーへの接続を行うサンプルプログラム
 - Send NoteOn as JSON
 	- JSONポートのINにNoteOnメッセージを送信
     - 参照→ sendNoteOnAsJSON()
-    
+
     - Send Periodic
         - 繰り返し送信を開始
         - 参照→ sendPeriodicStart()
     - Stop
         - 繰り返し送信を停止
         - 参照→ sendPeriodicStop()
-    
+
 - Disconnect User Clients
     - 入出力ポート間の接続をすべて切る
     - 参照→ disconnectUserClients()
@@ -43,16 +43,16 @@ Creators'Hubサーバーへの接続を行うサンプルプログラム
 - Remove User Clients
     - Creators'Hubサーバーの入出力ポートをまとめて削除
     - 参照→ removeUserClients()
-    
+
 - Add User Clients
     - Creators'Hubサーバーに入出力ポートを作成（例）
     - 参照→ addUserClients()
-    
+
 - Connect User Clients
     - 入出力ポート間の接続を行う（例）
     - 参照→ connectUserClients()
 
-## connection_test.js 
+## connection_test.js
 
 - Creators'Hubサーバーとの接続と初期化については init() を参照
 ``` javascript

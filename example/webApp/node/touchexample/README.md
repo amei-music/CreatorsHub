@@ -11,7 +11,7 @@ node app.js
 
 # プログラム解説
 
-## MW1への接続
+## Creators' Hubへの接続
 
 join_as_wsjsonを送信する。パラメータとしてnameを送るとその名前でMW1上に出現する。MIDI音源に接続し、操作を行うと発音する。
 

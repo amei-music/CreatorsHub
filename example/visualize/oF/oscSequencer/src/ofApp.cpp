@@ -6,7 +6,7 @@ static const int PORT = 12345;
 //--------------------------------------------------------------
 void ofApp::setup(){
     sender.setup("localhost", PORT);
-    
+
     initPosition();
 
     startsec = ofGetElapsedTimef();
@@ -28,7 +28,7 @@ void ofApp::draw(){
     float totaltime = sequences.at(0).size() * spb / 4.0;
     float rate = fmod(elapsed, totaltime) / totaltime;
     float linex = (endx - startx) * rate + startx;
-    
+
     ofBackground(0);
     drawInfo();
 
@@ -54,7 +54,7 @@ void ofApp::draw(){
         }
         ++sequence_index;
     }
-    
+
     ofSetColor(ofColor::red);
     ofPoint s(linex, liney);
     ofPoint e(linex, liney + linelen);
@@ -84,7 +84,7 @@ void ofApp::mouseDragged(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    
+
 }
 
 //--------------------------------------------------------------
@@ -113,7 +113,7 @@ void ofApp::gotMessage(ofMessage msg){
 }
 
 //--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
+void ofApp::dragEvent(ofDragInfo dragInfo){
 
 }
 
@@ -141,7 +141,7 @@ void ofApp::initPosition() {
     float grid = 1.0f;
     float hmargin = (ofGetWidth() - (len * sequences.at(0).size() + grid * (sequences.at(0).size()-1))) / 2.0;
     float vmargin = (ofGetHeight() -  len * 5 - grid * 4)/2.0;
-    
+
     int vindex = 0;
     for (auto &sequence :sequences) {
         int hindex = 0;
@@ -156,7 +156,7 @@ void ofApp::initPosition() {
         }
         ++vindex;
     }
-    
+
     startx = hmargin;
     endx = hmargin + len * sequences.at(0).size() + (grid * sequences.at(0).size()-1);
     liney = vmargin;
@@ -168,31 +168,31 @@ void ofApp::drawInfo() {
     ofTranslate(0,20);
     ofSetColor(255);
     float fps = ofGetFrameRate();
-    
+
     std::stringstream ss;
     ss << "FPS=" << fps;
-    
+
     std::stringstream oscss;
     oscss << "OSC send port=" << PORT;
-    
-    std::string separator = "MW1 settings";
+
+    std::string separator = "Creators' Hub settings";
     std::string mw1setting = "Add OSC receive - port:" + std::to_string(PORT);
     std::string mw1connection = "Connect localhost:" + std::to_string(PORT) + " to MIDI sound source";
-    
-    
+
+
     int ypos = 10;
     int gap = 15;
     ofDrawBitmapString(ss.str().c_str(), 10, ypos);
-    
+
     ypos += gap;
     ofDrawBitmapString(oscss.str().c_str(), 10, ypos);
-        
+
     ypos += gap;
     ofDrawBitmapString(separator, 10, ypos);
     ypos += gap;
     ofDrawBitmapString(mw1setting, 10, ypos);
     ypos += gap;
     ofDrawBitmapString(mw1connection, 10, ypos);
-    
+
     ofPopMatrix();
 }

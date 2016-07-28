@@ -1,10 +1,12 @@
-# mw1にWebSocket+JSONで接続する際のメッセージルール
+# Creators' HubにWebSocket+JSONでクライアントを接続する際のメッセージルール
+
+Socket.ioを用いて接続します。
 
 - wsjsonクライアントとしてネットワークに参加する: "join_as_wsjson"
 - ネットワークから離脱する: "exit_wsjson"
 - JSONメッセージを受信する: "message_json"
 
-join_as_wsjsonを送信する。パラメータとしてnameを送るとその名前でMW1上に出現する。MIDI音源に接続し、操作を行うと発音する。
+join_as_wsjsonを送信する。パラメータとしてnameを送るとその名前でCreators' Hub上に出現する。
 
 # 送れるメッセージの定義
 以下の形式を満たすJSONをmessge_jsonで送信すると、ハブは受け取ることができる。

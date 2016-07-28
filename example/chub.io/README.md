@@ -1,8 +1,9 @@
 # chub.io.js
 
-WebAppからCreators'Hubサーバーに接続するためのスクリプト
+Creators'Hubサーバーへの接続を簡易化するスクリプト。
+index.htmlが具体的な使い方を示すサンプルプログラムとなっています。
 
-## WebAppからの使い方
+## 使い方
 
 1. HTMLの"socket.io.js"読む箇所を次のように書き換える
 ```
@@ -18,21 +19,21 @@ WebAppからCreators'Hubサーバーに接続するためのスクリプト
     }
 ```
 
-3. ソケットへのコネクション 
+3. ソケットへのコネクション
 ``` javascript
     var socket = chub.connect();
 ```
     - 内部は io.connect を行う
     - サーバーのアドレスを指定しなければ localhost:16080 に接続される
 
-## WebAppの実行方法
+## 実行方法
 
 1. サーバーのアドレスを指定しない場合
 ```
     file:/// ... /index.html
 ```
     - localhost:16080 に接続します
-     
+
 2. サーバのアドレスを指定する場合
 ```
     file:/// ... /index.html?server=xxx.xxx.xxx.xxx:16080
@@ -64,4 +65,4 @@ index.html
         foo:    "bar"
     }
 ```
-のようになっており、WebApp内でも使用可能
+のようになっており、chub.io.jsを読み込んでいるプログラムからも使用可能。

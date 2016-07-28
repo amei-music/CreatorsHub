@@ -4,8 +4,8 @@ Creators' Hubを介して、ビジュアルアプリケーションを動かす�
 
 Creators' Hubの起動方法は以下をご確認下さい
 
-- [アプリケーション形式の起動](../../../README.md)（https://amei-music.github.io/CreatorsHub/ からDownloadした場合）
-- [ターミナルから起動](https://amei-music.github.io/CreatorsHub/document/)（githubからソースコードをcloneした場合）
+- [アプリケーション形式の起動](https://amei-music.github.io/CreatorsHub/document/)（https://amei-music.github.io/CreatorsHub/ からDownloadした場合）
+- [ターミナルから起動](../../../README.md)（githubからソースコードをcloneした場合）
 
 ## 共通のセットアップ
 

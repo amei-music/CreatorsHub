@@ -1,6 +1,6 @@
 {
   "name": "CreatorsHub",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "Toolkit for making multi-modal performance, interoperating multiple messaging protocol such as MIDI, OSC, WebSocket, etc.",
 
   "//": "entry point for npm start",

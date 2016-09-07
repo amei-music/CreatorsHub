@@ -26,7 +26,7 @@ function ServerHost(){ return{
   modules: {},  // クライアントモジュール
   documents: [],
   serverAddress: undefined,
-                
+
   g_httpApp: undefined,
   g_server: undefined,
   g_io: undefined,
@@ -52,7 +52,7 @@ function ServerHost(){ return{
       console.log("appendModule: " + name + " not found.");
     }
   },
-  
+
   appendModulesInDir : function(dir){
     // search files in dir.
     fs.readdir(dir, function (err, files) {
@@ -129,18 +129,18 @@ function ServerHost(){ return{
         this.clients.deliver(id, obj);
       }.bind(this),
       sendMessageTo : function(id, msg, obj){
-        this.g_io.to(id).emit(msg, obj);                
+        this.g_io.to(id).emit(msg, obj);
       }.bind(this),
       sendWebAppMessage : function(msg, obj){
-        this.g_io.sockets.emit(msg, obj);                
+        this.g_io.sockets.emit(msg, obj);
       }.bind(this),
     };
   },
-  
+
   // 初期化
   init : function(){
     this.openWebSocket();
-    
+
     var settings = this.clients.loadSettings();
     for(var i in settings.userInputs){
        this.open_input({}, {type: settings.userInputs[i].type, name: settings.userInputs[i].name});
@@ -152,7 +152,7 @@ function ServerHost(){ return{
     this.clients.connections = settings.connections;
     this.clients.updateConnectionsById();
     this.update_list(); // ネットワーク更新
-    
+
     //this.openDevices();
   },
 
@@ -253,7 +253,7 @@ function ServerHost(){ return{
     this.g_io.sockets.emit("test_modules", result);
     return result;
   },
-  
+
   // wsjsonクライアントとしてネットワークに参加する
   join_as_wsjson : function(socket, param) {
     var obj = {
@@ -286,7 +286,7 @@ function ServerHost(){ return{
   },
 
   //------------------
-  // 
+  //
 
   //  - このサーバーの受信ポートを作成する
   open_input : function(socket, obj, owner) {
@@ -362,7 +362,7 @@ function ServerHost(){ return{
   },
 
   //------------------
-  
+
   openWebSocket : function(){
     this.g_httpApp= connect();
     this.g_httpApp.use(serveStatic(PUBLIC_DIR));

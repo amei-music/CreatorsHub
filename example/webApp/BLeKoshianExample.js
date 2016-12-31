@@ -1,10 +1,12 @@
 // 2016.12/18
-// This example to use Konashi with Bluetooth LE
-// Datas form GPIO of Konashi via BLE to Creators' Hub via Websocket 
+// This example to use Koshian with Bluetooth LE
+// Koshian is a compatible module of Konashi
+// Datas form GPIO of Koshian via BLE to Creators' Hub via Websocket 
 // http://konashi.ux-xu.com/documents/
+// http://www.m-pression.com/ja/solutions/boards/koshian
 // You need install following two modules
-// npm install noble
-// npm install socket.io-client
+// > npm install noble
+// > npm install socket.io-client
 // Special Thanks for http://www.1ft-seabass.jp/memo/2015/12/17/nodejs-noble-konashi-connect/
 //
 
@@ -13,32 +15,32 @@ var noble = require('noble');
 // ----------------------------------------------------------------------------
 // To connect Bluetooth LE
 //
-// KONASHI自体のサービスID
-var KONASHI_SERVICE_UUID = '229bff0003fb40da98a7b0def65c2d4b';
+// Koshian自体のサービスID
+var KOSHIAN_SERVICE_UUID 					= '229bff0003fb40da98a7b0def65c2d4b';
 
 // 操作したいpinのID
-var KONASHI_PIO_SETTING_PINID    			= '229b300003fb40da98a7b0def65c2d4b';
-var KONASHI_PIO_PULLUP_PINID     			= '229b300103fb40da98a7b0def65c2d4b'
-var KONASHI_PIO_OUTPUT_PINID     			= '229b300203fb40da98a7b0def65c2d4b';
-var KONASHI_PIO_INPUT_NORTIFICATION_PINID	= '229b300303fb40da98a7b0def65c2d4b';
+var KOSHIAN_PIO_SETTING_PINID    			= '229b300003fb40da98a7b0def65c2d4b';
+var KOSHIAN_PIO_PULLUP_PINID     			= '229b300103fb40da98a7b0def65c2d4b'
+var KOSHIAN_PIO_OUTPUT_PINID     			= '229b300203fb40da98a7b0def65c2d4b';
+var KOSHIAN_PIO_INPUT_NORTIFICATION_PINID	= '229b300303fb40da98a7b0def65c2d4b';
 
-var KONASHI_PWM_CONFIG_PINID				= '229b300403fb40da98a7b0def65c2d4b';
-var KONASHI_PWM_PARAMETER_PINID				= '229b300503fb40da98a7b0def65c2d4b';
-var KONASHI_PWM_DUTY_PINID					= '229b300603fb40da98a7b0def65c2d4b';
+var KOSHIAN_PWM_CONFIG_PINID				= '229b300403fb40da98a7b0def65c2d4b';
+var KOSHIAN_PWM_PARAMETER_PINID				= '229b300503fb40da98a7b0def65c2d4b';
+var KOSHIAN_PWM_DUTY_PINID					= '229b300603fb40da98a7b0def65c2d4b';
 
-var KONASHI_ANALOG_DRIVE_PINID   			= '229b300703fb40da98a7b0def65c2d4b';
-var KONASHI_ANALOG_READ0_PINID   			= '229b300803fb40da98a7b0def65c2d4b';
-var KONASHI_ANALOG_READ1_PINID   			= '229b300903fb40da98a7b0def65c2d4b';
-var KONASHI_ANALOG_READ2_PINID   			= '229b300a03fb40da98a7b0def65c2d4b';
+var KOSHIAN_ANALOG_DRIVE_PINID   			= '229b300703fb40da98a7b0def65c2d4b';
+var KOSHIAN_ANALOG_READ0_PINID   			= '229b300803fb40da98a7b0def65c2d4b';
+var KOSHIAN_ANALOG_READ1_PINID   			= '229b300903fb40da98a7b0def65c2d4b';
+var KOSHIAN_ANALOG_READ2_PINID   			= '229b300a03fb40da98a7b0def65c2d4b';
 
 // 各CHARACTERISTICSをUUIDから判断してcharacteristic格納する変数
-var KONASHI_CHARACTERISTICS_ANALOG_READ0;
-var KONASHI_CHARACTERISTICS_ANALOG_READ1;
-var KONASHI_CHARACTERISTICS_ANALOG_READ2;
+var KOSHIAN_CHARACTERISTICS_ANALOG_READ0;
+var KOSHIAN_CHARACTERISTICS_ANALOG_READ1;
+var KOSHIAN_CHARACTERISTICS_ANALOG_READ2;
 
-var KONASHI_CHARACTERISTICS_PIO_SETTINGS;
-var KONASHI_CHARACTERISTICS_PIO_OUTPUT;
-var KONASHI_CHARACTERISTICS_PIO_INPUT;
+var KOSHIAN_CHARACTERISTICS_PIO_SETTINGS;
+var KOSHIAN_CHARACTERISTICS_PIO_OUTPUT;
+var KOSHIAN_CHARACTERISTICS_PIO_INPUT;
 
 // スイッチ、アナログバリューのバッファー
 var mPIO_0=0;
@@ -76,12 +78,12 @@ noble.on('discover', function(peripheral) {
     // まずスキャンをとめる
 	noble.stopScanning();
  
-	// KONASHI接続時のイベント
+	// KOSHIAN接続時のイベント
 	peripheral.on('connect', function() {
 		console.log('on -> connect');
 		this.discoverServices();
 	});
-	// KONASHI切断時のイベント
+	// KOSHIAN切断時のイベント
 	peripheral.on('disconnect', function() {
 		console.log('on -> disconnect');
 	});
@@ -93,9 +95,9 @@ noble.on('discover', function(peripheral) {
 
 		for(i = 0; i < services.length; i++) {
  
-			// サービスがKONASHI_SERVICE_UUIDと一致した時だけ処理
-			if(services[i]['uuid'] == KONASHI_SERVICE_UUID){
-				console.log('on -> find KONASHI ' + i);
+			// サービスがKOSHIAN_SERVICE_UUIDと一致した時だけ処理
+			if(services[i]['uuid'] == KOSHIAN_SERVICE_UUID){
+				console.log('on -> find KOSHIAN ' + i);
  
 				// サービスのcharacteristic捜索
 				services[i].on('includedServicesDiscover', function(includedServiceUuids) {
@@ -109,38 +111,38 @@ noble.on('discover', function(peripheral) {
 				// characteristics配列から必要なCHARACTERISTICSをUUIDから判断してcharacteristic格納
 				for(j = 0; j < characteristics.length; j++) {
 					// アナログ入力 characteristic
-					if( KONASHI_ANALOG_READ0_PINID == characteristics[j].uuid ){
-						console.log("KONASHI_CHARACTERISTICS_ANALOG_READ exist!!");
-						KONASHI_CHARACTERISTICS_ANALOG_READ0 = characteristics[j];
+					if( KOSHIAN_ANALOG_READ0_PINID == characteristics[j].uuid ){
+						console.log("KOSHIAN_CHARACTERISTICS_ANALOG_READ exist!!");
+						KOSHIAN_CHARACTERISTICS_ANALOG_READ0 = characteristics[j];
 					}
-					if( KONASHI_ANALOG_READ1_PINID == characteristics[j].uuid ){
-						console.log("KONASHI_CHARACTERISTICS_ANALOG_READ exist!!");
-						KONASHI_CHARACTERISTICS_ANALOG_READ1 = characteristics[j];
+					if( KOSHIAN_ANALOG_READ1_PINID == characteristics[j].uuid ){
+						console.log("KOSHIAN_CHARACTERISTICS_ANALOG_READ exist!!");
+						KOSHIAN_CHARACTERISTICS_ANALOG_READ1 = characteristics[j];
 					}
 					
-					if( KONASHI_ANALOG_READ2_PINID == characteristics[j].uuid ){
-						console.log("KONASHI_CHARACTERISTICS_ANALOG_READ exist!!");
-						KONASHI_CHARACTERISTICS_ANALOG_READ2 = characteristics[j];
+					if( KOSHIAN_ANALOG_READ2_PINID == characteristics[j].uuid ){
+						console.log("KOSHIAN_CHARACTERISTICS_ANALOG_READ exist!!");
+						KOSHIAN_CHARACTERISTICS_ANALOG_READ2 = characteristics[j];
  					}
 
 						// PIO設定 characteristic
-					if( KONASHI_PIO_SETTING_PINID == characteristics[j].uuid ){
-						console.log("KONASHI_PIO_SETTING_PINID exist!!");
-						KONASHI_CHARACTERISTICS_PIO_SETTINGS = characteristics[j];
+					if( KOSHIAN_PIO_SETTING_PINID == characteristics[j].uuid ){
+						console.log("KOSHIAN_PIO_SETTING_PINID exist!!");
+						KOSHIAN_CHARACTERISTICS_PIO_SETTINGS = characteristics[j];
 						// PIO0, PIO1 を入力、その他を出力に設定
-						KONASHI_CHARACTERISTICS_PIO_SETTINGS.write(new Buffer([0b11111100]), true);
+						KOSHIAN_CHARACTERISTICS_PIO_SETTINGS.write(new Buffer([0b11111100]), true);
 					}
 
                         // デジタル出力 characteristic
-					if( KONASHI_PIO_OUTPUT_PINID == characteristics[j].uuid ){
-						console.log("KONASHI_PIO_OUTPUT_PINID exist!!");
-						KONASHI_CHARACTERISTICS_PIO_OUTPUT = characteristics[j];
+					if( KOSHIAN_PIO_OUTPUT_PINID == characteristics[j].uuid ){
+						console.log("KOSHIAN_PIO_OUTPUT_PINID exist!!");
+						KOSHIAN_CHARACTERISTICS_PIO_OUTPUT = characteristics[j];
 					}
 
 						// デジタル入力  characteristic
-					if( KONASHI_PIO_INPUT_NORTIFICATION_PINID == characteristics[j].uuid ){
-						 console.log("KONASHI_PIO_INPUT_PINID exist!!");
-						KONASHI_CHARACTERISTICS_PIO_INPUT = characteristics[j];
+					if( KOSHIAN_PIO_INPUT_NORTIFICATION_PINID == characteristics[j].uuid ){
+						 console.log("KOSHIAN_PIO_INPUT_PINID exist!!");
+						KOSHIAN_CHARACTERISTICS_PIO_INPUT = characteristics[j];
 					}
 				}
  
@@ -149,10 +151,10 @@ noble.on('discover', function(peripheral) {
 					// DEGITAL OUTPUT PIO5
 					if(led_toggle){
 						// LED ON console.log("LED ON");
-						KONASHI_CHARACTERISTICS_PIO_OUTPUT.write(new Buffer([0b00100000]), true);
+						KOSHIAN_CHARACTERISTICS_PIO_OUTPUT.write(new Buffer([0b00100000]), true);
 					} else {
 						// LED OFF console.log("LED OFF");
-						KONASHI_CHARACTERISTICS_PIO_OUTPUT.write(new Buffer([0b00000000]), true);
+						KOSHIAN_CHARACTERISTICS_PIO_OUTPUT.write(new Buffer([0b00000000]), true);
 					}
 					 // LED ON/OFFの反転
 					led_toggle = !led_toggle;
@@ -161,7 +163,7 @@ noble.on('discover', function(peripheral) {
 				// スイッチ、ボリュームの読み込み
 				setInterval(function(){
 					// SWITCH_READ
-					KONASHI_CHARACTERISTICS_PIO_INPUT.read(function(error, data) {
+					KOSHIAN_CHARACTERISTICS_PIO_INPUT.read(function(error, data) {
 						if (data) {
 							if((data[0]&0x01)!= mPIO_0){
 								mPIO_0 = data[0]&0x01;
@@ -183,7 +185,7 @@ noble.on('discover', function(peripheral) {
 					var mMaxAGO=0x7F;		//ボリュームをＭＩＤＩに変換する際に最大
 					var mMaxAG1=0x40;		//ボリュームをＭＩＤＩに変換する際に最大
 
-					KONASHI_CHARACTERISTICS_ANALOG_READ0.read(function(error, data) {
+					KOSHIAN_CHARACTERISTICS_ANALOG_READ0.read(function(error, data) {
 						if (data) {
 							var temp = Math.floor((data[1] + data[0]*256)/2500*mMaxAGO);
 							if(temp>mMaxAGO) temp=mMaxAGO;
@@ -195,7 +197,7 @@ noble.on('discover', function(peripheral) {
 						}
 					});
 
-					KONASHI_CHARACTERISTICS_ANALOG_READ1.read(function(error, data) {
+					KOSHIAN_CHARACTERISTICS_ANALOG_READ1.read(function(error, data) {
 						if (data) {
 							var temp = Math.floor((data[1] + data[0]*256)/2500*mMaxAG1);
 							if(temp>mMaxAG1) temp=mMaxAG1;

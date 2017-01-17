@@ -1,0 +1,104 @@
+﻿<!DOCTYPE html>
+<HTML>
+<HEAD>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta http-equiv="Cache-Control" content="no-cache">
+	<title> Petite Controler for Creators' Hub via Bluetooth LE</title>
+
+<style type="text/css">
+<!--
+	#sans10 { color: black; font-family:sans-serif ;  font-size: 10pt; line-height : 1.5em}
+	#sans12 { color: black; font-family:sans-serif ;  font-size: 12pt; line-height : 1.5em}
+	#mono { color: black; font-family:monospace ; font-size: 10pt; line-height : 1.5em}
+-->
+</style>
+</head>
+
+<!--	-------------------------------------------------------------------- -->
+<body bgcolor="#ffffff" text="#000000" link="#0000ff" vlink="#ff00ff" 
+alink="#ff0000" style="margin-right:40px;margin-left:40px;margin-top:40px;">
+
+<!--	-------------------------------------------------------------------- -->
+<a href="https://amei-music.github.io/CreatorsHub/index.html" TARGET="_blank">
+<img src="https://amei-music.github.io/CreatorsHub/img/logo.svg" width="240">
+<br>
+<div id="mono">https://amei-music.github.io/CreatorsHub/index.html</div>
+</a>
+
+<div id="sans12"><h2>Koshianで作ったプチ・コントローラをCreators' Hubにつなぐ</h2>
+<div id="sans10">(2016.12.24)</div><br>
+<div id="sans12">
+
+<table><tr>
+<td width="750" valign="top">
+片手で持って、片手で操作できるプチコントローラを作成する。
+<a href="http://www.m-pression.com/ja/solutions/boards/KOSHIAN" TARGET="_blank">
+Koshian</a> という<b>Bluetooth&reg; SMART モジュール</b>を使用。このSMART モジュールはGPIO, A/D、UART, I2Cのインターフェースを持っていて、データをBluetoothでPCに送ること、またPCからBluetooth で制御することも可能である。これだけのインターフェースを持っていて、1,000円しないところが魅力である。しかし、Konash の端子間隔は1.27mmなので基板が特殊となり半田付けがしずらく、konashi 
+<a href="https://store.macnica.co.jp/products/yukaigong-xue_ye-ex002" TARGET="_blank">
+小型化拡張ボード</a>を購入。こちらがいささかお高い。<br><br>
+
+回路図は次の通り。スライダーをA/Dポートに、スイッチをGPIOポートに接続している。
+<br><br>
+</td></tr>
+<tr><td>
+<img src="blesliderIMG/koshiancurcit.jpg" width="750">
+</td></tr></table>
+
+<!---	-----------------------------------------------------------------	-->
+<table><tr>
+<td>
+<img src="blesliderIMG/IMG_2165.jpeg" width="300">
+</td>
+<td width="50"></td>
+<td width="400" valign="top">
+これを、タカチ電機工業 TW5-3-9 なるケースに収めている。（このケース深さが20mm 程度、Koshian を基板に実装すると9mm くらい、スライダーの高さが8mmくらいあるので,
+裏蓋を閉める時に結構きつい。）<br><br>
+KonashiはiOSを母艦としてBluetooth でやり取りをするのではれば、
+<a href="https://itunes.apple.com/jp/app/konashi.js-javascript-html/id652940096
+" TARGET="_blank">konashi-js</a>を使って、javascript で開発をすることができる。今回はCreators' Hub に対して受信したデータをWebscket で投げたいので、node で動作する。Bluetooth LE からWebsocket 変換を作製する。<br><br>
+開発環境：（多少古い）<br>
+Bluetooth Adapter iBUFFELO<br>
+Windows 7、node v.5.4.0<br>
+及び<br>
+Ubuntu 14.04、node v.5.4.0<br>
+<br>
+</td>
+</tr>
+</table>
+<!--	-------------------------------------------------------------------- -->
+<br><br>
+<table><tr>
+<td width="750" valign="top">
+node のBluetoothを扱うモジュールとして 
+<a href="https://www.npmjs.com/package/noble" TARGET="_blank">
+<b>noble</b></a>
+ を、Websocket のクライアントとしては、
+<a href="https://www.npmjs.com/package/socket.io-client" TARGET="_blank">
+<b>socket.io-client</b></a>
+を使用しました。
+nobleとKoshianの接続については、
+<a href="http://www.1ft-seabass.jp/memo/2015/12/17/nodejs-noble-konashi-connect/" TARGET="_blank">「NodeJSでBLE通信ができるnobleライブラリでkonashiとつなげたメモ」</a>を参照させていただきました。また、noble のWindows 7での利用については、
+<a href="http://qiita.com/YumeYakata/items/ddf871ba3aeeafc47f88" TARGET="_blank">「Windows 7 のnoble でBluetooth LE を使う」</a>
+を参照いたしました。
+<br><br>
+以下２つのモジュールをインストールします。<br>
+<br><font color="blue">
+&gt; npm install noble<br>
+&gt; npm install socket.io-client<br>
+</font><br>
+サンプルプログラムは　
+<a href="https://github.com/amei-music/CreatorsHub/blob/ble-kaki/example/webApp/BLeKoshianExample.js" TARGET="_blank">
+⇒ここ</a>
+　を参照下さい。さて、プチ・コントローラとCreators' Hub を使って、次のような図のパフォーマンスを行うことができます。<br>
+</td></tr>
+<tr><td =width="750">
+<img src="blesliderIMG/IMG_2167.jpg" width="740">
+</td></tr>
+</table>
+<!--	-------------------------------------------------------------------- -->
+
+<br>
+<br>
+<!--	-------------------------------------------------------------------- -->
+</body>
+</html>
